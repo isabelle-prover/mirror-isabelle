@@ -12,10 +12,12 @@ class Setup
     private static void echo(String msg)
     {
         System.out.print(msg + "\n");
+        System.out.flush();
     }
     private static void echo_err(String msg)
     {
         System.err.print(msg + "\n");
+        System.err.flush();
     }
     private static void fail(String msg)
     {
