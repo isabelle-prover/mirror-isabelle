@@ -332,7 +332,7 @@ final class Path private(
       case Path.Basic(b) :: _ => b
       case _ =>
         def err(bad: Path): Nothing = error("Cannot determine file-name from " + bad)
-        (try { Some(expand.elems) } catch { case ERROR(_) => None }) match {
+        (try { Some(absolute.elems) } catch { case ERROR(_) => None }) match {
           case Some(Path.Basic(b) :: _) => b
           case Some(elems) => err(new Path(elems))
           case None => err(this)

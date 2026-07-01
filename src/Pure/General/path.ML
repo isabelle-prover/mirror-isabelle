@@ -244,7 +244,7 @@ val absolute =
 fun file_name (Path (Basic b :: _)) = b
   | file_name path =
       let fun err bad = error ("Cannot determine file-name from " ^ print bad) in
-        (case try expand path of
+        (case try absolute path of
           SOME (Path (Basic b :: _)) => b
         | SOME p => err p
         | NONE => err path)
