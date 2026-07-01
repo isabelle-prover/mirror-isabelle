@@ -276,19 +276,17 @@ directory individually.
 
   /* Isabelle application */
 
-  def isabelle_options_path(platform: Platform.Family, dir: Path, name: String): Path =
-    if (platform == Platform.Family.windows) dir + Path.basic(name + ".l4j.ini")
-    else dir + Path.basic("Isabelle.options")
+  val isabelle_options_path: Path = Path.basic("Isabelle.options")
 
   def read_isabelle_options(platform: Platform.Family, dir: Path, name: String): List[String] =
-    Library.trim_split_lines(File.read(isabelle_options_path(platform, dir, name)))
+    Library.trim_split_lines(File.read(dir + isabelle_options_path))
       .filterNot(line => line.startsWith("#") || Library.trim_string(line).isEmpty)
 
   def make_isabelle_options(
     platform: Platform.Family, dir: Path, name: String, options: List[String]
   ): Unit = {
     val line_ending = if (platform == Platform.Family.windows) "\r\n" else "\n"
-    val path = isabelle_options_path(platform, dir, name)
+    val path = dir + isabelle_options_path
     val title = "# Java runtime options"
     File.write(path, (title :: options).map(_ + line_ending).mkString)
   }
@@ -653,19 +651,29 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         // Java parameters
 
-        val java_options: List[String] =
-          (for {
-            variable <-
-              List(
-                "ISABELLE_JAVA_SYSTEM_OPTIONS",
-                "JEDIT_JAVA_SYSTEM_OPTIONS",
-                "JEDIT_JAVA_OPTIONS")
-            opt <- Word.explode(other_isabelle.getenv(variable))
-          }
-          yield {
-            val s = "-Dapple.awt.application.name="
-            if (opt.startsWith(s)) s + isabelle_name else opt
-          }) ::: List("-Disabelle.jedit_server=" + isabelle_name)
+        val java_options: List[String] = {
+          val opts1 =
+            for {
+              variable <-
+                List(
+                  "ISABELLE_JAVA_SYSTEM_OPTIONS",
+                  "JEDIT_JAVA_SYSTEM_OPTIONS",
+                  "JEDIT_JAVA_OPTIONS")
+              opt <- Word.explode(other_isabelle.getenv(variable))
+            }
+            yield {
+              val s = "-Dapple.awt.application.name="
+              if (opt.startsWith(s)) s + isabelle_name else opt
+            }
+          val opts2 =
+            if (platform == Platform.Family.windows) {
+              List("-Dcygwin.root=$ROOTDIR/contrib/cygwin", "-Disabelle.root=$ROOTDIR")
+            }
+            else Nil
+          val opts3 = List("-Disabelle.jedit_server=" + isabelle_name)
+
+          opts1 ::: opts2 ::: opts3
+        }
 
         val classpath: List[Path] = {
           val base = isabelle_target.absolute
@@ -753,41 +761,11 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             Isabelle_System.move_file(isabelle_target + Path.explode("contrib/windows_app"), tmp_dir)
 
-            val app_template = Path.explode("~~/Admin/Windows/launch4j")
-
-            make_isabelle_options(platform, isabelle_target, isabelle_name, java_options)
-
-            val isabelle_xml = Path.explode("isabelle.xml")
-            val isabelle_exe = bundle_info.path
-
-            File.write(tmp_dir + isabelle_xml,
-              File.read(app_template + isabelle_xml).replacing(
-                "{ISABELLE_NAME}" -> isabelle_name,
-                "{OUTFILE}" -> File.platform_path(isabelle_target + isabelle_exe),
-                "{ICON}" -> File.platform_path(app_template + Path.explode("isabelle_transparent.ico")),
-                "{SPLASH}" -> File.platform_path(app_template + Path.explode("isabelle.bmp")),
-                "{CLASSPATH}" ->
-                  cat_lines(classpath.map(cp =>
-                    "    <cp>%EXEDIR%\\" + File.platform_path(cp).replacing("/" -> "\\") + "</cp>")),
-                "\\jdk\\" -> ("\\" + jdk_component + "\\")))
-
-            val java_opts =
-              bash_java_opens(
-                "java.base/java.io",
-                "java.base/java.lang",
-                "java.base/java.lang.reflect",
-                "java.base/java.text",
-                "java.base/java.util",
-                "java.desktop/java.awt.font")
-            val launch4j_jar = Component_Windows_App.launch4j_jar()
-
-            execute(tmp_dir,
-              cat_lines(List(
-                "export LAUNCH4J=" + File.bash_platform_path(launch4j_jar),
-                "isabelle java " + java_opts + " -jar \"$LAUNCH4J\" isabelle.xml")))
-
-            Isabelle_System.copy_file(app_template + Path.explode("manifest.xml"),
-              isabelle_target + isabelle_exe.ext("manifest"))
+            Component_JDK.setup_launcher(platform,
+              isabelle_target,
+              Path.basic("contrib") + Path.explode(jdk_component),
+              classpath = classpath.map(_.implode),
+              java_options = java_options)
 
 
             // Cygwin setup
@@ -848,6 +826,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
                 Component_Windows_App.sfx_txt.replacing("{ISABELLE_NAME}" -> isabelle_name)
               ).map(_ + "\r\n").mkString
 
+            val isabelle_exe = bundle_info.path
             Bytes.write(context.dist_dir + isabelle_exe,
               Bytes.read(sfx_exe) + Bytes(sfx_txt) + Bytes.read(exe_archive))
             File.set_executable(context.dist_dir + isabelle_exe)

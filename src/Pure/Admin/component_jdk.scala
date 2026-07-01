@@ -46,12 +46,24 @@ object Component_JDK {
   val launcher_info_windows: Launcher_Info =
     Launcher_Info(
       cfg_dir = "app",
+      splash = "lib/logo/isabelle.gif",
       launchers =
         List(
           Launcher(
             "classes/jdk/jpackage/internal/resources/jpackageapplauncherw.exe",
             "{N}.exe",
             executable = true)))
+
+  val exe_manifest =
+    """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" >
+ <asmv3:application>
+   <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
+    <dpiAware>true</dpiAware>
+   </asmv3:windowsSettings>
+ </asmv3:application>
+</assembly>
+"""
 
   def setup_launcher(
     platform: Platform.Family,
@@ -85,6 +97,10 @@ object Component_JDK {
         Bytes.write(path, bytes)
         if (launcher.executable) File.set_executable(path)
       }
+    }
+
+    if (platform == Platform.Family.windows) {
+      File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), exe_manifest)
     }
 
     val cfg_lines =

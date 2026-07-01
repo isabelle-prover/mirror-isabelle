@@ -181,10 +181,10 @@ mac.CFBundleTypeRole=Editor
       val isabelle_components = Components.Directory(isabelle_home).read_components()
 
       for { path <-
-        Build_Release.isabelle_options_path(platform_family, isabelle_home, isabelle_identifier) ::
         (if (platform.is_windows) Nil
          else {
            List(
+            isabelle_home + Build_Release.isabelle_options_path,
             isabelle_home + Path.basic(isabelle_identifier),
             isabelle_home + Build_Release.ISABELLE_APP)
          })
