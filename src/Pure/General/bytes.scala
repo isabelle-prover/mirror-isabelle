@@ -587,12 +587,19 @@ final class Bytes private(
       byte_unchecked(3) == 0xFD.toByte
 
   def uncompress_xz(cache: Compress.Cache = Compress.Cache.none): Bytes =
-    using(new xz.XZInputStream(stream(), cache.for_xz))(Bytes.read_stream(_, hint = size))
+    cache.for_xz match {
+      case None => this
+      case Some(xz_cache) =>
+        using(new xz.XZInputStream(stream(), xz_cache))(Bytes.read_stream(_, hint = size))
+    }
 
-  def uncompress_zstd(cache: Compress.Cache = Compress.Cache.none): Bytes = {
-    Zstd.init()
-    using(new zstd.ZstdInputStream(stream(), cache.for_zstd))(Bytes.read_stream(_, hint = size))
-  }
+  def uncompress_zstd(cache: Compress.Cache = Compress.Cache.none): Bytes =
+    cache.for_zstd match {
+      case None => this
+      case Some(zstd_cache) =>
+        Zstd.init()
+        using(new zstd.ZstdInputStream(stream(), zstd_cache))(Bytes.read_stream(_, hint = size))
+    }
 
   def uncompress(cache: Compress.Cache = Compress.Cache.none): Bytes =
     if (detect_xz) uncompress_xz(cache = cache)
@@ -607,9 +614,16 @@ final class Bytes private(
       using(
         options match {
           case options_xz: Compress.Options_XZ =>
-            new xz.XZOutputStream(out, options_xz.make, cache.for_xz)
+            cache.for_xz match {
+              case None => new xz.XZOutputStream(out, options_xz.make)
+              case Some(xz_cache) => new xz.XZOutputStream(out, options_xz.make, xz_cache)
+            }
           case options_zstd: Compress.Options_Zstd =>
-            new zstd.ZstdOutputStream(out, cache.for_zstd, options_zstd.level)
+            cache.for_zstd match {
+              case None => new zstd.ZstdOutputStream(out, options_zstd.level)
+              case Some(zstd_cache) =>
+                new zstd.ZstdOutputStream(out, zstd_cache, options_zstd.level)
+            }
         }
       ) { s => for (a <- subarray_iterator) s.write(a.array, a.offset, a.length) }
     }
