@@ -236,12 +236,19 @@ fun eval (Variable s) =
 
 val expand = rep #> maps eval #> norm #> Path;
 
-val file_name = implode_path o base o expand;
-
 val absolute =
   expand #> (fn path =>
     if is_absolute path then path
     else append (explode_path (ML_System.standard_path (OS.FileSys.getDir ()))) path);
+
+fun file_name (Path (Basic b :: _)) = b
+  | file_name path =
+      let fun err bad = error ("Cannot determine file-name from " ^ print bad) in
+        (case try expand path of
+          SOME (Path (Basic b :: _)) => b
+        | SOME p => err p
+        | NONE => err path)
+      end;
 
 
 (* binding: strictly monotonic path with position *)
