@@ -156,13 +156,23 @@ object Term {
         compress: Compress.Cache = Compress.Cache.make(),
         max_string: Int = isabelle.Cache.default_max_string,
         initial_size: Int = isabelle.Cache.default_initial_size): Cache =
-      new Cache(compress, initial_size, max_string)
+      new Memory_Cache(compress, initial_size, max_string)
 
-    val none: Cache = make(max_string = 0)
+    val none: Cache = new Cache {}
   }
 
-  class Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
-  extends XML.Cache(compress, max_string, initial_size) {
+  trait Cache extends XML.Cache {
+    def indexname(x: Indexname): Indexname = x
+    def sort(x: Sort): Sort = x
+    def typ(x: Typ): Typ = x
+    def term(x: Term): Term = x
+    def thm_name(x: Thm_Name): Thm_Name = x
+    def proof(x: Proof): Proof = x
+    def position(x: Position.T): Position.T = x
+  }
+
+  class Memory_Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
+  extends XML.Memory_Cache(compress, max_string, initial_size) with Cache {
     protected def cache_indexname(x: Indexname): Indexname =
       lookup(x) getOrElse store(Indexname(cache_string(x.name), x.index))
 
@@ -243,20 +253,20 @@ object Term {
     }
 
     // main methods
-    def indexname(x: Indexname): Indexname =
+    override def indexname(x: Indexname): Indexname =
       if (no_cache) x else synchronized { cache_indexname(x) }
-    def sort(x: Sort): Sort =
+    override def sort(x: Sort): Sort =
       if (no_cache) x else synchronized { cache_sort(x) }
-    def typ(x: Typ): Typ =
+    override def typ(x: Typ): Typ =
       if (no_cache) x else synchronized { cache_typ(x) }
-    def term(x: Term): Term =
+    override def term(x: Term): Term =
       if (no_cache) x else synchronized { cache_term(x) }
-    def thm_name(x: Thm_Name): Thm_Name =
+    override def thm_name(x: Thm_Name): Thm_Name =
       if (no_cache) x else synchronized { cache_thm_name(x) }
-    def proof(x: Proof): Proof =
+    override def proof(x: Proof): Proof =
       if (no_cache) x else synchronized { cache_proof(x) }
 
-    def position(x: Position.T): Position.T =
+    override def position(x: Position.T): Position.T =
       if (no_cache) x
       else synchronized { x.map({ case (a, b) => (cache_string(a), cache_string(b)) }) }
   }

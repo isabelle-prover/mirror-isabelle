@@ -248,13 +248,23 @@ object XML {
         compress: Compress.Cache = Compress.Cache.make(),
         max_string: Int = isabelle.Cache.default_max_string,
         initial_size: Int = isabelle.Cache.default_initial_size): Cache =
-      new Cache(compress, max_string, initial_size)
+      new Memory_Cache(compress, max_string, initial_size)
 
-    val none: Cache = make(Compress.Cache.none, max_string = 0)
+    val none: Cache = new Cache { }
   }
 
-  class Cache(val compress: Compress.Cache, max_string: Int, initial_size: Int)
-  extends isabelle.Cache(max_string, initial_size) {
+  trait Cache extends isabelle.Cache {
+    def compress: Compress.Cache = Compress.Cache.none
+    def tree0(x: XML.Tree): XML.Tree = x
+    def props(x: Properties.T): Properties.T = x
+    def markup(x: Markup): Markup = x
+    def tree(x: XML.Tree): XML.Tree = x
+    def body(x: XML.Body): XML.Body = x
+    def elem(x: XML.Elem): XML.Elem = x
+  }
+
+  class Memory_Cache(override val compress: Compress.Cache, max_string: Int, initial_size: Int)
+  extends isabelle.Memory_Cache(max_string, initial_size) with Cache {
     protected def cache_props(x: Properties.T): Properties.T = {
       if (x.isEmpty) x
       else
@@ -298,20 +308,14 @@ object XML {
     }
 
     // support hash-consing
-    def tree0(x: XML.Tree): XML.Tree =
-      if (no_cache) x else synchronized { lookup(x) getOrElse store(x) }
+    override def tree0(x: XML.Tree): XML.Tree = synchronized { lookup(x) getOrElse store(x) }
 
     // main methods
-    def props(x: Properties.T): Properties.T =
-      if (no_cache) x else synchronized { cache_props(x) }
-    def markup(x: Markup): Markup =
-      if (no_cache) x else synchronized { cache_markup(x) }
-    def tree(x: XML.Tree): XML.Tree =
-      if (no_cache) x else synchronized { cache_tree(x) }
-    def body(x: XML.Body): XML.Body =
-      if (no_cache) x else synchronized { cache_body(x) }
-    def elem(x: XML.Elem): XML.Elem =
-      if (no_cache) x else synchronized { cache_tree(x).asInstanceOf[XML.Elem] }
+    override def props(x: Properties.T): Properties.T = synchronized { cache_props(x) }
+    override def markup(x: Markup): Markup = synchronized { cache_markup(x) }
+    override def tree(x: XML.Tree): XML.Tree = synchronized { cache_tree(x) }
+    override def body(x: XML.Body): XML.Body = synchronized { cache_body(x) }
+    override def elem(x: XML.Elem): XML.Elem = synchronized { cache_tree(x).asInstanceOf[XML.Elem] }
   }
 
 

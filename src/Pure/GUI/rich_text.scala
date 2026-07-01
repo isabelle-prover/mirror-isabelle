@@ -76,17 +76,21 @@ object Rich_Text {
         compress: Compress.Cache = Compress.Cache.make(),
         max_string: Int = isabelle.Cache.default_max_string,
         initial_size: Int = isabelle.Cache.default_initial_size): Cache =
-      new Cache(compress, initial_size, max_string)
+      new Memory_Cache(compress, initial_size, max_string)
 
-    val none: Cache = make(max_string = 0)
+    val none: Cache = new Cache { }
 
     sealed case class Args(
       msg: XML.Elem, margin: Double, metric: Font_Metric, unicode_symbols: Boolean)
   }
 
-  class Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
-  extends Term.Cache(compress, max_string, initial_size) {
-    def formatted(x: Cache.Args, run: => Formatted): Formatted = {
+  trait Cache extends Term.Cache {
+    def formatted(args: Cache.Args, run: => Formatted): Formatted = run
+  }
+
+  class Memory_Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
+  extends Term.Memory_Cache(compress, max_string, initial_size) with Cache {
+    override def formatted(x: Cache.Args, run: => Formatted): Formatted = {
       if (table == null) run
       else {
         val get: Option[Formatted] =
