@@ -30,7 +30,7 @@ fun run_system_encoded args =
   |> (fn [a, b] => {output = a, timing = Time.fromMilliseconds (Value.parse_int b)})
 
 fun run_system {system, problem, extra, timeout} =
-  [system, Isabelle_System.absolute_path problem, extra, string_of_int (Time.toMilliseconds timeout)]
+  [system, File.absolute_path problem, extra, string_of_int (Time.toMilliseconds timeout)]
   |> run_system_encoded
 
 end

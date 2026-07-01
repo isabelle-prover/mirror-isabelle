@@ -12,7 +12,7 @@ sig
   val bash_paths: Path.T list -> string
   val bash_platform_path: Path.T -> string
   val symbolic_path: Path.T -> string
-  val absolute_path: Path.T -> Path.T
+  val absolute_path: Path.T -> string
   val full_path: Path.T -> Path.T -> Path.T
   val tmp_path: Path.T -> Path.T
   val exists: Path.T -> bool
@@ -70,16 +70,13 @@ fun symbolic_path path =
 
 (* full_path *)
 
-val absolute_path =
-  Path.expand #> (fn path =>
-    if Path.is_absolute path then path
-    else Path.explode (ML_System.standard_path (OS.FileSys.getDir ())) + path);
+val absolute_path = Path.implode o Path.absolute;
 
 fun full_path dir path =
   let
     val path' = Path.expand path;
     val _ = Path.is_current path' andalso error "Bad file specification";
-  in absolute_path (dir + path') end;
+  in Path.absolute (dir + path') end;
 
 
 (* tmp_path *)

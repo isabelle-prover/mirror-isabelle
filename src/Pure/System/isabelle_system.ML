@@ -12,7 +12,6 @@ sig
   val bash: string -> int
   val bash_functions: unit -> string list
   val check_bash_function: Proof.context -> string * Position.T -> string
-  val absolute_path: Path.T -> string
   val make_directory: Path.T -> Path.T
   val copy_dir: Path.T -> Path.T -> unit
   val copy_file: Path.T -> Path.T -> unit
@@ -34,8 +33,6 @@ structure Isabelle_System: ISABELLE_SYSTEM =
 struct
 
 (* bash *)
-
-val absolute_path = Path.implode o File.absolute_path;
 
 local
 
@@ -70,7 +67,7 @@ fun bash_process params =
      [Bytes.string Bash.server_run,
       Bytes.string script,
       input,
-      let open XML.Encode in YXML.bytes_of_body (option (string o absolute_path) cwd) end,
+      let open XML.Encode in YXML.bytes_of_body (option (string o File.absolute_path) cwd) end,
       let open XML.Encode in YXML.bytes_of_body o list (pair string string) end
         (("ISABELLE_TMP", getenv "ISABELLE_TMP") :: putenv),
       Bytes.string (Value.print_bool redirect),
@@ -134,7 +131,7 @@ fun check_bash_function ctxt arg =
 
 (* directory and file operations *)
 
-fun scala_function name = ignore o Scala.function name o map absolute_path;
+fun scala_function name = ignore o Scala.function name o map File.absolute_path;
 
 fun make_directory path = (scala_function "make_directory" [path]; path);
 
@@ -144,7 +141,7 @@ fun copy_file src dst = scala_function "copy_file" [src, dst];
 
 fun copy_file_base (base_dir, src) target_dir =
   ignore (Scala.function "copy_file_base"
-    [absolute_path base_dir, Path.implode src, absolute_path target_dir]);
+    [File.absolute_path base_dir, Path.implode src, File.absolute_path target_dir]);
 
 
 (* tmp files *)

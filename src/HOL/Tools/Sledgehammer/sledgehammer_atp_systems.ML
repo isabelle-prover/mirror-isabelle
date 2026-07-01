@@ -534,7 +534,7 @@ fun remote_config system_name system_versions proof_delims known_failures prem_r
   {exec = isabelle_scala_function,
    arguments = fn _ => fn _ => fn command => fn timeout => fn problem =>
      [the_remote_system system_name system_versions,
-      Isabelle_System.absolute_path problem,
+      File.absolute_path problem,
       command, string_of_int (Int.min (max_remote_secs, to_secs 1 timeout) * 1000)],
    proof_delims = union (op =) tstp_proof_delims proof_delims,
    known_failures = known_failures @ known_says_failures,
