@@ -123,6 +123,7 @@ object Build_App {
       File.write(file_associations,
 """
 extension=thy
+mime-type=text/plain
 icon=theory.icns
 description=Isabelle theory file
 mac.CFBundleTypeRole=Editor
@@ -136,7 +137,7 @@ mac.CFBundleTypeRole=Editor
       val app_root = app_target.app_if(platform.is_macos)
       val app_prefix = app_root + platform_prefix
       val app_resources = app_prefix + Path.explode("Resources")
-      val app_identifier = "isabelle." + app_name
+      val app_identifier = "isabelle." + app_name.replacing("_" -> "--")
       val app_icon = if (platform.is_macos) Some(dist_dir + Build_Release.ISABELLE_ICNS) else None
 
       val mac_sign_options =
@@ -254,17 +255,7 @@ mac.CFBundleTypeRole=Editor
 
       val jdk_dir =
         isabelle_components.filter(_.containsSlice("jdk")) match {
-          case List(jdk) =>
-            val platform_dir = isabelle_home + Path.explode(jdk) + Path.basic(platform_name)
-            if (platform.is_macos) {
-              File.get_entry(platform_dir,
-                pred = { path =>
-                  val name = path.file_name
-                  name.startsWith("zulu-") && name.endsWith(".jdk")
-                },
-                title = "zulu-*.jdk")
-            }
-            else platform_dir
+          case List(jdk) => isabelle_home + Path.explode(jdk) + Path.basic(platform_name)
           case _ => error("Failed to determine jdk component")
         }
 
