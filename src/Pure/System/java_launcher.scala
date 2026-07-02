@@ -178,7 +178,7 @@ object Java_Launcher {
             "{VERSION}" -> proper_string(app_version).getOrElse("1.0")))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
       case Platform.Family.windows =>
-        File.write(isabelle_home + Path.basic(app_name + ".exe.manifest"), exe_manifest)
+        File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
       case _ =>
     }
 
@@ -186,12 +186,12 @@ object Java_Launcher {
       List("[Application]") :::
       (if (launcher.splash.isEmpty) Nil else List("app.splash=$ROOTDIR/" + launcher.splash)) :::
       List("app.mainclass=" + main_class) :::
-      List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(isabelle_home, java_home).implode) :::
+      List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(app_root, java_home).implode) :::
       classpath.map("app.classpath=$ROOTDIR/" + _) :::
       List("", "[JavaOptions]") :::
       ("-Disabelle.root=$ROOTDIR" :: java_options).map("java-options=" + _)
 
-    val cfg_path = isabelle_home + Path.explode(launcher.cfg_dir) + Path.basic(app_name + ".cfg")
+    val cfg_path = app_root + Path.explode(launcher.cfg_dir) + Path.basic(app_name + ".cfg")
     Isabelle_System.make_directory(cfg_path.dir)
     File.write(cfg_path, Library.terminate_lines(cfg_lines))
 
