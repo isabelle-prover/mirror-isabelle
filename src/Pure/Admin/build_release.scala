@@ -105,9 +105,6 @@ directory individually.
   val ISABELLE_IDENTIFIER: Path = Path.explode("etc/ISABELLE_IDENTIFIER")
   val ISABELLE_APP: Path = Path.explode("lib/scripts/Isabelle_app")
 
-  val ISABELLE_ICNS: Path = Path.explode("lib/logo/isabelle.icns")
-  val THEORY_ICNS: Path = Path.explode("lib/logo/theory.icns")
-
   object Release_Archive {
     def make(bytes: Bytes, rename: String = ""): Release_Archive = {
       Isabelle_System.with_tmp_dir("build_release")(dir =>
@@ -296,8 +293,7 @@ directory individually.
     isabelle_target: Path,
     isabelle_name: String,
     jdk_component: String,
-    classpath: List[Path],
-    dock_icon: Boolean = false
+    classpath: List[Path]
   ): Unit = {
     val script_classpath =
       "-classpath " + quote(classpath.map(p => "$ISABELLE_HOME/" + p.implode).mkString(":"))
@@ -334,8 +330,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
   "-Disabelle.root=$ISABELLE_HOME" "${JAVA_OPTIONS[@]}" \
   """ + script_classpath + """ \
   "-splash:$ISABELLE_HOME/lib/logo/isabelle.gif" \
-""" + (if (dock_icon) """"-Xdock:icon=$ISABELLE_HOME/lib/logo/isabelle_transparent-128.png" \
-""" else "") + """  isabelle.jedit.JEdit_Main "$@"
+  isabelle.jedit.JEdit_Main "$@"
 """
     val script_path = isabelle_target + ISABELLE_APP
     File.write(script_path, script)
@@ -346,64 +341,6 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
       component_dir + Path.explode(Platform.Family.native(platform)) + Path.explode("Isabelle"),
       isabelle_target + Path.explode(isabelle_name))
     Isabelle_System.rm_tree(component_dir)
-  }
-
-
-  def make_isabelle_plist(path: Path, isabelle_name: String, isabelle_rev: String): Unit = {
-    File.write(path, """<?xml version="1.0" ?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-<key>CFBundleDevelopmentRegion</key>
-<string>English</string>
-<key>CFBundleIconFile</key>
-<string>isabelle.icns</string>
-<key>CFBundleIdentifier</key>
-<string>de.tum.in.isabelle</string>
-<key>CFBundleDisplayName</key>
-<string>""" + isabelle_name + """</string>
-<key>CFBundleInfoDictionaryVersion</key>
-<string>6.0</string>
-<key>CFBundleName</key>
-<string>""" + isabelle_name + """</string>
-<key>CFBundlePackageType</key>
-<string>APPL</string>
-<key>CFBundleShortVersionString</key>
-<string>""" + isabelle_name + """</string>
-<key>CFBundleSignature</key>
-<string>????</string>
-<key>CFBundleVersion</key>
-<string>""" + isabelle_rev + """</string>
-<key>NSHumanReadableCopyright</key>
-<string></string>
-<key>LSMinimumSystemVersion</key>
-<string>10.11</string>
-<key>LSApplicationCategoryType</key>
-<string>public.app-category.developer-tools</string>
-<key>NSHighResolutionCapable</key>
-<string>true</string>
-<key>NSSupportsAutomaticGraphicsSwitching</key>
-<string>true</string>
-<key>CFBundleDocumentTypes</key>
-<array>
-<dict>
-<key>CFBundleTypeExtensions</key>
-<array>
-<string>thy</string>
-</array>
-<key>CFBundleTypeIconFile</key>
-<string>theory.icns</string>
-<key>CFBundleTypeName</key>
-<string>Isabelle theory file</string>
-<key>CFBundleTypeRole</key>
-<string>Editor</string>
-<key>LSTypeIsPackage</key>
-<false/>
-</dict>
-</array>
-</dict>
-</plist>
-""")
   }
 
 
@@ -719,30 +656,35 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             // macOS application bundle
 
-            val app_contents = isabelle_target + Path.explode("Contents")
+            val isabelle_app = Path.explode(isabelle_name).app
 
-            for (icon <- List(ISABELLE_ICNS, THEORY_ICNS)) {
-              Isabelle_System.copy_file(isabelle_target + icon,
-                Isabelle_System.make_directory(app_contents + Path.explode("Resources")))
+            val app_root = tmp_dir + isabelle_app
+            val app_contents = app_root + Path.explode("Contents")
+            val app_resources = app_contents + Path.explode("Resources")
+
+            Isabelle_System.new_directory(app_contents)
+            Isabelle_System.move_file(tmp_dir + Path.explode(isabelle_name), app_resources)
+
+            for (name <- File.read_dir(app_resources)) {
+              val path = Path.basic(name)
+              Isabelle_System.symlink(Path.explode("Contents/Resources") + path, app_root)
             }
 
-            make_isabelle_plist(
-              app_contents + Path.explode("Info.plist"), isabelle_name, archive.id)
-
-            make_isabelle_app(platform, isabelle_target, isabelle_name, jdk_component,
-              classpath, dock_icon = true)
-
-            make_isabelle_options(platform, isabelle_target, isabelle_name,
-              java_options ::: List("-Disabelle.app=true"))
+            Java_Launcher.setup(platform,
+              app_root = app_root,
+              app_version = archive.id,
+              jdk_home = jdk_home,
+              classpath = classpath.map(_.implode),
+              java_options =
+                java_options :::
+                List(
+                  "-Xdock:icon=$ROOTDIR/Contents/Resources/lib/logo/isabelle_transparent-128.png",
+                  "-Disabelle.app=true"))
 
 
             // application archive
 
             progress.echo("Packaging " + bundle_info.name + " ...")
-
-            val isabelle_app = Path.explode(isabelle_name).app
-            Isabelle_System.move_file(tmp_dir + Path.explode(isabelle_name),
-              tmp_dir + isabelle_app)
 
             execute_tar(tmp_dir,
               "-czf " + File.bash_path(context.dist_dir + bundle_info.path) + " " +
@@ -760,7 +702,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
             Isabelle_System.move_file(isabelle_target + Path.explode("contrib/windows_app"), tmp_dir)
 
             Java_Launcher.setup(platform,
-              isabelle_target,
+              app_root = isabelle_target,
               jdk_home = jdk_home,
               classpath = classpath.map(_.implode),
               java_options = java_options)

@@ -16,6 +16,8 @@ object Build_App {
   val ADMIN_MACOS_ENTITLEMENTS: Path =
     Path.explode("~~/Admin/macOS/app/entitlements.plist")
 
+  val ISABELLE_ICNS: Path = Path.explode("lib/logo/isabelle.icns")
+  val THEORY_ICNS: Path = Path.explode("lib/logo/theory.icns")
 
 
   /** build app **/
@@ -138,7 +140,7 @@ mac.CFBundleTypeRole=Editor
       val app_prefix = app_root + platform_prefix
       val app_resources = app_prefix + Path.explode("Resources")
       val app_identifier = "isabelle." + app_name.replacing("_" -> "--")
-      val app_icon = if (platform.is_macos) Some(dist_dir + Build_Release.ISABELLE_ICNS) else None
+      val app_icon = if (platform.is_macos) Some(dist_dir + ISABELLE_ICNS) else None
 
       val mac_sign_options =
         if (platform.is_macos && codesign_user.nonEmpty) {
@@ -199,7 +201,7 @@ mac.CFBundleTypeRole=Editor
               "$USER_HOME/Library/Application Support/Isabelle"))
         }
         Isabelle_System.rm_tree(isabelle_home + Path.explode("Contents"))
-        Isabelle_System.copy_file(isabelle_home + Build_Release.THEORY_ICNS, app_resources)
+        Isabelle_System.copy_file(isabelle_home + THEORY_ICNS, app_resources)
 
         val bad_files =
           File.find_files(app_root, pred = { file =>

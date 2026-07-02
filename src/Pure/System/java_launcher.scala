@@ -16,10 +16,15 @@ object Java_Launcher {
 
   private sealed case class Info(
     home: String = "",
+    resources: String = "",
     cfg_dir: String = "",
     splash: String = "",
     items: List[Item] = Nil,
-    links: List[(String, String)] = Nil)
+    links: List[(String, String)] = Nil
+  ) {
+    def home_path: Path = Path.explode(home)
+    def resources_path: Path = Path.explode(resources)
+  }
 
   private val info_linux: Info =
     Info(
@@ -36,7 +41,18 @@ object Java_Launcher {
             "lib/libapplauncher.so")),
       links = List("bin/{N}" -> "{N}", "lib/app/{N}.cfg" -> "{N}.cfg"))
 
-  private val info_macos: Info = Info(home = "Contents/Home")  // FIXME
+  private val info_macos: Info =
+    Info(
+      home = "Contents/Home",
+      resources = "Contents/Resources",
+      cfg_dir = "Contents/app",
+      items =
+        List(
+          Item(
+            "classes/jdk/jpackage/internal/resources/jpackageapplauncher",
+            "Contents/MacOS/{N}",
+            executable = true)),
+      links = List("Contents/app/{N}.cfg" -> "{N}.cfg"))
 
   private val info_windows: Info =
     Info(
@@ -48,6 +64,62 @@ object Java_Launcher {
             "classes/jdk/jpackage/internal/resources/jpackageapplauncherw.exe",
             "{N}.exe",
             executable = true)))
+
+  private val info_plist =
+    """<?xml version="1.0" ?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+<key>CFBundleDevelopmentRegion</key>
+<string>English</string>
+<key>CFBundleIconFile</key>
+<string>lib/logo/isabelle.icns</string>
+<key>CFBundleIdentifier</key>
+<string>de.tum.in.isabelle</string>
+<key>CFBundleDisplayName</key>
+<string>{NAME}</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleName</key>
+<string>{NAME}</string>
+<key>CFBundlePackageType</key>
+<string>APPL</string>
+<key>CFBundleShortVersionString</key>
+<string>{NAME}</string>
+<key>CFBundleSignature</key>
+<string>????</string>
+<key>CFBundleVersion</key>
+<string>{VERSION}</string>
+<key>NSHumanReadableCopyright</key>
+<string></string>
+<key>LSMinimumSystemVersion</key>
+<string>10.11</string>
+<key>LSApplicationCategoryType</key>
+<string>public.app-category.developer-tools</string>
+<key>NSHighResolutionCapable</key>
+<string>true</string>
+<key>NSSupportsAutomaticGraphicsSwitching</key>
+<string>true</string>
+<key>CFBundleDocumentTypes</key>
+<array>
+<dict>
+<key>CFBundleTypeExtensions</key>
+<array>
+<string>thy</string>
+</array>
+<key>CFBundleTypeIconFile</key>
+<string>lib/logo/theory.icns</string>
+<key>CFBundleTypeName</key>
+<string>Isabelle theory file</string>
+<key>CFBundleTypeRole</key>
+<string>Editor</string>
+<key>LSTypeIsPackage</key>
+<false/>
+</dict>
+</array>
+</dict>
+</plist>
+"""
 
   private val exe_manifest =
   """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -62,8 +134,9 @@ object Java_Launcher {
 
   def setup(
     platform: Platform.Family,
-    isabelle_home: Path,
+    app_root: Path,
     jdk_home: Path,
+    app_version: String = "",
     classpath: List[String] = Nil,
     java_options: List[String] = Nil,
     main_class: String = "isabelle.jedit.JEdit_Main"
@@ -75,25 +148,36 @@ object Java_Launcher {
         case Platform.Family.windows => info_windows
       }
     val platform_root = Path.basic(Platform.Family.native(platform))
-    val platform_home = Path.explode(launcher.home)
 
-    val java_home = isabelle_home + jdk_home + platform_root + platform_home
+    val app_name = app_root.drop_ext.file_name
+    val isabelle_home = app_root + launcher.resources_path
+    val java_home = isabelle_home + jdk_home + platform_root + launcher.home_path
 
-    val app_name = isabelle_home.file_name
-    def app_path(s: String): Path = Path.explode(s.replacing("{N}" -> app_name))
+    def app_path(s: String, relative: Boolean = false): Path =
+      (if (relative) Path.current else app_root) + Path.explode(s.replacing("{N}" -> app_name))
 
     val zip_path = java_home + Path.explode("jmods/jdk.jpackage.jmod")
     using(new ZipFile(zip_path.file)) { zip_file =>
       for (item <- launcher.items) {
-        val path = isabelle_home + app_path(item.output)
+        val path = app_path(item.output)
         val bytes = using(zip_file.getInputStream(item.zip_entry))(Bytes.read_stream(_))
+        Isabelle_System.make_directory(path.dir)
         Bytes.write(path, bytes)
         if (item.executable) File.set_executable(path)
       }
     }
 
-    if (platform == Platform.Family.windows) {
-      File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), exe_manifest)
+    platform match {
+      case Platform.Family.macos | Platform.Family.macos_arm =>
+        val app_contents = app_root + Path.explode("Contents")
+        File.write(app_contents + Path.explode("Info.plist"),
+          info_plist.replacing(
+            "{NAME}" -> app_name,
+            "{VERSION}" -> proper_string(app_version).getOrElse("1.0")))
+        File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
+      case Platform.Family.windows =>
+        File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), exe_manifest)
+      case _ =>
     }
 
     val cfg_lines =
@@ -110,7 +194,7 @@ object Java_Launcher {
     File.write(cfg_path, Library.terminate_lines(cfg_lines))
 
     for ((a, b) <- launcher.links) {
-      Isabelle_System.symlink(app_path(a), isabelle_home + app_path(b), force = true)
+      Isabelle_System.symlink(app_path(a, relative = true), app_path(b), force = true)
     }
   }
 }
