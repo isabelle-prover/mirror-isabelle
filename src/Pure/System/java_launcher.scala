@@ -178,7 +178,7 @@ object Java_Launcher {
             "{VERSION}" -> proper_string(app_version).getOrElse("1.0")))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
       case Platform.Family.windows =>
-        File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), exe_manifest)
+        File.write(isabelle_home + Path.basic(app_name + ".exe.manifest"), exe_manifest)
       case _ =>
     }
 
