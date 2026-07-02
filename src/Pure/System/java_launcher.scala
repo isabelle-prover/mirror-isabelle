@@ -15,6 +15,7 @@ object Java_Launcher {
   }
 
   private sealed case class Info(
+    home: String = "",
     cfg_dir: String = "",
     splash: String = "",
     items: List[Item] = Nil,
@@ -35,7 +36,7 @@ object Java_Launcher {
             "lib/libapplauncher.so")),
       links = List("bin/{N}" -> "{N}", "lib/app/{N}.cfg" -> "{N}.cfg"))
 
-  private val info_macos: Info = Info()  // FIXME
+  private val info_macos: Info = Info(home = "Contents/Home")  // FIXME
 
   private val info_windows: Info =
     Info(
@@ -67,18 +68,16 @@ object Java_Launcher {
     java_options: List[String] = Nil,
     main_class: String = "isabelle.jedit.JEdit_Main"
   ): Unit = {
-    val platform_name = Platform.Family.native(platform)
-    val (platform_home, launcher) =
+    val launcher =
       platform match {
-        case Platform.Family.linux | Platform.Family.linux_arm =>
-          (Path.current, info_linux)
-        case Platform.Family.macos | Platform.Family.macos_arm =>
-          (Path.explode("Contents/Home"), info_macos)
-        case Platform.Family.windows =>
-          (Path.current, info_windows)
+        case Platform.Family.linux | Platform.Family.linux_arm => info_linux
+        case Platform.Family.macos | Platform.Family.macos_arm => info_macos
+        case Platform.Family.windows => info_windows
       }
+    val platform_root = Path.basic(Platform.Family.native(platform))
+    val platform_home = Path.explode(launcher.home)
 
-    val java_home = isabelle_home + jdk_home + Path.basic(platform_name) + platform_home
+    val java_home = isabelle_home + jdk_home + platform_root + platform_home
 
     val app_name = isabelle_home.file_name
     def app_path(s: String): Path = Path.explode(s.replacing("{N}" -> app_name))
