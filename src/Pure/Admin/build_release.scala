@@ -633,8 +633,8 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         val contrib_dir = Components.contrib(isabelle_target)
 
-        val (bundled_components, jdk_component) =
-          get_bundled_components(isabelle_target, platform)
+        val (bundled_components, jdk_component) = get_bundled_components(isabelle_target, platform)
+        val jdk_home = Path.explode("contrib") + Path.explode(jdk_component)
 
         for (name <- bundled_components) {
           Components.resolve(Components.default_components_base, name,
@@ -761,7 +761,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             Java_Launcher.setup(platform,
               isabelle_target,
-              Path.basic("contrib") + Path.explode(jdk_component),
+              jdk_home = jdk_home,
               classpath = classpath.map(_.implode),
               java_options = java_options)
 
