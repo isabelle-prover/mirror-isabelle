@@ -759,7 +759,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             Isabelle_System.move_file(isabelle_target + Path.explode("contrib/windows_app"), tmp_dir)
 
-            Component_JDK.setup_launcher(platform,
+            Java_Launcher.setup(platform,
               isabelle_target,
               Path.basic("contrib") + Path.explode(jdk_component),
               classpath = classpath.map(_.implode),
