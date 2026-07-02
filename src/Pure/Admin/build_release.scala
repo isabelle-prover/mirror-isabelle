@@ -590,6 +590,9 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         val java_options: List[String] = {
           val opts1 =
+            if (platform == Platform.Family.windows) List("-Dcygwin.root=$ROOTDIR/contrib/cygwin")
+            else Nil
+          val opts2 =
             for {
               variable <-
                 List(
@@ -602,9 +605,6 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
               val s = "-Dapple.awt.application.name="
               if (opt.startsWith(s)) s + isabelle_name else opt
             }
-          val opts2 =
-            if (platform == Platform.Family.windows) List("-Dcygwin.root=$ROOTDIR/contrib/cygwin")
-            else Nil
           val opts3 = List("-Disabelle.jedit_server=" + isabelle_name)
 
           opts1 ::: opts2 ::: opts3
