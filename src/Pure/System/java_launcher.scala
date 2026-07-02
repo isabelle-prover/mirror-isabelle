@@ -153,12 +153,12 @@ object Java_Launcher {
 
     val app_name = app_root.drop_ext.file_name
     val isabelle_home = app_root + launcher.resources_path
-    val java_home = isabelle_home + jdk_home + platform_root + launcher.home_path
+    val java_root = isabelle_home + jdk_home + platform_root
 
     def app_path(s: String, relative: Boolean = false): Path =
       (if (relative) Path.current else app_root) + Path.explode(s.replacing("{NAME}" -> app_name))
 
-    val zip_path = java_home + Path.explode("jmods/jdk.jpackage.jmod")
+    val zip_path = java_root + launcher.home_path + Path.explode("jmods/jdk.jpackage.jmod")
     using(new ZipFile(zip_path.file)) { zip_file =>
       for (item <- launcher.items) {
         val path = app_path(item.output)
@@ -186,7 +186,7 @@ object Java_Launcher {
       List("[Application]") :::
       (if (launcher.splash.isEmpty) Nil else List("app.splash=$ROOTDIR/" + launcher.splash)) :::
       List("app.mainclass=" + main_class) :::
-      List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(app_root, java_home).implode) :::
+      List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(app_root, java_root).implode) :::
       classpath.map("app.classpath=$ROOTDIR/" + _) :::
       List("", "[JavaOptions]") :::
       ("-Disabelle.root=$ROOTDIR" :: java_options).map("java-options=" + _)
