@@ -16,45 +16,46 @@ import java.util.zip.{ZipFile, ZipEntry}
 object Component_JDK {
   /* Java app launcher */
 
-  sealed case class Launcher(name: String, output: String, executable: Boolean = false) {
-    def zip_entry: ZipEntry = new ZipEntry(name)
-  }
+  private object Launcher {
+    sealed case class Item(name: String, output: String, executable: Boolean = false) {
+      def zip_entry: ZipEntry = new ZipEntry(name)
+    }
 
-  sealed case class Launcher_Info(
-    cfg_dir: String = "",
-    splash: String = "",
-    launchers: List[Launcher] = Nil,
-    links: List[(String, String)] = Nil)
+    sealed case class Info(
+      cfg_dir: String = "",
+      splash: String = "",
+      items: List[Item] = Nil,
+      links: List[(String, String)] = Nil)
 
-  val launcher_info_linux: Launcher_Info =
-    Launcher_Info(
-      cfg_dir = "lib/app",
-      splash = "lib/logo/isabelle.gif",
-      launchers =
-        List(
-          Launcher(
-            "classes/jdk/jpackage/internal/resources/jpackageapplauncher",
-            "bin/{N}",
-            executable = true),
-          Launcher(
-            "classes/jdk/jpackage/internal/resources/libjpackageapplauncheraux.so",
-            "lib/libapplauncher.so")),
-      links = List("bin/{N}" -> "{N}", "lib/app/{N}.cfg" -> "{N}.cfg"))
+    val info_linux: Info =
+      Info(
+        cfg_dir = "lib/app",
+        splash = "lib/logo/isabelle.gif",
+        items =
+          List(
+            Item(
+              "classes/jdk/jpackage/internal/resources/jpackageapplauncher",
+              "bin/{N}",
+              executable = true),
+            Item(
+              "classes/jdk/jpackage/internal/resources/libjpackageapplauncheraux.so",
+              "lib/libapplauncher.so")),
+        links = List("bin/{N}" -> "{N}", "lib/app/{N}.cfg" -> "{N}.cfg"))
 
-  val launcher_info_macos: Launcher_Info = Launcher_Info()  // FIXME
+    val info_macos: Info = Info()  // FIXME
 
-  val launcher_info_windows: Launcher_Info =
-    Launcher_Info(
-      cfg_dir = "app",
-      splash = "lib/logo/isabelle.gif",
-      launchers =
-        List(
-          Launcher(
-            "classes/jdk/jpackage/internal/resources/jpackageapplauncherw.exe",
-            "{N}.exe",
-            executable = true)))
+    val info_windows: Info =
+      Info(
+        cfg_dir = "app",
+        splash = "lib/logo/isabelle.gif",
+        items =
+          List(
+            Item(
+              "classes/jdk/jpackage/internal/resources/jpackageapplauncherw.exe",
+              "{N}.exe",
+              executable = true)))
 
-  val exe_manifest =
+    val exe_manifest =
     """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" >
  <asmv3:application>
@@ -64,6 +65,7 @@ object Component_JDK {
  </asmv3:application>
 </assembly>
 """
+  }
 
   def setup_launcher(
     platform: Platform.Family,
@@ -74,14 +76,14 @@ object Component_JDK {
     main_class: String = "isabelle.jedit.JEdit_Main"
   ): Unit = {
     val platform_name = Platform.Family.native(platform)
-    val (platform_home, launcher_info) =
+    val (platform_home, launcher) =
       platform match {
         case Platform.Family.linux | Platform.Family.linux_arm =>
-          (Path.current, launcher_info_linux)
+          (Path.current, Launcher.info_linux)
         case Platform.Family.macos | Platform.Family.macos_arm =>
-          (Path.explode("Contents/Home"), launcher_info_macos)
+          (Path.explode("Contents/Home"), Launcher.info_macos)
         case Platform.Family.windows =>
-          (Path.current, launcher_info_windows)
+          (Path.current, Launcher.info_windows)
       }
 
     val java_home = isabelle_home + jdk_home + Path.basic(platform_name) + platform_home
@@ -91,33 +93,31 @@ object Component_JDK {
 
     val zip_path = java_home + Path.explode("jmods/jdk.jpackage.jmod")
     using(new ZipFile(zip_path.file)) { zip_file =>
-      for (launcher <- launcher_info.launchers) {
-        val path = isabelle_home + app_path(launcher.output)
-        val bytes = using(zip_file.getInputStream(launcher.zip_entry))(Bytes.read_stream(_))
+      for (item <- launcher.items) {
+        val path = isabelle_home + app_path(item.output)
+        val bytes = using(zip_file.getInputStream(item.zip_entry))(Bytes.read_stream(_))
         Bytes.write(path, bytes)
-        if (launcher.executable) File.set_executable(path)
+        if (item.executable) File.set_executable(path)
       }
     }
 
     if (platform == Platform.Family.windows) {
-      File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), exe_manifest)
+      File.write(isabelle_home + Path.basic(app_name + "exe.manifest"), Launcher.exe_manifest)
     }
 
     val cfg_lines =
       List("[Application]") :::
-      (if (launcher_info.splash.isEmpty) Nil
-       else List("app.splash=$ROOTDIR/" + launcher_info.splash)) :::
+      (if (launcher.splash.isEmpty) Nil else List("app.splash=$ROOTDIR/" + launcher.splash)) :::
       List("app.mainclass=" + main_class) :::
       List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(isabelle_home, java_home).implode) :::
       classpath.map("app.classpath=$ROOTDIR/" + _) :::
       List("", "[JavaOptions]") ::: java_options.map("java-options=" + _)
 
-    val cfg_path =
-      isabelle_home + Path.explode(launcher_info.cfg_dir) + Path.basic(app_name + ".cfg")
+    val cfg_path = isabelle_home + Path.explode(launcher.cfg_dir) + Path.basic(app_name + ".cfg")
     Isabelle_System.make_directory(cfg_path.dir)
     File.write(cfg_path, Library.terminate_lines(cfg_lines))
 
-    for ((a, b) <- launcher_info.links) {
+    for ((a, b) <- launcher.links) {
       Isabelle_System.symlink(app_path(a), isabelle_home + app_path(b), force = true)
     }
   }
