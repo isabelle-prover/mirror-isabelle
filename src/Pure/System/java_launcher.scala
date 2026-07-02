@@ -182,14 +182,17 @@ object Java_Launcher {
       case _ =>
     }
 
+    val rootdir = "$ROOTDIR" + if_proper(launcher.resources, "/" + launcher.resources)
+    val rootdir1 = rootdir + "/"
+
     val cfg_lines =
       List("[Application]") :::
-      (if (launcher.splash.isEmpty) Nil else List("app.splash=$ROOTDIR/" + launcher.splash)) :::
+      (if (launcher.splash.isEmpty) Nil else List("app.splash=" + rootdir1 + launcher.splash)) :::
       List("app.mainclass=" + main_class) :::
       List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(app_root, java_root).implode) :::
-      classpath.map("app.classpath=$ROOTDIR/" + _) :::
+      classpath.map(cp => "app.classpath=" + rootdir1 + cp) :::
       List("", "[JavaOptions]") :::
-      ("-Disabelle.root=$ROOTDIR" :: java_options).map("java-options=" + _)
+      (("-Disabelle.root=" + rootdir) :: java_options).map("java-options=" + _)
 
     val cfg_path = app_root + Path.explode(launcher.cfg_dir) + Path.basic(app_name + ".cfg")
     Isabelle_System.make_directory(cfg_path.dir)
