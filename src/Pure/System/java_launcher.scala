@@ -34,12 +34,12 @@ object Java_Launcher {
         List(
           Item(
             "classes/jdk/jpackage/internal/resources/jpackageapplauncher",
-            "bin/{N}",
+            "bin/{NAME}",
             executable = true),
           Item(
             "classes/jdk/jpackage/internal/resources/libjpackageapplauncheraux.so",
             "lib/libapplauncher.so")),
-      links = List("bin/{N}" -> "{N}", "lib/app/{N}.cfg" -> "{N}.cfg"))
+      links = List("bin/{NAME}" -> "{NAME}", "lib/app/{NAME}.cfg" -> "{NAME}.cfg"))
 
   private val info_macos: Info =
     Info(
@@ -50,9 +50,9 @@ object Java_Launcher {
         List(
           Item(
             "classes/jdk/jpackage/internal/resources/jpackageapplauncher",
-            "Contents/MacOS/{N}",
+            "Contents/MacOS/{NAME}",
             executable = true)),
-      links = List("Contents/app/{N}.cfg" -> "{N}.cfg"))
+      links = List("Contents/app/{NAME}.cfg" -> "{NAME}.cfg"))
 
   private val info_windows: Info =
     Info(
@@ -62,7 +62,7 @@ object Java_Launcher {
         List(
           Item(
             "classes/jdk/jpackage/internal/resources/jpackageapplauncherw.exe",
-            "{N}.exe",
+            "{NAME}.exe",
             executable = true)))
 
   private val info_plist =
@@ -154,7 +154,7 @@ object Java_Launcher {
     val java_home = isabelle_home + jdk_home + platform_root + launcher.home_path
 
     def app_path(s: String, relative: Boolean = false): Path =
-      (if (relative) Path.current else app_root) + Path.explode(s.replacing("{N}" -> app_name))
+      (if (relative) Path.current else app_root) + Path.explode(s.replacing("{NAME}" -> app_name))
 
     val zip_path = java_home + Path.explode("jmods/jdk.jpackage.jmod")
     using(new ZipFile(zip_path.file)) { zip_file =>
