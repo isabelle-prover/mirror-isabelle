@@ -77,7 +77,7 @@ object Java_Launcher {
 <key>CFBundleIconFile</key>
 <string>lib/logo/isabelle.icns</string>
 <key>CFBundleIdentifier</key>
-<string>de.tum.in.isabelle</string>
+<string>isabelle.{NAME}</string>
 <key>CFBundleDisplayName</key>
 <string>{NAME}</string>
 <key>CFBundleInfoDictionaryVersion</key>
