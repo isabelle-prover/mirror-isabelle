@@ -72,6 +72,8 @@ object Java_Launcher {
 <dict>
 <key>CFBundleDevelopmentRegion</key>
 <string>English</string>
+<key>CFBundleExecutable</key>
+<string>{NAME}</string>
 <key>CFBundleIconFile</key>
 <string>lib/logo/isabelle.icns</string>
 <key>CFBundleIdentifier</key>
@@ -85,13 +87,13 @@ object Java_Launcher {
 <key>CFBundlePackageType</key>
 <string>APPL</string>
 <key>CFBundleShortVersionString</key>
-<string>{NAME}</string>
+<string>{VERSION}</string>
 <key>CFBundleSignature</key>
 <string>????</string>
 <key>CFBundleVersion</key>
 <string>{VERSION}</string>
 <key>NSHumanReadableCopyright</key>
-<string></string>
+<string>Isabelle contributors: various open-source licenses</string>
 <key>LSMinimumSystemVersion</key>
 <string>10.11</string>
 <key>LSApplicationCategoryType</key>
