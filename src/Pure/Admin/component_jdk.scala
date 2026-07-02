@@ -111,7 +111,8 @@ object Component_JDK {
       List("app.mainclass=" + main_class) :::
       List("app.runtime=$ROOTDIR/" + File.perhaps_relative_path(isabelle_home, java_home).implode) :::
       classpath.map("app.classpath=$ROOTDIR/" + _) :::
-      List("", "[JavaOptions]") ::: java_options.map("java-options=" + _)
+      List("", "[JavaOptions]") :::
+      ("-Disabelle.root=$ROOTDIR" :: java_options).map("java-options=" + _)
 
     val cfg_path = isabelle_home + Path.explode(launcher.cfg_dir) + Path.basic(app_name + ".cfg")
     Isabelle_System.make_directory(cfg_path.dir)

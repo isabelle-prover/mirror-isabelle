@@ -666,9 +666,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
               if (opt.startsWith(s)) s + isabelle_name else opt
             }
           val opts2 =
-            if (platform == Platform.Family.windows) {
-              List("-Dcygwin.root=$ROOTDIR/contrib/cygwin", "-Disabelle.root=$ROOTDIR")
-            }
+            if (platform == Platform.Family.windows) List("-Dcygwin.root=$ROOTDIR/contrib/cygwin")
             else Nil
           val opts3 = List("-Disabelle.jedit_server=" + isabelle_name)
 
