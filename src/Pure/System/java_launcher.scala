@@ -162,10 +162,12 @@ object Java_Launcher {
     using(new ZipFile(zip_path.file)) { zip_file =>
       for (item <- launcher.items) {
         val path = app_path(item.output)
-        val bytes = using(zip_file.getInputStream(item.zip_entry))(Bytes.read_stream(_))
-        Isabelle_System.make_directory(path.dir)
-        Bytes.write(path, bytes)
-        if (item.executable) File.set_executable(path)
+        if (!path.is_file) {
+          val bytes = using(zip_file.getInputStream(item.zip_entry))(Bytes.read_stream(_))
+          Isabelle_System.make_directory(path.dir)
+          Bytes.write(path, bytes)
+          if (item.executable) File.set_executable(path)
+        }
       }
     }
 
