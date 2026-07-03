@@ -701,6 +701,9 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             Isabelle_System.move_file(isabelle_target + Path.explode("contrib/windows_app"), tmp_dir)
 
+            Isabelle_System.copy_file(tmp_dir + Component_Windows_App.isabelle_exe(),
+              isabelle_target + Path.basic(isabelle_name).exe)
+
             Java_Launcher.setup(platform,
               app_root = isabelle_target,
               jdk_home = jdk_home,
@@ -755,12 +758,12 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             progress.echo("Packaging " + archive_name + " ...")
             execute(tmp_dir,
-              File.bash_path(Component_Windows_App.seven_zip(exe = true)) +
+              File.bash_path(Component_Windows_App.seven_zip_exe()) +
                 " -myv=1602 -y -bd a " + File.bash_path(exe_archive) + " " +
                 Bash.string(isabelle_name))
             if (!exe_archive.is_file) error("Failed to create archive: " + exe_archive)
 
-            val sfx_exe = tmp_dir + Component_Windows_App.sfx_path
+            val sfx_exe = tmp_dir + Component_Windows_App.sfx_path()
             val sfx_txt =
               Library.trim_split_lines(
                 Component_Windows_App.sfx_txt.replacing("{ISABELLE_NAME}" -> isabelle_name)
