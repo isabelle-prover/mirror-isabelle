@@ -382,11 +382,12 @@ struct
    causing the *_cancel_numeral_factor simprocs to loop. *)
   val norm_ss3 =
     HOL_basic_ss |> Simplifier.simpset_map \<^context>
-      (Simplifier.add_simps @{thms ac_simps minus_mult_commute numeral_times_minus_swap})
+      (Simplifier.add_simps @{thms mult_ac minus_times_numeral_swap numeral_times_minus_swap})
   fun norm_tac ctxt =
     ALLGOALS (simp_tac (put_simpset norm_ss1 ctxt))
     THEN ALLGOALS (simp_tac (put_simpset norm_ss2 ctxt))
     THEN ALLGOALS (simp_tac (put_simpset norm_ss3 ctxt))
+    THEN ALLGOALS (simp_tac (put_simpset norm_ss1 ctxt))
 
   (* simp_thms are necessary because some of the cancellation rules below
   (e.g. mult_less_cancel_left) introduce various logical connectives *)

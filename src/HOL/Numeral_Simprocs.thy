@@ -100,6 +100,10 @@ lemma numeral_times_minus_swap:
   fixes x:: "'a::comm_ring_1" shows  "numeral w * -x = x * - numeral w"
   by (simp add: ac_simps)
 
+lemma minus_times_numeral_swap:
+  fixes x:: "'a::comm_ring_1" shows "-x * numeral w = x * - numeral w"
+  by (simp add: ac_simps)
+
 ML_file \<open>Tools/numeral_simprocs.ML\<close>
 
 simproc_setup semiring_assoc_fold
