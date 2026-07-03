@@ -369,7 +369,7 @@ struct
 
   val norm_ss1 =
     HOL_basic_ss |> Simplifier.simpset_map \<^context>
-      (Simplifier.add_simps (minus_from_mult_simps @ numeral_syms @ mult_1s))
+      (Simplifier.add_simps (minus_from_mult_simps @ mult_1s))
   val norm_ss2 =
     HOL_basic_ss |> Simplifier.simpset_map \<^context>
       (Simplifier.add_simps (simps @ mult_minus_simps))
