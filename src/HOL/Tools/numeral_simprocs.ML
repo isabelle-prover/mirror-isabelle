@@ -373,6 +373,13 @@ struct
   val norm_ss2 =
     HOL_basic_ss |> Simplifier.simpset_map \<^context>
       (Simplifier.add_simps (simps @ mult_minus_simps))
+(* NB: numeral_times_minus_swap must NOT appear here.  Together with
+   mult.commute (from ac_simps) and minus_mult_commute it forms a
+   non-terminating rewrite cycle, e.g. on 2 * - (s (r x) y):
+     numeral_times_minus_swap: 2 * - t  ~>  t * - 2
+     mult.commute:             t * - 2  ~>  - 2 * t
+     minus_mult_commute:       - 2 * t  ~>  2 * - t   (back to start)
+   causing the *_cancel_numeral_factor simprocs to loop. *)
   val norm_ss3 =
     HOL_basic_ss |> Simplifier.simpset_map \<^context>
       (Simplifier.add_simps @{thms ac_simps minus_mult_commute numeral_times_minus_swap})

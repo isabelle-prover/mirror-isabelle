@@ -272,6 +272,25 @@ notepad begin
   next
     assume "- x \<le> y" have "- (2 * x) \<le> 2*y"
       by (tactic \<open>test \<^context> [\<^simproc>\<open>ring_le_cancel_numeral_factor\<close>]\<close>) fact
+  next
+    \<comment> \<open>regression: compound multiplicand used to make the simproc loop\<close>
+    fix r :: "'a \<Rightarrow> 'a" and s :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" and z :: 'a
+    assume "- (s (r x) y) \<le> z" have "- (2 * (s (r x)) y) \<le> (z * 2)"
+      by (tactic \<open>test \<^context> [\<^simproc>\<open>ring_le_cancel_numeral_factor\<close>]\<close>) fact
+  }
+end
+
+subsection \<open>Regression: \<open>*_cancel_numeral_factor\<close> loop on compound multiplicands\<close>
+
+notepad begin
+  fix x y z :: "'a::linordered_idom"
+  fix r :: "'a \<Rightarrow> 'a" and s :: "'a \<Rightarrow> 'a \<Rightarrow> 'a"
+  {
+    assume "- (s (r x) y) < z" have "- (2 * (s (r x)) y) < (z * 2)"
+      by (tactic \<open>test \<^context> [\<^simproc>\<open>ring_less_cancel_numeral_factor\<close>]\<close>) fact
+  next
+    assume "- (s (r x) y) = z" have "- (2 * (s (r x)) y) = (z * 2)"
+      by (tactic \<open>test \<^context> [\<^simproc>\<open>ring_eq_cancel_numeral_factor\<close>]\<close>) fact
   }
 end
 
