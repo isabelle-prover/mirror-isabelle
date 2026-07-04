@@ -119,7 +119,7 @@ object Build_App {
         " --app-image " + File.bash_path(app_root) +
         " --type dmg" +
         " --mac-sign" +
-        " --mac-package-signing-prefix " + Bash.string(app_identifier) +
+        " --mac-package-signing-prefix " + Bash.string(app_identifier + ".") +
         " --mac-entitlements " + File.bash_path(ADMIN_MACOS_ENTITLEMENTS) +
         " --mac-signing-key-user-name " + Bash.string(codesign_user) +
         if_proper(codesign_keychain,
