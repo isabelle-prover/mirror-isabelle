@@ -26,18 +26,20 @@ object Component_Windows_App {
   val sfx_name = "7zsd_All_x64.sfx"
   def sfx_path(base: Path = base_path): Path = base + Path.basic(sfx_name)
 
-  val sfx_txt =
-""";!@Install@!UTF-8!
+  def sfx_txt(name: String): String = {
+    val txt = """;!@Install@!UTF-8!
 GUIFlags="64"
 InstallPath="%UserDesktop%"
-BeginPrompt="Unpack {ISABELLE_NAME}?"
+BeginPrompt="Unpack {NAME}?"
 ExtractPathText="Target directory"
-ExtractTitle="Unpacking {ISABELLE_NAME} ..."
-Shortcut="Du,{%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe},{},{},{},{{ISABELLE_NAME}},{%%T\{ISABELLE_NAME}}"
-RunProgram="\"%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe\""
-AutoInstall="\"%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe\" -init"
+ExtractTitle="Unpacking {NAME} ..."
+Shortcut="Du,{%%T\{NAME}\{NAME}.exe},{},{},{},{{NAME}},{%%T\{NAME}}"
+RunProgram="\"%%T\{NAME}\{NAME}.exe\""
+AutoInstall="\"%%T\{NAME}\{NAME}.exe\" -init"
 ;!@InstallEnd@!
-"""
+""".replacing("{NAME}" -> name)
+    Library.trim_split_lines(txt).map(_ + "\r\n").mkString
+  }
 
 
   /* 7zip platform downloads */

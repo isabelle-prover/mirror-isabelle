@@ -764,10 +764,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
             if (!exe_archive.is_file) error("Failed to create archive: " + exe_archive)
 
             val sfx_exe = tmp_dir + Component_Windows_App.sfx_path()
-            val sfx_txt =
-              Library.trim_split_lines(
-                Component_Windows_App.sfx_txt.replacing("{ISABELLE_NAME}" -> isabelle_name)
-              ).map(_ + "\r\n").mkString
+            val sfx_txt = Component_Windows_App.sfx_txt(isabelle_name)
 
             val isabelle_exe = bundle_info.path
             Bytes.write(context.dist_dir + isabelle_exe,
