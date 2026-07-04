@@ -87,11 +87,11 @@ object Java_Launcher {
 <key>CFBundlePackageType</key>
 <string>APPL</string>
 <key>CFBundleShortVersionString</key>
-<string>{VERSION}</string>
+<string>1.0</string>
 <key>CFBundleSignature</key>
 <string>????</string>
 <key>CFBundleVersion</key>
-<string>{VERSION}</string>
+<string>1.0</string>
 <key>NSHumanReadableCopyright</key>
 <string>Isabelle contributors: various open-source licenses</string>
 <key>LSMinimumSystemVersion</key>
@@ -138,7 +138,6 @@ object Java_Launcher {
     platform: Platform.Family,
     app_root: Path,
     jdk_home: Path,
-    app_version: String = "",
     classpath: List[String] = Nil,
     java_options: List[String] = Nil,
     main_class: String = "isabelle.jedit.JEdit_Main"
@@ -175,9 +174,7 @@ object Java_Launcher {
       case Platform.Family.macos | Platform.Family.macos_arm =>
         val app_contents = app_root + Path.explode("Contents")
         File.write(app_contents + Path.explode("Info.plist"),
-          info_plist.replacing(
-            "{NAME}" -> app_name,
-            "{VERSION}" -> proper_string(app_version).getOrElse("1.0")))
+          info_plist.replacing("{NAME}" -> app_name))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
       case Platform.Family.windows =>
         File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)

@@ -672,7 +672,6 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
             Java_Launcher.setup(platform,
               app_root = app_root,
-              app_version = archive.id,
               jdk_home = jdk_home,
               classpath = classpath.map(_.implode),
               java_options =
