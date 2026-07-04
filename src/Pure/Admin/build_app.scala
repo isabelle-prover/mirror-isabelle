@@ -118,7 +118,6 @@ object Build_App {
       jpackage(
         " --app-image " + File.bash_path(app_root) +
         " --type dmg" +
-        " --type app-image" +
         " --mac-sign" +
         " --mac-package-signing-prefix " + Bash.string(app_identifier) +
         " --mac-entitlements " + File.bash_path(ADMIN_MACOS_ENTITLEMENTS) +
