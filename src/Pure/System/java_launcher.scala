@@ -102,6 +102,8 @@ object Java_Launcher {
 <string>true</string>
 <key>NSSupportsAutomaticGraphicsSwitching</key>
 <string>true</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>The application {NAME} is requesting access to the microphone.</string>
 <key>CFBundleDocumentTypes</key>
 <array>
 <dict>
