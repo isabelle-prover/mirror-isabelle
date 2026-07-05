@@ -11,12 +11,6 @@ import java.nio.file.Files
 
 
 object Build_App {
-  /** resources **/
-
-  val ADMIN_MACOS_ENTITLEMENTS: Path =
-    Path.explode("~~/Admin/macOS/app/entitlements.plist")
-
-
   /** build app **/
 
   def build_app(dist_archive: String,
@@ -104,6 +98,26 @@ object Build_App {
 
       progress.echo("Building signed dmg ...")
 
+      val entitlements_path = tmp_dir + Path.explode("entitlements.plist")
+      File.write(entitlements_path,
+"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.cs.disable-executable-page-protection</key>
+	<true/>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+</dict>
+</plist>
+""")
+
       File.write(app_contents + Path.explode("app/.jpackage.xml"),
 """<?xml version="1.0" ?>
 <jpackage-state version="{VERSION}" platform="macOS">
@@ -120,7 +134,7 @@ object Build_App {
         " --type dmg" +
         " --mac-sign" +
         " --mac-package-signing-prefix " + Bash.string(app_identifier + ".") +
-        " --mac-entitlements " + File.bash_path(ADMIN_MACOS_ENTITLEMENTS) +
+        " --mac-entitlements " + File.bash_path(entitlements_path) +
         " --mac-signing-key-user-name " + Bash.string(codesign_user) +
         if_proper(codesign_keychain,
           " --mac-signing-keychain " + Bash.string(codesign_keychain)) +
