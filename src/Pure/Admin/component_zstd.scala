@@ -32,7 +32,7 @@ object Component_Zstd {
 
   val license_url = "https://raw.githubusercontent.com/luben/zstd-jni/master/LICENSE"
   val default_download_url = "https://repo1.maven.org/maven2/com/github/luben/zstd-jni"
-  val default_version = "1.5.7-6"
+  val default_version = "1.5.7-11"
 
   def build_zstd(
     target_dir: Path = Path.current,
@@ -74,6 +74,11 @@ object Component_Zstd {
 ISABELLE_ZSTD_HOME="$COMPONENT"
 
 classpath "$ISABELLE_ZSTD_HOME/lib/""" + jar_name + """"
+""")
+
+    File.write(component_dir.platform_props,
+"""macos = arm64-darwin x86_64-darwin
+macos_arm = arm64-darwin x86_64-darwin
 """)
   }
 
