@@ -17,7 +17,7 @@ object Zstd {
     require(!zstd.util.Native.isLoaded(),
       "Zstd library already initialized by other means than isabelle.Zstd.init()")
 
-    val lib_dir = Path.explode("$ISABELLE_ZSTD_HOME/$ISABELLE_JAVA_PLATFORM")
+    val lib_dir = Path.explode("$ISABELLE_ZSTD_HOME") + Path.basic(Platform.jvm_platform)
     val lib_file = File.get_file(lib_dir)
 
     System.load(lib_file.absolute_file.getPath)

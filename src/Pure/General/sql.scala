@@ -662,7 +662,7 @@ object SQLite {
   val date_format: Date.Format = Date.Format("uuuu-MM-dd HH:mm:ss.SSS x")
 
   lazy val init_jdbc: Unit = {
-    val lib_path = Path.explode("$ISABELLE_SQLITE_HOME/$ISABELLE_JAVA_PLATFORM")
+    val lib_path = Path.explode("$ISABELLE_SQLITE_HOME") + Path.basic(Platform.jvm_platform)
     val lib_name = File.get_file(lib_path).file_name
 
     System.setProperty("org.sqlite.lib.path", File.platform_path(lib_path))

@@ -29,6 +29,8 @@ object Platform {
     else error("Failed to determine current platform family")
   }
 
+  def jvm_platform: String = Family.native(family)
+
   object Family {
     val list: List[Family] =
       List(Family.linux, Family.linux_arm, Family.windows, Family.macos, Family.macos_arm)
