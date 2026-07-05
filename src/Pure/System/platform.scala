@@ -15,7 +15,10 @@ object Platform {
   val is_macos: Boolean = isabelle.setup.Environment.is_macos()
   val is_unix: Boolean = is_linux || is_macos
 
-  def is_arm: Boolean = cpu_arch.startsWith("arm")
+  def is_arm: Boolean = {
+    val arch = Isabelle_System.get_property("os.arch")
+    arch.containsSlice("arm64") || arch.containsSlice("aarch64")
+  }
 
   def family: Family =
     if (is_linux && is_arm) Family.linux_arm
@@ -57,26 +60,6 @@ object Platform {
   }
 
   enum Family { case linux_arm, linux, macos, macos_arm, windows }
-
-
-  /* platform identifiers */
-
-  private val X86_64 = """amd64|x86_64""".r
-  private val Arm64 = """arm64|aarch64""".r
-
-  def cpu_arch: String =
-    Isabelle_System.get_property("os.arch") match {
-      case X86_64() => "x86_64"
-      case Arm64() => "arm64"
-      case _ => error("Failed to determine CPU architecture")
-    }
-
-  def os_name: String =
-    family match {
-      case Family.linux_arm => "linux"
-      case Family.macos | Family.macos_arm => "darwin"
-      case _ => family.toString
-    }
 
 
   /* platform info */
