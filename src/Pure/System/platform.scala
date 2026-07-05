@@ -15,6 +15,8 @@ object Platform {
   val is_macos: Boolean = isabelle.setup.Environment.is_macos()
   val is_unix: Boolean = is_linux || is_macos
 
+  enum Family { case linux_arm, linux, macos, macos_arm, windows }
+
   def family: Family = {
     val arch = Isabelle_System.get_property("os.arch")
     val is_arm = arch.containsSlice("arm64") || arch.containsSlice("aarch64")
@@ -57,8 +59,6 @@ object Platform {
       list.find(family => platform == standard(family) || platform == native(family))
         .getOrElse(error("Bad platform " + quote(platform)))
   }
-
-  enum Family { case linux_arm, linux, macos, macos_arm, windows }
 
 
   /* platform info */
