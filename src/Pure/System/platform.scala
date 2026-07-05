@@ -15,18 +15,17 @@ object Platform {
   val is_macos: Boolean = isabelle.setup.Environment.is_macos()
   val is_unix: Boolean = is_linux || is_macos
 
-  def is_arm: Boolean = {
+  def family: Family = {
     val arch = Isabelle_System.get_property("os.arch")
-    arch.containsSlice("arm64") || arch.containsSlice("aarch64")
-  }
+    val is_arm = arch.containsSlice("arm64") || arch.containsSlice("aarch64")
 
-  def family: Family =
     if (is_linux && is_arm) Family.linux_arm
     else if (is_linux) Family.linux
     else if (is_macos && is_arm) Family.macos_arm
     else if (is_macos) Family.macos
     else if (is_windows) Family.windows
     else error("Failed to determine current platform family")
+  }
 
   object Family {
     val list: List[Family] =
