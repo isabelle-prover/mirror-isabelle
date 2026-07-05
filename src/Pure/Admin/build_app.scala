@@ -1,7 +1,56 @@
 /*  Title:      Pure/Admin/build_app.scala
     Author:     Makarius
 
-Build official macOS app from Isabelle distribution archive.
+Build official macOS app from Isabelle distribution archive: everything
+needs to be in "Contents", no other files/dirs outside.
+
+Notes on Codesigning:
+
+* Apple developler membership (USD 100/year) https://developer.apple.com
+
+* "Developer ID Application" certificate:
+  """This certificate is used to code sign your app for distribution outside
+  of the Mac App Store Connect."""
+
+  - https://developer.apple.com/account/resources/certificates/add
+  - select "Previous Sub-CA"
+  - create "CSR" via "Keychain Access" tool
+      + open "/System/Library/CoreServices/Applications/Keychain Access.app"
+      + button "Open Keychain Access" (not "Passwords")
+      + menu "Keychain Access / Certificate Assistant / Request a certificate from a Certificate Authority"
+        CA Email Address: <empty>
+        Request is: Saved to disk
+        (e.g. "CertificateSigningRequest1.certSigningRequest")
+  - "Choose file": saved "CertificateSigningRequest1.certSigningRequest"
+  - "Download" certificate and load it into "Keychain Access"
+  - "Keychain Access": include authority certificates from
+    https://www.apple.com/certificateauthority
+      + Developer Authentication: DevAuthCA.cer
+      + Developer ID - G1: DeveloperIDCA.cer
+      + Developer ID - G2: DeveloperIDG2CA.cer
+
+* Generate an app-specific password:
+  """Sign in to apps with your Apple Account using app-specific passwords"""
+  https://support.apple.com/en-us/102654
+
+
+Links:
+
+- Apple: Signing your apps for Gatekeeper
+  https://developer.apple.com/developer-id
+
+- Apple: Developer ID certificates
+  https://developer.apple.com/help/account/certificates/create-developer-id-certificates
+
+- Apple: Certificates overview
+  https://developer.apple.com/help/account/certificates/certificates-overview
+
+- Blog: Notarizing your Flash/AIR applications for macOS (Sep-2019)
+  https://www.molleindustria.org/blog/notarizing-your-flashair-applications-for-macos
+
+- Blog: Notarizing Java applications on macOS (Aug-2020)
+  https://www.joelotter.com/posts/2020/08/macos-java-notarization
+
 */
 
 package isabelle

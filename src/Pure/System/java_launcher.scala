@@ -2,6 +2,10 @@
     Author:     Makarius
 
 Java app launcher, based on resources of "jpackage".
+
+See also:
+  https://docs.oracle.com/en/java/javase/25/docs/specs/man/jpackage.html
+  https://github.com/openjdk/jdk25u-dev/tree/master/src/jdk.jpackage
 */
 
 package isabelle
