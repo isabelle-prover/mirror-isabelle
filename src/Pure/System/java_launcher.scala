@@ -65,7 +65,7 @@ object Java_Launcher {
             "{NAME}.exe",
             executable = true)))
 
-  private val info_plist =
+  private val app_info =
     """<?xml version="1.0" ?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -174,7 +174,7 @@ object Java_Launcher {
       case Platform.Family.macos | Platform.Family.macos_arm =>
         val app_contents = app_root + Path.explode("Contents")
         File.write(app_contents + Path.explode("Info.plist"),
-          info_plist.replacing("{NAME}" -> app_name))
+          app_info.replacing("{NAME}" -> app_name))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
       case Platform.Family.windows =>
         File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
