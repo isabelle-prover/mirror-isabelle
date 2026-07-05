@@ -78,8 +78,6 @@ object Platform {
       case _ => family.toString
     }
 
-  lazy val jvm_platform: String = cpu_arch + "-" + os_name
-
 
   /* platform info */
 

@@ -175,7 +175,7 @@ object Session_Build {
     /* main */
 
     setTitle("Isabelle build (" + PIDE.session.store.ml_settings.ml_identifier + " / " +
-      "jdk-" + Platform.jvm_version + "_" + Platform.jvm_platform + ")")
+      "jdk-" + Platform.jvm_version + "_" + Isabelle_System.getenv("ISABELLE_JAVA_PLATFORM") + ")")
 
     pack()
     setLocationRelativeTo(view)
