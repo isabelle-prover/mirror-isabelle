@@ -65,7 +65,6 @@ object Build_App {
       val app_root = app_target.app
       val app_contents = app_root + Path.explode("Contents")
       val app_resources = app_contents + Path.explode("Resources")
-      val app_identifier = "isabelle." + app_name
 
       progress.echo("Preparing Isabelle directory structure ...")
 
@@ -133,7 +132,7 @@ object Build_App {
         " --app-image " + File.bash_path(app_root) +
         " --type dmg" +
         " --mac-sign" +
-        " --mac-package-signing-prefix " + Bash.string(app_identifier + ".") +
+        " --mac-package-signing-prefix " + Bash.string(Java_Launcher.app_ident(app_name) + ".") +
         " --mac-entitlements " + File.bash_path(entitlements_path) +
         " --mac-signing-key-user-name " + Bash.string(codesign_user) +
         if_proper(codesign_keychain,

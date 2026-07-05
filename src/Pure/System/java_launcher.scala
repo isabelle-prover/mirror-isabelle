@@ -65,6 +65,8 @@ object Java_Launcher {
             "{NAME}.exe",
             executable = true)))
 
+  def app_ident(name: String): String = name.replacing("_" -> "--")
+
   private val app_info =
     """<?xml version="1.0" ?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -77,7 +79,7 @@ object Java_Launcher {
 <key>CFBundleIconFile</key>
 <string>lib/logo/isabelle.icns</string>
 <key>CFBundleIdentifier</key>
-<string>isabelle.{NAME}</string>
+<string>{IDENT}</string>
 <key>CFBundleDisplayName</key>
 <string>{NAME}</string>
 <key>CFBundleInfoDictionaryVersion</key>
@@ -203,7 +205,7 @@ object Java_Launcher {
       case Platform.Family.macos | Platform.Family.macos_arm =>
         val app_contents = app_root + Path.explode("Contents")
         File.write(app_contents + Path.explode("Info.plist"),
-          app_info.replacing("{NAME}" -> app_name))
+          app_info.replacing("{NAME}" -> app_name, "{IDENT}" -> app_ident(app_name)))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
 
         val runtime_contents =
