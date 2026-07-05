@@ -26,7 +26,7 @@ object Build_App {
     progress: Progress = new Progress
   ): Unit = {
     require(codesign_user.nonEmpty, "Missing codesign_user")
-    require(Platform.is_unix, "macOS platform required")
+    require(Platform.is_macos, "macOS platform required")
 
 
     Isabelle_System.with_tmp_dir("build") { tmp_dir =>
