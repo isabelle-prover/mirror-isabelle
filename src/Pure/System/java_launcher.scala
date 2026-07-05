@@ -125,6 +125,33 @@ object Java_Launcher {
 </plist>
 """
 
+  private val runtime_info =
+"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+<key>CFBundleDevelopmentRegion</key>
+<string>English</string>
+<key>CFBundleExecutable</key>
+<string>libjli.dylib</string>
+<key>CFBundleIdentifier</key>
+<string>isabelle.dummy</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleName</key>
+<string>Dummy</string>
+<key>CFBundlePackageType</key>
+<string>BNDL</string>
+<key>CFBundleShortVersionString</key>
+<string>1.0</string>
+<key>CFBundleSignature</key>
+<string>????</string>
+<key>CFBundleVersion</key>
+<string>1.0</string>
+</dict>
+</plist>
+"""
+
   private val exe_manifest =
   """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" >
@@ -178,6 +205,11 @@ object Java_Launcher {
         File.write(app_contents + Path.explode("Info.plist"),
           app_info.replacing("{NAME}" -> app_name))
         File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
+
+        val runtime_contents =
+          Isabelle_System.new_directory(app_root + Path.explode("Contents/runtime/Contents"))
+        File.write(runtime_contents + Path.explode("Info.plist"), runtime_info)
+        Isabelle_System.copy_dir(java_root + Path.explode("Contents/MacOS"), runtime_contents)
       case Platform.Family.windows =>
         File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
       case _ =>
