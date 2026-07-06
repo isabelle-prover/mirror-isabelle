@@ -395,7 +395,7 @@ in
 
 fun import_file path0 thy =
   let
-    val path = File.absolute_path (Resources.master_directory thy + path0)
+    val path = Path.absolute (Resources.master_directory thy + path0)
     val lines =
       if Path.is_zst path then Bytes.read path |> Zstd.uncompress |> Bytes.trim_split_lines
       else File.read_lines path

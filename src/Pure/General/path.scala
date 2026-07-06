@@ -105,7 +105,7 @@ object Path {
         else basic_elem(s)
       }
       catch { case ERROR(msg) => cat_error(msg, "The error(s) above occurred in " + quote(str)) }
-  
+
     val ss = space_explode('/', str)
     val r = ss.takeWhile(_.isEmpty).length
     val es = ss.dropWhile(_.isEmpty)
@@ -308,21 +308,6 @@ final class Path private(
 
   def expand: Path = expand_env(Isabelle_System.Settings())
 
-  def file_name: String =
-    elems match {
-      case Path.Basic(b) :: _ => b
-      case _ =>
-        def err(bad: Path): Nothing = error("Cannot determine file-name from " + bad)
-        val expanded = try { Some(expand) } catch { case ERROR(_) => None }
-        if (expanded.isEmpty) err(this)
-        else {
-          expanded.get.elems match {
-            case Path.Basic(b) :: _ => b
-            case _ => err(expanded.get)
-          }
-        }
-    }
-
 
   /* platform files */
 
@@ -341,4 +326,16 @@ final class Path private(
 
   def absolute: Path = File.path(absolute_file)
   def canonical: Path = File.path(canonical_file)
+
+  def file_name: String =
+    elems match {
+      case Path.Basic(b) :: _ => b
+      case _ =>
+        def err(bad: Path): Nothing = error("Cannot determine file-name from " + bad)
+        (try { Some(absolute.elems) } catch { case ERROR(_) => None }) match {
+          case Some(Path.Basic(b) :: _) => b
+          case Some(elems) => err(new Path(elems))
+          case None => err(this)
+        }
+    }
 }

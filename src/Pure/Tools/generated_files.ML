@@ -303,8 +303,7 @@ fun scala_build_generated_files ctxt args external =
       val _ = List.app (fn (file, pos) => report_file ctxt pos file) files;
       val _ = List.app (write_file dir o #1) files;
       val _ = List.app (get_external_files dir) external;
-      val [jar_name, jar_bytes, output] =
-        \<^scala>\<open>scala_build\<close> [Bytes.string (Isabelle_System.absolute_path dir)];
+      val [jar_name, jar_bytes, output] = \<^scala>\<open>scala_build\<close> [Bytes.string (File.absolute_path dir)];
       val _ = writeln (Bytes.content output);
     in
       Export.export (Proof_Context.theory_of ctxt)

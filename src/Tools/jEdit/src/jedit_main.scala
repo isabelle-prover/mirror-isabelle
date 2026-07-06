@@ -17,8 +17,15 @@ object JEdit_Main {
   /* main entry point */
 
   def main(args: Array[String]): Unit = {
+    def err(title: String, exn: Throwable): Nothing = {
+      try { GUI.init_laf() } catch { case _: Throwable => }
+      GUI.dialog(title = title, message = Seq(GUI.scrollable_text(Exn.print(exn))))
+      sys.exit(Process_Result.RC.failure)
+    }
+
     if (args.nonEmpty && args(0) == "-init") {
-      Isabelle_System.init()
+      try { Isabelle_System.init() }
+      catch { case exn: Throwable => err("Isabelle init", exn) }
     }
     else {
       val start = {
@@ -126,12 +133,7 @@ object JEdit_Main {
 
           () => jEdit.main(Array(jedit_settings, jedit_server) ++ jedit_options ++ more_args)
         }
-        catch {
-          case exn: Throwable =>
-            try { GUI.init_laf() } catch { case _: Throwable => }
-            GUI.dialog(title = "Isabelle main", message = Seq(GUI.scrollable_text(Exn.print(exn))))
-            sys.exit(Process_Result.RC.failure)
-        }
+        catch { case exn: Throwable => err("Isabelle main", exn) }
       }
       start()
     }

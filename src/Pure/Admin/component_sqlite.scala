@@ -11,10 +11,10 @@ object Component_SQLite {
   /* build sqlite */
 
   val default_main_url =
-    "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.51.0.0/sqlite-jdbc-3.51.0.0.jar"
+    "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.53.2.0/sqlite-jdbc-3.53.2.0.jar"
 
   val default_logger_url =
-    "https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar"
+    "https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar"
 
   private def jar_name(url: String): String = {
     Url.get_base_name(url, suffix = ".jar") getOrElse
@@ -62,6 +62,11 @@ ISABELLE_SQLITE_HOME="$COMPONENT"
 classpath "$ISABELLE_SQLITE_HOME/lib/""" + main_name + """.jar"
 classpath "$ISABELLE_SQLITE_HOME/lib/""" + logger_name + """.jar"
 classpath "$ISABELLE_SQLITE_HOME/lib/""" + nop_name(logger_name) + """.jar"
+""")
+
+    File.write(component_dir.platform_props,
+"""macos = arm64-darwin x86_64-darwin
+macos_arm = arm64-darwin x86_64-darwin
 """)
 
 

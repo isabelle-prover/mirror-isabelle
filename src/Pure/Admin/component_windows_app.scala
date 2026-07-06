@@ -1,7 +1,7 @@
 /*  Title:      Pure/Admin/component_windows_app.scala
     Author:     Makarius
 
-Build Isabelle windows_app component from GNU binutils and launch4j.
+Auxiliary parts for Isabelle as Windows application.
 */
 
 package isabelle
@@ -15,134 +15,131 @@ object Component_Windows_App {
     Isabelle_Platform.local.ISABELLE_PLATFORM64
   }
 
-  def tool_platform_path(): Path = Path.basic(tool_platform())
-
   val base_path: Path = Path.basic("windows_app")
 
-  def launch4j_jar(base: Path = base_path): Path =
-    base + tool_platform_path() + Path.basic("launch4j.jar")
+  def isabelle_exe(base: Path = base_path): Path =
+    base + Path.basic("Isabelle.exe")
 
-  def seven_zip(base: Path = base_path, exe: Boolean = false): Path =
-    base + tool_platform_path() + Path.basic("7zip") +
-      (if (exe) Path.basic("7zz") else Path.current)
+  def seven_zip_exe(base: Path = base_path): Path =
+    base + Path.basic(tool_platform()) + Path.basic("7zz")
 
   val sfx_name = "7zsd_All_x64.sfx"
-  val sfx_path: Path = base_path + Path.basic(sfx_name)
+  def sfx_path(base: Path = base_path): Path = base + Path.basic(sfx_name)
 
-  val sfx_txt =
-""";!@Install@!UTF-8!
+  def sfx_txt(name: String): String = {
+    val txt = """;!@Install@!UTF-8!
 GUIFlags="64"
 InstallPath="%UserDesktop%"
-BeginPrompt="Unpack {ISABELLE_NAME}?"
+BeginPrompt="Unpack {NAME}?"
 ExtractPathText="Target directory"
-ExtractTitle="Unpacking {ISABELLE_NAME} ..."
-Shortcut="Du,{%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe},{},{},{},{{ISABELLE_NAME}},{%%T\{ISABELLE_NAME}}"
-RunProgram="\"%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe\""
-AutoInstall="\"%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe\" -init"
+ExtractTitle="Unpacking {NAME} ..."
+Shortcut="Du,{%%T\{NAME}\{NAME}.exe},{},{},{},{{NAME}},{%%T\{NAME}}"
+RunProgram="\"%%T\{NAME}\{NAME}.exe\""
+AutoInstall="\"%%T\{NAME}\{NAME}.exe\" -init"
 ;!@InstallEnd@!
-"""
+""".replacing("{NAME}" -> name)
+    Library.trim_split_lines(txt).map(_ + "\r\n").mkString
+  }
 
 
   /* 7zip platform downloads */
 
   sealed case class Seven_Zip_Platform(name: String, url_template: String) {
-    def url(version: String): String = url_template.replacing("{V}" -> version)
+    def path: Path = Path.basic(name)
   }
 
   private val seven_zip_platforms: List[Seven_Zip_Platform] =
     List(
-      Seven_Zip_Platform("arm64-linux", "https://www.7-zip.org/a/7z{V}-linux-arm64.tar.xz"),
-      Seven_Zip_Platform("x86_64-darwin", "https://www.7-zip.org/a/7z{V}-mac.tar.xz"),
-      Seven_Zip_Platform("x86_64-linux", "https://www.7-zip.org/a/7z{V}-linux-x64.tar.xz"))
+      Seven_Zip_Platform("arm64-linux", "{U}/{V}/7z{v}-linux-arm.tar.xz"),
+      Seven_Zip_Platform("x86_64-darwin", "{U}/{V}/7z{v}-mac.tar.xz"),
+      Seven_Zip_Platform("x86_64-linux", "{U}/{V}/7z{v}-linux-x64.tar.xz"))
+
+  private val seven_zip_windows = "{U}/{V}/7zr.exe"
 
 
   /* build windows_app */
 
-  val default_launch4j_url =
-    "https://deac-riga.dl.sourceforge.net/project/launch4j/launch4j-3/3.50/launch4j-3.50-linux-x64.tgz"
-
-  val default_binutils_url =
-    "https://ftp.gnu.org/gnu/binutils/binutils-2.26.1.tar.gz"
-
   val default_sfx_url =
     "https://github.com/chrislake/7zsfxmm/releases/download/1.7.1.3901/7zsd_extra_171_3901.7z"
 
-  val default_seven_zip_version = "2409"
+  val default_seven_zip_url = "https://github.com/ip7z/7zip/releases/download"
+  val default_seven_zip_version = "26.02"
 
   def build_windows_app(
-    launch4j_url: String = default_launch4j_url,
-    binutils_url: String = default_binutils_url,
     sfx_url: String = default_sfx_url,
+    seven_zip_url: String = default_seven_zip_url,
     seven_zip_version: String = default_seven_zip_version,
     progress: Progress = new Progress,
     target_dir: Path = Path.current
   ): Unit = {
-    val platform_name = tool_platform()
+    require(Platform.is_windows, "Windows platform required")
 
     Isabelle_System.with_tmp_dir("build") { tmp_dir =>
-      val download_tar = tmp_dir + Path.basic("download.tar.gz")
-
-
-      /* component */
-
       val component_dir = Components.Directory(tmp_dir + Path.basic("windows_app")).create()
-
-      val platform_dir =
-        Isabelle_System.make_directory(component_dir.path + Path.basic(platform_name))
-
-      val platform_bin_dir = platform_dir + Path.basic("bin")
-
-
-      /* launch4j */
-
-      Isabelle_System.download_file(launch4j_url, download_tar, progress = progress)
-      Isabelle_System.extract(download_tar, platform_dir, strip = true)
-
-
-      /* GNU binutils */
-
-      Isabelle_System.download_file(binutils_url, download_tar, progress = progress)
-      Isabelle_System.extract(download_tar, tmp_dir, strip = true)
-
-      progress.echo("Building GNU binutils for " + platform_name + " ...")
-      val build_script =
-        List("""./configure --prefix="$PWD/target" --target=x86_64-w64-mingw32""",
-          "make", "make install")
-      Isabelle_System.bash(build_script.mkString(" && "), cwd = tmp_dir,
-        progress_stdout = progress.echo(_, verbose = true),
-        progress_stderr = progress.echo(_, verbose = true)).check
-
-      for (name <- List("ld", "windres")) {
-        Isabelle_System.copy_file(
-          tmp_dir + Path.explode("target/bin") + Path.basic("x86_64-w64-mingw32-" + name),
-            platform_bin_dir + Path.basic(name))
-      }
 
 
       /* 7zip tool */
 
-      seven_zip_platforms.find(platform => platform.name == platform_name) match {
-        case Some(platform) =>
-          val url = platform.url(seven_zip_version)
-          val name = Url.get_base_name(url).getOrElse(error("No base name in " + quote(url)))
-          val download = tmp_dir + Path.basic(name)
-          Isabelle_System.download_file(url, download, progress = progress)
-          Isabelle_System.extract(download,
-            Isabelle_System.make_directory(seven_zip(base = component_dir.path)))
-        case None => error("No 7zip for platform " + quote(platform_name))
+      def make_url(url_template: String): String =
+        url_template.replacing(
+          "{U}" -> seven_zip_url,
+          "{V}" -> seven_zip_version,
+          "{v}" -> seven_zip_version.replacing("." -> ""))
+
+      for (platform <- seven_zip_platforms) {
+        val url = make_url(platform.url_template)
+        val name = Url.get_base_name(url).getOrElse(error("No base name in " + quote(url)))
+        val download = tmp_dir + Path.basic(name)
+        Isabelle_System.download_file(url, download, progress = progress)
+        Isabelle_System.extract(download,
+          Isabelle_System.make_directory(tmp_dir + platform.path))
+        Isabelle_System.copy_file(tmp_dir + platform.path + Path.basic("7zz"),
+          Isabelle_System.make_directory(component_dir.path + platform.path))
       }
 
 
       /* 7zip sfx module */
 
-      val sfx_archive_name = Url.get_base_name(sfx_url).get
+      val sfx_archive = Path.basic(Url.get_base_name(sfx_url).get)
+      val tmp_7z_exe = tmp_dir + Path.basic("7z.exe")
 
-      Isabelle_System.download_file(sfx_url,
-        tmp_dir + Path.basic(sfx_archive_name), progress = progress)
+      Isabelle_System.download_file(sfx_url, tmp_dir + sfx_archive, progress = progress)
+      Isabelle_System.download_file(make_url(seven_zip_windows), tmp_7z_exe, progress = progress)
+      File.set_executable(tmp_7z_exe)
+
+      Isabelle_System.bash("./7z x -y " + File.bash_path(sfx_archive), cwd = tmp_dir).check
+      Isabelle_System.copy_file(sfx_path(base = tmp_dir), component_dir.path)
+
+
+      /* Java launcher */
+
+      val launcher_dir = Isabelle_System.make_directory(tmp_dir + Path.basic("launcher"))
+
+      val isabelle_setup_jar = Path.explode("isabelle_setup.jar")
+      val lib_isabelle_setup_jar = Path.explode("lib") + isabelle_setup_jar
+
+      val isabelle_setup_dir =
+        Components.directories().filter(dir => (dir + lib_isabelle_setup_jar).is_file) match {
+          case List(dir) => dir
+          case Nil => error("No component with " + lib_isabelle_setup_jar)
+          case bad =>
+            error("Multiple components with " + lib_isabelle_setup_jar + bad.mkString(":\n", "\n", ""))
+        }
+
+      Isabelle_System.copy_file(isabelle_setup_dir + lib_isabelle_setup_jar, launcher_dir)
+      Isabelle_System.copy_file(Path.explode("~~/lib/logo/isabelle_transparent.ico"), launcher_dir)
       Isabelle_System.bash(
-        File.bash_path(seven_zip(base = component_dir.path, exe = true)) + " x " +
-          Bash.string(sfx_archive_name), cwd = tmp_dir).check
-      Isabelle_System.copy_file(tmp_dir + Path.basic(sfx_name), component_dir.path)
+        Library.make_lines(
+          "set -e",
+          "isabelle_java jpackage --name Isabelle --type app-image --input . " +
+            "--main-jar isabelle_setup.jar " +
+            "--main-class isabelle.setup.GUI_Test " +
+            "--icon isabelle_transparent.ico",
+          "chmod 755 Isabelle/Isabelle.exe"),
+        cwd = launcher_dir).check
+      Isabelle_System.copy_file(
+        isabelle_exe(base = launcher_dir + Path.explode("Isabelle")),
+        isabelle_exe(base = component_dir.path))
 
 
       /* README */
@@ -151,15 +148,10 @@ AutoInstall="\"%%T\{ISABELLE_NAME}\{ISABELLE_NAME}.exe\" -init"
         """Auxiliary parts for Isabelle as Windows application
 ===================================================
 
-* Application launcher: http://launch4j.sourceforge.net
-
-* Platform binaries "ld" and "windres" from GNU binutils:
-  """ + binutils_url + build_script.mkString("\n\n    ", "\n    ", "") + """
+* 7zip: https://www.7-zip.org
 
 * Self-extracting installer:
   """ + sfx_url + """
-
-See also Isabelle/Admin/Windows/.
 
 
         Makarius
@@ -183,14 +175,12 @@ See also Isabelle/Admin/Windows/.
   /* Isabelle tool wrapper */
 
   val isabelle_tool =
-    Isabelle_Tool("component_windows_app",
-        "build windows_app component from GNU binutils and launch4j",
+    Isabelle_Tool("component_windows_app", "build windows_app component",
       Scala_Project.here,
       { args =>
         var target_dir = Path.current
-        var launch4j_url = default_launch4j_url
-        var binutils_url = default_binutils_url
         var sfx_url = default_sfx_url
+        var seven_zip_url = default_seven_zip_url
         var seven_zip_version = default_seven_zip_version
         var verbose = false
 
@@ -198,24 +188,20 @@ See also Isabelle/Admin/Windows/.
 Usage: isabelle component_windows_app [OPTIONS]
 
   Options are:
-    -B           build GNU binutils from sources
     -D DIR       target directory (default ".")
-    -U URL       download URL for launch4j, default:
-                 """ + default_launch4j_url + """
-    -V URL       download URL for GNU binutils, default:
-                 """ + default_binutils_url + """
-    -W URL       download URL for 7zip sfx module, default:
+    -S URL       download URL for 7zip sfx module, default:
                  """ + default_sfx_url + """
-    -X VERSION   version for 7zip download (default: """ + default_seven_zip_version + """)
+    -U URL       download URL for 7zip tool, default:
+                 """ + default_seven_zip_url + """
+    -V VERSION   version for 7zip download (default: """ + default_seven_zip_version + """)
     -v           verbose
 
-  Build Isabelle windows_app component from GNU binutils and launch4j.
+  Build auxiliary parts for Isabelle as Windows application.
 """,
           "D:" -> (arg => target_dir = Path.explode(arg)),
-          "U:" -> (arg => launch4j_url = arg),
-          "V:" -> (arg => binutils_url = arg),
-          "W:" -> (arg => sfx_url = arg),
-          "X:" -> (arg => seven_zip_version = arg),
+          "S:" -> (arg => sfx_url = arg),
+          "U:" -> (arg => seven_zip_url = arg),
+          "V:" -> (arg => seven_zip_version = arg),
           "v" -> (_ => verbose = true))
 
         val more_args = getopts(args)
@@ -223,8 +209,7 @@ Usage: isabelle component_windows_app [OPTIONS]
 
         val progress = new Console_Progress(verbose = verbose)
 
-        build_windows_app(launch4j_url = launch4j_url, binutils_url = binutils_url,
-          sfx_url = sfx_url, seven_zip_version = seven_zip_version,
-          progress = progress, target_dir = target_dir)
+        build_windows_app(sfx_url = sfx_url, seven_zip_url = seven_zip_url,
+          seven_zip_version = seven_zip_version, progress = progress, target_dir = target_dir)
       })
 }

@@ -22,18 +22,16 @@ end;
 structure ML_Process: ML_PROCESS =
 struct
 
-val absolute_path = Path.implode o File.absolute_path;
-
 abstype args = Rev of string list
 with
 
 fun add1 arg (Rev args) = Rev (arg :: args);
 fun add2 arg1 arg2 (Rev args) = Rev (arg2 :: arg1 :: args);
 
-val cwd = add2 "-C" o absolute_path;
-val include_dir = add2 "-d" o absolute_path;
+val cwd = add2 "-C" o File.absolute_path;
+val include_dir = add2 "-d" o File.absolute_path;
 val eval_expr = add2 "-e";
-val eval_file = add2 "-f" o absolute_path;
+val eval_file = add2 "-f" o File.absolute_path;
 val logic = add2 "-l";
 val print_mode = add2 "-m";
 val system_option = add2 "-o";

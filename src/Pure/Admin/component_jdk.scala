@@ -269,6 +269,9 @@ case "$ISABELLE_PLATFORM_FAMILY" in
 esac
 """)
 
+    File.write(component_dir.platform_props,
+      "windows = x86_64-windows x86_64-windows.patch\n")
+
 
     /* README */
 

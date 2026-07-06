@@ -11,24 +11,26 @@ ISABELLE_WINDOWS_PLATFORM64=""
 
 case $(uname -s) in
   Linux)
-    ISABELLE_PLATFORM_FAMILY="linux"
     case $(uname -m) in
       aarch64)
+        ISABELLE_PLATFORM_FAMILY="linux_arm"
         ISABELLE_PLATFORM64=arm64-linux
         ;;
       *)
+        ISABELLE_PLATFORM_FAMILY="linux"
         ISABELLE_PLATFORM64=x86_64-linux
         ;;
     esac
     ;;
   Darwin)
-    ISABELLE_PLATFORM_FAMILY="macos"
     ISABELLE_PLATFORM64=x86_64-darwin
     case $(uname -a) in
       *arm64*|*ARM64*)
+        ISABELLE_PLATFORM_FAMILY="macos_arm"
         ISABELLE_APPLE_PLATFORM64=arm64-darwin
         ;;
       *)
+        ISABELLE_PLATFORM_FAMILY="macos"
         ;;
     esac
     ;;
