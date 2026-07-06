@@ -246,17 +246,10 @@ directory individually.
       ssh.with_tmp_dir { remote_dir =>
         ssh.write_directory(remote_dir, local_dir, direct = true)
 
-        ssh.bash(cwd = remote_dir, settings = false, script =
-          Library.make_lines(
-            "set -e",
-            """mkdir -p "$(bin/isabelle getenv -b ISABELLE_HOME_USER)/etc" """,
-            if (platform == Platform.Family.macos && ssh.isabelle_platform.is_arm) {
-              """{ echo "ML_system_apple = false" > "$(bin/isabelle getenv -b ISABELLE_HOME_USER)/etc/preferences"; }"""
-            }
-            else "",
-            "bin/isabelle build -o parallel_proofs=0 -o system_heaps -b -- " +
-              Bash.strings(build_sessions)
-          )).check
+        ssh.bash(
+          "bin/isabelle build -o parallel_proofs=0 -o system_heaps -b -- " +
+            Bash.strings(build_sessions),
+          cwd = remote_dir, settings = false).check
 
         val local_heaps = local_dir + Path.basic("heaps")
         val remote_heaps = remote_dir + Path.basic("heaps")
@@ -646,6 +639,13 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
 
           case Platform.Family.macos | Platform.Family.macos_arm =>
+            File.change_lines(isabelle_target + Path.explode("etc/options"))(_.map { line =>
+              if (platform == Platform.Family.macos && line.containsSlice("ML_system_apple")) {
+                line.replacing("true" -> "false")
+              }
+              else line
+            })
+
             File.change(isabelle_target + jedit_props) {
               _.replacing(
                 "lookAndFeel=.*".r -> "lookAndFeel=com.formdev.flatlaf.themes.FlatMacLightLaf",
