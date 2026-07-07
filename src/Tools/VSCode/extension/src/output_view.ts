@@ -75,7 +75,8 @@ function open_webview_link(link: string) {
 }
 
 function get_webview_html(content: string, webview: Webview, extension_path: string): string {
-  const script_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, 'media', 'main.js')))
+  const script_uri =
+    webview.asWebviewUri(Uri.file(path.join(extension_path, 'media', 'output_view.js')))
   const css_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, 'media', 'vscode.css')))
   const font_uri =
     webview.asWebviewUri(Uri.file(path.join(extension_path, 'fonts', 'IsabelleDejaVuSansMono.ttf')))

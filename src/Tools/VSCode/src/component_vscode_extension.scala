@@ -201,6 +201,20 @@ object Component_VSCode {
             platform_context = Isabelle_Platform.Bash_Context(progress = progress),
             packages = List("yarn", "vsce"))
 
+        val scala_sources =
+          File.find_files(Path.explode("$ISABELLE_HOME/src/Pure"), pred = File.is_scala) :::
+            File.find_files(VSCode_Main.extension_dir + Path.basic("src"), pred = File.is_scala)
+
+        val modules = List(Scalajs.Module("output_view", "isabelle.vscode.extension.Output_View"))
+
+        progress.echo("Compiling scalajs modules ...")
+        val scalajs_result =
+          Scalajs.compile(scala_sources.map(_.file), modules,
+            Isabelle_System.make_directory(build_dir + Path.basic("media")))
+
+        scalajs_result.messages.foreach(_.output(progress))
+        if (!scalajs_result.ok) error("Failed to compile js modules")
+
         val manifest_text = File.read(VSCode_Main.extension_dir + VSCode_Main.MANIFEST)
         val manifest_entries = split_lines(manifest_text).filter(_.nonEmpty)
         for (name <- manifest_entries) {
@@ -212,7 +226,9 @@ object Component_VSCode {
         val fonts_dir = Isabelle_System.make_directory(build_dir + Path.basic("fonts"))
         for (entry <- Isabelle_Fonts.fonts()) { Isabelle_System.copy_file(entry.path, fonts_dir) }
         val manifest_text2 =
-          manifest_text + cat_lines(Isabelle_Fonts.fonts().map(e => "fonts/" + e.path.file_name))
+          manifest_text + cat_lines(
+            Isabelle_Fonts.fonts().map(e => "fonts/" + e.path.file_name) :::
+              modules.map(m => "media/" + m.js_path.file_name))
         val manifest_entries2 = split_lines(manifest_text2).filter(_.nonEmpty)
 
         val manifest_shasum: Shasum = {
