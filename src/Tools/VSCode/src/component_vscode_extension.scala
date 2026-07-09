@@ -177,6 +177,21 @@ object Component_VSCode {
   }
 
 
+  /* Isabelle symbols provider (static subset only) */
+
+  val symbol_provider = Path.basic("symbol_provider.scala")
+
+  def make_symbol_provider(): File.Content =
+    File.content(symbol_provider, """
+package isabelle
+
+object Symbol_Provider {
+  def symbols: Symbol.Symbols =
+    Symbol.Symbols.make(""" + Scala.print_string(File.read(Path.explode("~~/etc/symbols"))) + """)
+}
+""")
+
+
   /* build extension */
 
   def build_extension(options: Options,
@@ -201,8 +216,11 @@ object Component_VSCode {
             platform_context = Isabelle_Platform.Bash_Context(progress = progress),
             packages = List("yarn", "vsce"))
 
+        make_symbol_provider().write(build_dir)
+        val pure_sources =
+          File.find_files(Path.explode("$ISABELLE_HOME/src/Pure"), pred = File.is_scala)
         val scala_sources =
-          File.find_files(Path.explode("$ISABELLE_HOME/src/Pure"), pred = File.is_scala) :::
+          (build_dir + symbol_provider) :: pure_sources.filterNot(_.base == symbol_provider) :::
             File.find_files(VSCode_Main.extension_dir + Path.basic("src"), pred = File.is_scala)
 
         val modules = List(Scalajs.Module("output_view", "isabelle.vscode.extension.Output_View"))
