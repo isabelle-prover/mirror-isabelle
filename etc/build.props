@@ -143,6 +143,7 @@ sources = \
   src/Pure/General/sql.scala \
   src/Pure/General/ssh.scala \
   src/Pure/General/symbol.scala \
+  src/Pure/General/symbol_provider.scala \
   src/Pure/General/time.scala \
   src/Pure/General/timing.scala \
   src/Pure/General/toml.scala \
