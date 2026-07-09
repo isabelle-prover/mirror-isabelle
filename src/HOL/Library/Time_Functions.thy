@@ -30,7 +30,7 @@ by (cases xs) simp_all
 
 time_fun tl
 
-lemma T_tl: "T_tl xs = 0"
+lemma T_tl[simp]: "T_tl xs = 0"
 by (cases xs) simp_all
 
 declare T_tl.simps[simp del]
