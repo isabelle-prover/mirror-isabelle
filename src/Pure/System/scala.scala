@@ -11,12 +11,24 @@ import java.io.{File => JFile, PrintStream, ByteArrayOutputStream, OutputStream}
 
 import scala.collection.mutable
 
+import dotty.tools.dotc.core.Constants.Constant
+import dotty.tools.dotc.core.Contexts.{Context, ContextBase}
 import dotty.tools.dotc.CompilationUnit
 import dotty.tools.repl
 import dotty.tools.repl.ReplDriver
 
 
 object Scala {
+  /** syntax **/
+
+  def print_string(s: String): String = {
+    val baseCtx = new ContextBase
+    given Context = baseCtx.initialCtx
+    baseCtx.settings.color.update("never")
+    Constant(s).show
+  }
+
+
   /** registered functions **/
 
   abstract class Fun(val name: String, val thread: Boolean = false) {
