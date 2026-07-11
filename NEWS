@@ -189,6 +189,7 @@ For example:
 
 * Sledgehammer:
   - Update of bundled provers:
+      . spass-3.8ds -- include arm64-darwin
       . zipperposition-2.1 -- include arm64-darwin
       . vampire-4.8 -- include arm64-darwin
   - Tuned output of proof reconstruction to detect more duplicate
