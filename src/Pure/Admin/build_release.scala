@@ -617,6 +617,13 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         // build heaps
 
+        if (platform == Platform.Family.macos) {
+          File.change_lines(isabelle_target + Path.explode("etc/options"))(_.map { line =>
+            if (line.containsSlice("ML_system_apple")) line.replacing("true" -> "false")
+            else line
+          })
+        }
+
         if (build_sessions.nonEmpty) {
           build_heaps(options, platform, build_sessions, isabelle_target, progress = progress)
         }
@@ -639,13 +646,6 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
 
           case Platform.Family.macos | Platform.Family.macos_arm =>
-            File.change_lines(isabelle_target + Path.explode("etc/options"))(_.map { line =>
-              if (platform == Platform.Family.macos && line.containsSlice("ML_system_apple")) {
-                line.replacing("true" -> "false")
-              }
-              else line
-            })
-
             File.change(isabelle_target + jedit_props) {
               _.replacing(
                 "lookAndFeel=.*".r -> "lookAndFeel=com.formdev.flatlaf.themes.FlatMacLightLaf",
