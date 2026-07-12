@@ -8,6 +8,21 @@ package isabelle
 
 sealed abstract class Platform_Family {
   family =>
+
+  def standard: String =
+    family match {
+      case Platform_Family.linux_arm => "arm64-linux"
+      case Platform_Family.linux => "x86_64-linux"
+      case Platform_Family.macos | Platform_Family.macos_arm => "x86_64-darwin"
+      case Platform_Family.windows => "x86_64-cygwin"
+    }
+
+  def native: String =
+    family match {
+      case Platform_Family.macos_arm => "arm64-darwin"
+      case Platform_Family.windows => "x86_64-windows"
+      case _ => standard
+    }
 }
 
 object Platform_Family {
@@ -31,22 +46,7 @@ object Platform_Family {
   def parse(name: String): Platform_Family =
     unapply(name) getOrElse error("Bad platform family: " + quote(name))
 
-  val standard: Platform_Family => String =
-    {
-      case Platform_Family.linux_arm => "arm64-linux"
-      case Platform_Family.linux => "x86_64-linux"
-      case Platform_Family.macos | Platform_Family.macos_arm => "x86_64-darwin"
-      case Platform_Family.windows => "x86_64-cygwin"
-    }
-
-  val native: Platform_Family => String =
-    {
-      case Platform_Family.macos_arm => "arm64-darwin"
-      case Platform_Family.windows => "x86_64-windows"
-      case platform => standard(platform)
-    }
-
   def from_platform(platform: String): Platform_Family =
-    list.find(family => platform == standard(family) || platform == native(family))
+    list.find(family => platform == family.standard || platform == family.native)
       .getOrElse(error("Bad platform " + quote(platform)))
 }

@@ -331,7 +331,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
     val component_dir = isabelle_target + Path.explode("contrib/Isabelle_app")
     Isabelle_System.move_file(
-      component_dir + Path.explode(Platform_Family.native(platform)) + Path.explode("Isabelle"),
+      component_dir + Path.explode(platform.native) + Path.explode("Isabelle"),
       isabelle_target + Path.explode(isabelle_name))
     Isabelle_System.rm_tree(component_dir)
   }

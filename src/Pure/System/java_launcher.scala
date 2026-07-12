@@ -183,7 +183,7 @@ object Java_Launcher {
         case Platform_Family.macos | Platform_Family.macos_arm => info_macos
         case Platform_Family.windows => info_windows
       }
-    val platform_root = Path.basic(Platform_Family.native(platform))
+    val platform_root = Path.basic(platform.native)
 
     val app_name = app_root.drop_ext.file_name
     val isabelle_home = app_root + launcher.resources_path

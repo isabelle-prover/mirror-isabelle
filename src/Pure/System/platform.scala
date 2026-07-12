@@ -27,7 +27,7 @@ object Platform {
     else error("Failed to determine current platform family")
   }
 
-  def jvm_platform: String = Platform_Family.native(family)
+  def jvm_platform: String = family.native
 
 
   /* platform info */
