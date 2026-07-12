@@ -214,8 +214,10 @@ final class Other_Isabelle private(
 
       override def ml_system: String = getenv_strict("ML_SYSTEM")
 
-      override def ml_platform: String =
-        if (ssh.is_file(isabelle_home + Path.explode("lib/Tools/console"))) {
+      override def ml_platform: String = {
+        val isabelle_console = isabelle_home + Path.explode("lib/Tools/console")
+        if (ssh.is_file(isabelle_console) &&
+            ssh.read(isabelle_console).containsSlice("isabelle.ML_Console")) {
           val Pattern = """.*val ML_PLATFORM = "(.*)".*""".r
           val input = """val ML_PLATFORM = Option.getOpt (OS.Process.getEnv "ML_PLATFORM", "")"""
           val result = bash("bin/isabelle console -r", input = input)
@@ -227,6 +229,7 @@ final class Other_Isabelle private(
           }
         }
         else getenv_strict("ML_PLATFORM")
+      }
 
       override def ml_options: String =
         proper_string(getenv("ML_OPTIONS")) getOrElse
