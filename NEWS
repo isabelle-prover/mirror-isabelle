@@ -306,6 +306,15 @@ operations, notably Time.sleep instead of OS.Process.sleep.
 
 *** System ***
 
+* Poly/ML 5.9.2 has been patched to support larger heap size in the
+special x86_64_32/arm64_32 mode with 32-bit values: the limit is now 32
+GiB, instead of 16 GiB before. The cost is a factor of 1.2 .. 1.5 more
+memory requirement (due to alignment of values), and a slowdown factor
+0.9 .. 0.95 for average sessions. For very large sessions, the gain is a
+speedup factor 1.9 .. 1.2, due to reduced GC time. It also avoids the
+need for bulky x86_64/arm64 mode with 64-bit values and excessive GC
+time.
+
 * Both SHA1 and SHA256 are supported in Isabelle/Scala. SHA1 is still
 used routinely, but will be eventually phased out. Result is of type
 Message_Digest.T, with slightly different toString method. Subtle
