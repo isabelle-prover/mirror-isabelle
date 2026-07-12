@@ -115,7 +115,7 @@ object Build_History {
     ml_statistics_step: Int = 1,
     component_repository: String = Components.static_component_repository,
     components_base: String = Components.dynamic_components_base,
-    clean_platforms: Option[List[Platform.Family]] = None,
+    clean_platforms: Option[List[Platform_Family]] = None,
     clean_archives: Boolean = false,
     fresh: Boolean = false,
     hostname: String = "",
@@ -401,7 +401,7 @@ object Build_History {
       var max_heap: Option[Int] = None
       var multicore_list = List(default_multicore)
       var isabelle_identifier = default_isabelle_identifier
-      var clean_platforms: Option[List[Platform.Family]] = None
+      var clean_platforms: Option[List[Platform_Family]] = None
       var clean_archives = false
       var component_repository = Components.static_component_repository
       var components_base = Components.dynamic_components_base
@@ -460,7 +460,7 @@ Usage: Admin/build_other [OPTIONS] ISABELLE_HOME [ARGS ...]
         "H:" -> (arg => heap = Some(Value.Int.parse(arg))),
         "M:" -> (arg => multicore_list = space_explode(',', arg).map(Multicore.parse)),
         "N:" -> (arg => isabelle_identifier = arg),
-        "O:" -> (arg => clean_platforms = Some(space_explode(',',arg).map(Platform.Family.parse))),
+        "O:" -> (arg => clean_platforms = Some(space_explode(',',arg).map(Platform_Family.parse))),
         "Q" -> (_ => clean_archives = true),
         "R:" -> (arg => component_repository = arg),
         "S:" -> (arg => components_base = arg),

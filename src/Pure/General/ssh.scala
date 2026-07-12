@@ -732,8 +732,8 @@ object SSH {
 
     def isabelle_platform: Isabelle_Platform = Isabelle_Platform.local
 
-    def isabelle_platform_family: Platform.Family =
-      Platform.Family.parse(isabelle_platform.ISABELLE_PLATFORM_FAMILY)
+    def isabelle_platform_family: Platform_Family =
+      Platform_Family.parse(isabelle_platform.ISABELLE_PLATFORM_FAMILY)
   }
 
   object Local extends System {

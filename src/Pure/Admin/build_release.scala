@@ -73,22 +73,22 @@ directory individually.
 """)
     }
 
-    def bundle_info(platform: Platform.Family): Bundle_Info =
+    def bundle_info(platform: Platform_Family): Bundle_Info =
       platform match {
-        case Platform.Family.linux_arm =>
+        case Platform_Family.linux_arm =>
           Bundle_Info(platform, "Linux (ARM)", dist_name + "_linux_arm.tar.gz")
-        case Platform.Family.linux =>
+        case Platform_Family.linux =>
           Bundle_Info(platform, "Linux", dist_name + "_linux.tar.gz")
-        case Platform.Family.macos =>
+        case Platform_Family.macos =>
           Bundle_Info(platform, "macOS (Intel)", dist_name + "_macos.tar.gz")
-        case Platform.Family.macos_arm =>
+        case Platform_Family.macos_arm =>
           Bundle_Info(platform, "macOS (ARM)", dist_name + "_macos_arm.tar.gz")
-        case Platform.Family.windows => Bundle_Info(platform, "Windows", dist_name + ".exe")
+        case Platform_Family.windows => Bundle_Info(platform, "Windows", dist_name + ".exe")
       }
   }
 
   sealed case class Bundle_Info(
-    platform: Platform.Family,
+    platform: Platform_Family,
     platform_description: String,
     name: String
   ) {
@@ -157,7 +157,7 @@ directory individually.
 
   /* bundled components */
 
-  class Bundled(platform: Option[Platform.Family] = None) {
+  class Bundled(platform: Option[Platform_Family] = None) {
     def detect(s: String): Boolean =
       s.startsWith("#bundled") && !s.startsWith("#bundled ")
 
@@ -170,7 +170,7 @@ directory individually.
     def unapply(s: String): Option[String] =
       s match {
         case Pattern1(name) => Some(name)
-        case Pattern2(Platform.Family(plat), name) if platform == Some(plat) => Some(name)
+        case Pattern2(Platform_Family(plat), name) if platform == Some(plat) => Some(name)
         case _ => None
       }
   }
@@ -178,7 +178,7 @@ directory individually.
   def record_bundled_components(dir: Path): Unit = {
     val catalogs =
       List("main", "bundled").map((_, new Bundled())) :::
-      Platform.Family.list.flatMap(platform =>
+      Platform_Family.list.flatMap(platform =>
         List(platform.toString, "bundled-" + platform.toString).
           map((_, new Bundled(platform = Some(platform)))))
 
@@ -193,7 +193,7 @@ directory individually.
         } yield bundled(line)).toList))
   }
 
-  def get_bundled_components(dir: Path, platform: Platform.Family): (List[String], String) = {
+  def get_bundled_components(dir: Path, platform: Platform_Family): (List[String], String) = {
     val Bundled = new Bundled(platform = Some(platform))
     val components =
       for { case Bundled(name) <- Components.Directory(dir).read_components() } yield name
@@ -202,7 +202,7 @@ directory individually.
     (components, jdk_component)
   }
 
-  def activate_components(dir: Path, platform: Platform.Family, more_names: List[String]): Unit = {
+  def activate_components(dir: Path, platform: Platform_Family, more_names: List[String]): Unit = {
     def contrib_name(name: String): String =
       Components.contrib(name = name).implode
 
@@ -225,7 +225,7 @@ directory individually.
 
   private def build_heaps(
     options: Options,
-    platform: Platform.Family,
+    platform: Platform_Family,
     build_sessions: List[String],
     local_dir: Path,
     progress: Progress = new Progress,
@@ -237,7 +237,7 @@ directory individually.
 
     val ssh =
       if (server.nonEmpty) SSH.open_session(options, server)
-      else if (Platform.family == platform || Platform.is_macos && platform == Platform.Family.macos) {
+      else if (Platform.family == platform || Platform.is_macos && platform == Platform_Family.macos) {
         SSH.Local
       }
       else error("Undefined option " + server_option + ": cannot build heaps")
@@ -268,21 +268,21 @@ directory individually.
 
   val isabelle_options_path: Path = Path.basic("Isabelle.options")
 
-  def read_isabelle_options(platform: Platform.Family, dir: Path, name: String): List[String] =
+  def read_isabelle_options(platform: Platform_Family, dir: Path, name: String): List[String] =
     Library.trim_split_lines(File.read(dir + isabelle_options_path))
       .filterNot(line => line.startsWith("#") || Library.trim_string(line).isEmpty)
 
   def make_isabelle_options(
-    platform: Platform.Family, dir: Path, name: String, options: List[String]
+    platform: Platform_Family, dir: Path, name: String, options: List[String]
   ): Unit = {
-    val line_ending = if (platform == Platform.Family.windows) "\r\n" else "\n"
+    val line_ending = if (platform == Platform_Family.windows) "\r\n" else "\n"
     val path = dir + isabelle_options_path
     val title = "# Java runtime options"
     File.write(path, (title :: options).map(_ + line_ending).mkString)
   }
 
   def make_isabelle_app(
-    platform: Platform.Family,
+    platform: Platform_Family,
     isabelle_target: Path,
     isabelle_name: String,
     jdk_component: String,
@@ -331,7 +331,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
     val component_dir = isabelle_target + Path.explode("contrib/Isabelle_app")
     Isabelle_System.move_file(
-      component_dir + Path.explode(Platform.Family.native(platform)) + Path.explode("Isabelle"),
+      component_dir + Path.explode(Platform_Family.native(platform)) + Path.explode("Isabelle"),
       isabelle_target + Path.explode(isabelle_name))
     Isabelle_System.rm_tree(component_dir)
   }
@@ -503,13 +503,13 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
     }
   }
 
-  def default_platform_families: List[Platform.Family] = Platform.Family.list
+  def default_platform_families: List[Platform_Family] = Platform_Family.list
 
   def build_release(
     options: Options,
     context: Release_Context,
     afp_rev: String = "",
-    platform_families: List[Platform.Family] = default_platform_families,
+    platform_families: List[Platform_Family] = default_platform_families,
     more_components: List[Path] = Nil,
     more_settings: List[String] = Nil,
     website: Option[Path] = None,
@@ -583,7 +583,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         val java_options: List[String] = {
           val opts1 =
-            if (platform == Platform.Family.windows) List("-Dcygwin.root=$ROOTDIR/contrib/cygwin")
+            if (platform == Platform_Family.windows) List("-Dcygwin.root=$ROOTDIR/contrib/cygwin")
             else Nil
           val opts2 =
             for {
@@ -617,7 +617,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
 
         // build heaps
 
-        if (platform == Platform.Family.macos) {
+        if (platform == Platform_Family.macos) {
           File.change_lines(isabelle_target + Path.explode("etc/options"))(_.map { line =>
             if (line.containsSlice("ML_system_apple")) line.replacing("true" -> "false")
             else line
@@ -634,7 +634,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
         Components.clean_base(contrib_dir, platforms = List(platform))
 
         platform match {
-          case Platform.Family.linux_arm | Platform.Family.linux =>
+          case Platform_Family.linux_arm | Platform_Family.linux =>
             make_isabelle_options(platform, isabelle_target, isabelle_name, java_options)
 
             make_isabelle_app(platform, isabelle_target, isabelle_name, jdk_component, classpath)
@@ -645,7 +645,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
               Bash.string(isabelle_name))
 
 
-          case Platform.Family.macos | Platform.Family.macos_arm =>
+          case Platform_Family.macos | Platform_Family.macos_arm =>
             File.change(isabelle_target + jedit_props) {
               _.replacing(
                 "lookAndFeel=.*".r -> "lookAndFeel=com.formdev.flatlaf.themes.FlatMacLightLaf",
@@ -690,7 +690,7 @@ exec "$ISABELLE_JDK_HOME/bin/java" \
               File.bash_path(isabelle_app))
 
 
-          case Platform.Family.windows =>
+          case Platform_Family.windows =>
             File.change(isabelle_target + jedit_props) {
               _.replacing("foldPainter=.*".r -> "foldPainter=Square")
             }
@@ -876,7 +876,7 @@ Usage: Admin/build_release [OPTIONS]
         "j:" -> (arg => parallel_jobs = Value.Int.parse(arg)),
         "l" -> (_ => build_library = true),
         "o:" -> (arg => options = options + arg),
-        "p:" -> (arg => platform_families = space_explode(',', arg).map(Platform.Family.parse)),
+        "p:" -> (arg => platform_families = space_explode(',', arg).map(Platform_Family.parse)),
         "r:" -> (arg => rev = arg))
 
       val more_args = getopts(args)

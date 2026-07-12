@@ -43,15 +43,15 @@ object Components {
     def paths(args: String*): List[Path] = args.toList.map(Path.explode)
     Platforms(
       Map(
-        Platform.Family.linux_arm.toString ->
+        Platform_Family.linux_arm.toString ->
           paths("arm64-linux", "arm64_32-linux"),
-        Platform.Family.linux.toString ->
+        Platform_Family.linux.toString ->
           paths("x86_64-linux", "x86_64_32-linux"),
-        Platform.Family.macos_arm.toString ->
+        Platform_Family.macos_arm.toString ->
           paths("arm64-darwin", "arm64_32-darwin"),
-        Platform.Family.macos.toString ->
+        Platform_Family.macos.toString ->
           paths("x86_64-darwin", "x86_64_32-darwin"),
-        Platform.Family.windows.toString ->
+        Platform_Family.windows.toString ->
           paths("x86_64-cygwin", "x86_64-windows", "x86_64_32-windows", "x86-windows"),
         "obsolete" -> paths("x86-linux", "x86-cygwin")
       ))
@@ -92,7 +92,7 @@ object Components {
 
   def clean_base(
     base_dir: Path,
-    platforms: List[Platform.Family] = Platform.Family.list,
+    platforms: List[Platform_Family] = Platform_Family.list,
     ssh: SSH.System = SSH.Local,
     progress: Progress = new Progress
   ): Unit = {
@@ -108,7 +108,7 @@ object Components {
     name: String,
     target_dir: Option[Path] = None,
     copy_dir: Option[Path] = None,
-    clean_platforms: Option[List[Platform.Family]] = None,
+    clean_platforms: Option[List[Platform_Family]] = None,
     clean_archives: Boolean = false,
     component_repository: String = Components.static_component_repository,
     ssh: SSH.System = SSH.Local,
@@ -210,7 +210,7 @@ object Components {
     }
 
     def write_platforms(
-      lines: List[String] = Platform.Family.list.map(family => family.toString + " = ")
+      lines: List[String] = Platform_Family.list.map(family => family.toString + " = ")
     ): Directory = {
       File.write(platform_props, terminate_lines(lines))
       this
@@ -236,7 +236,7 @@ object Components {
     }
 
     def clean(
-      preserve: List[Platform.Family] = Platform.Family.list,
+      preserve: List[Platform_Family] = Platform_Family.list,
       progress: Progress = new Progress
     ): Unit = {
       val platforms = get_platforms()

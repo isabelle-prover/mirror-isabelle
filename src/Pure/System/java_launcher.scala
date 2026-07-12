@@ -170,7 +170,7 @@ object Java_Launcher {
 """
 
   def setup(
-    platform: Platform.Family,
+    platform: Platform_Family,
     app_root: Path,
     jdk_home: Path,
     classpath: List[String] = Nil,
@@ -179,11 +179,11 @@ object Java_Launcher {
   ): Unit = {
     val launcher =
       platform match {
-        case Platform.Family.linux | Platform.Family.linux_arm => info_linux
-        case Platform.Family.macos | Platform.Family.macos_arm => info_macos
-        case Platform.Family.windows => info_windows
+        case Platform_Family.linux | Platform_Family.linux_arm => info_linux
+        case Platform_Family.macos | Platform_Family.macos_arm => info_macos
+        case Platform_Family.windows => info_windows
       }
-    val platform_root = Path.basic(Platform.Family.native(platform))
+    val platform_root = Path.basic(Platform_Family.native(platform))
 
     val app_name = app_root.drop_ext.file_name
     val isabelle_home = app_root + launcher.resources_path
@@ -206,7 +206,7 @@ object Java_Launcher {
     }
 
     platform match {
-      case Platform.Family.macos | Platform.Family.macos_arm =>
+      case Platform_Family.macos | Platform_Family.macos_arm =>
         val app_contents = app_root + Path.explode("Contents")
         File.write(app_contents + Path.explode("Info.plist"),
           app_info.replacing("{NAME}" -> app_name, "{IDENT}" -> app_ident(app_name)))
@@ -216,7 +216,7 @@ object Java_Launcher {
           Isabelle_System.new_directory(app_root + Path.explode("Contents/runtime/Contents"))
         File.write(runtime_contents + Path.explode("Info.plist"), runtime_info)
         Isabelle_System.copy_dir(java_root + Path.explode("Contents/MacOS"), runtime_contents)
-      case Platform.Family.windows =>
+      case Platform_Family.windows =>
         File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
       case _ =>
     }
