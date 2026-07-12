@@ -26,19 +26,13 @@ sealed abstract class Platform_Family {
 }
 
 object Platform_Family {
-  case object linux_arm extends Platform_Family { override def toString: String = "linux_arm" }
   case object linux extends Platform_Family { override def toString: String = "linux" }
+  case object linux_arm extends Platform_Family { override def toString: String = "linux_arm" }
   case object macos extends Platform_Family { override def toString: String = "macos" }
   case object macos_arm extends Platform_Family { override def toString: String = "macos_arm" }
   case object windows extends Platform_Family { override def toString: String = "windows" }
 
-  val list: List[Platform_Family] =
-    List(
-      linux,
-      linux_arm,
-      windows,
-      macos,
-      macos_arm)
+  val list: List[Platform_Family] = List(linux, linux_arm, macos, macos_arm, windows)
 
   def unapply(name: String): Option[Platform_Family] =
     list.find(family => family.toString == name)
