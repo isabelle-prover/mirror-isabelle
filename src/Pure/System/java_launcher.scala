@@ -178,11 +178,9 @@ object Java_Launcher {
     main_class: String = "isabelle.jedit.JEdit_Main"
   ): Unit = {
     val launcher =
-      platform match {
-        case Platform_Family.linux | Platform_Family.linux_arm => info_linux
-        case Platform_Family.macos | Platform_Family.macos_arm => info_macos
-        case Platform_Family.windows => info_windows
-      }
+      if (platform.any_linux) info_linux
+      else if (platform.any_macos) info_macos
+      else info_windows
     val platform_root = Path.basic(platform.native)
 
     val app_name = app_root.drop_ext.file_name
@@ -205,20 +203,20 @@ object Java_Launcher {
       }
     }
 
-    platform match {
-      case Platform_Family.macos | Platform_Family.macos_arm =>
-        val app_contents = app_root + Path.explode("Contents")
-        File.write(app_contents + Path.explode("Info.plist"),
-          app_info.replacing("{NAME}" -> app_name, "{IDENT}" -> app_ident(app_name)))
-        File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
+    if (platform.any_macos) {
+      val app_contents = app_root + Path.explode("Contents")
+      File.write(app_contents + Path.explode("Info.plist"),
+        app_info.replacing("{NAME}" -> app_name, "{IDENT}" -> app_ident(app_name)))
+      File.write(app_contents + Path.explode("PkgInfo"), "APPL????")
 
-        val runtime_contents =
-          Isabelle_System.new_directory(app_root + Path.explode("Contents/runtime/Contents"))
-        File.write(runtime_contents + Path.explode("Info.plist"), runtime_info)
-        Isabelle_System.copy_dir(java_root + Path.explode("Contents/MacOS"), runtime_contents)
-      case Platform_Family.windows =>
-        File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
-      case _ =>
+      val runtime_contents =
+        Isabelle_System.new_directory(app_root + Path.explode("Contents/runtime/Contents"))
+      File.write(runtime_contents + Path.explode("Info.plist"), runtime_info)
+      Isabelle_System.copy_dir(java_root + Path.explode("Contents/MacOS"), runtime_contents)
+    }
+
+    if (platform.any_windows) {
+      File.write(app_root + Path.basic(app_name + ".exe.manifest"), exe_manifest)
     }
 
     val rootdir = "$ROOTDIR" + if_proper(launcher.resources, "/" + launcher.resources)

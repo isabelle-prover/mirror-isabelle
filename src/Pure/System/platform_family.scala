@@ -9,6 +9,10 @@ package isabelle
 sealed abstract class Platform_Family {
   family =>
 
+  def any_linux: Boolean = family == Platform_Family.linux || family == Platform_Family.linux_arm
+  def any_macos: Boolean = family == Platform_Family.macos || family == Platform_Family.macos_arm
+  def any_windows: Boolean = family == Platform_Family.windows
+
   def standard: String =
     family match {
       case Platform_Family.linux_arm => "arm64-linux"
