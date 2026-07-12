@@ -591,7 +591,9 @@ Usage: Admin/build_other [OPTIONS] ISABELLE_HOME [ARGS ...]
         }
         catch {
           case ERROR(msg) =>
-            cat_error(msg, "The error(s) above occurred for Admin/build_other " + build_options)
+            cat_error(msg,
+              "The error(s) above occurred for Admin/build_other " + build_options +
+              if_proper(rev, "\n(Isabelle/" + rev + ")"))
         }
 
         for (line <- split_lines(ssh.read(output_file)))
