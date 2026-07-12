@@ -50,7 +50,7 @@ AutoInstall="\"%%T\{NAME}\{NAME}.exe\" -init"
 
   private val seven_zip_platforms: List[Seven_Zip_Platform] =
     List(
-      Seven_Zip_Platform("arm64-linux", "{U}/{V}/7z{v}-linux-arm.tar.xz"),
+      Seven_Zip_Platform("arm64-linux", "{U}/{V}/7z{v}-linux-arm64.tar.xz"),
       Seven_Zip_Platform("x86_64-darwin", "{U}/{V}/7z{v}-mac.tar.xz"),
       Seven_Zip_Platform("x86_64-linux", "{U}/{V}/7z{v}-linux-x64.tar.xz"))
 
