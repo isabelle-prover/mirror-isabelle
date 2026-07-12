@@ -13,6 +13,8 @@ sealed abstract class Platform_Family {
   def any_macos: Boolean = family == Platform_Family.macos || family == Platform_Family.macos_arm
   def any_windows: Boolean = family == Platform_Family.windows
 
+  def line_ending: String = if (any_windows) "\r\n" else "\n"
+
   def standard: String =
     family match {
       case Platform_Family.linux_arm => "arm64-linux"

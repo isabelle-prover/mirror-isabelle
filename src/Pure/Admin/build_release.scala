@@ -275,10 +275,9 @@ directory individually.
   def make_isabelle_options(
     platform: Platform_Family, dir: Path, name: String, options: List[String]
   ): Unit = {
-    val line_ending = if (platform.any_windows) "\r\n" else "\n"
     val path = dir + isabelle_options_path
     val title = "# Java runtime options"
-    File.write(path, (title :: options).map(_ + line_ending).mkString)
+    File.write(path, (title :: options).map(_ + platform.line_ending).mkString)
   }
 
   def make_isabelle_app(

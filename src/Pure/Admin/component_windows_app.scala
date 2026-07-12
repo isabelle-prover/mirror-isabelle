@@ -38,7 +38,7 @@ RunProgram="\"%%T\{NAME}\{NAME}.exe\""
 AutoInstall="\"%%T\{NAME}\{NAME}.exe\" -init"
 ;!@InstallEnd@!
 """.replacing("{NAME}" -> name)
-    Library.trim_split_lines(txt).map(_ + "\r\n").mkString
+    Library.trim_split_lines(txt).map(_ + Platform_Family.windows.line_ending).mkString
   }
 
 
