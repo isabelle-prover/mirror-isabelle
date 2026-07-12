@@ -6,20 +6,27 @@ Abstract platform family, with correlation to Isabelle distribution bundles.
 
 package isabelle
 
-enum Platform_Family { case linux_arm, linux, macos, macos_arm, windows }
+sealed abstract class Platform_Family {
+  family =>
+}
 
 object Platform_Family {
+  case object linux_arm extends Platform_Family { override def toString: String = "linux_arm" }
+  case object linux extends Platform_Family { override def toString: String = "linux" }
+  case object macos extends Platform_Family { override def toString: String = "macos" }
+  case object macos_arm extends Platform_Family { override def toString: String = "macos_arm" }
+  case object windows extends Platform_Family { override def toString: String = "windows" }
+
   val list: List[Platform_Family] =
     List(
-      Platform_Family.linux,
-      Platform_Family.linux_arm,
-      Platform_Family.windows,
-      Platform_Family.macos,
-      Platform_Family.macos_arm)
+      linux,
+      linux_arm,
+      windows,
+      macos,
+      macos_arm)
 
   def unapply(name: String): Option[Platform_Family] =
-    try { Some(Platform_Family.valueOf(name)) }
-    catch { case _: IllegalArgumentException => None }
+    list.find(family => family.toString == name)
 
   def parse(name: String): Platform_Family =
     unapply(name) getOrElse error("Bad platform family: " + quote(name))
