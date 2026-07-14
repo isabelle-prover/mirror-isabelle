@@ -14,13 +14,18 @@ object Pretty_Text_View {
   private val vscode = Webview_Api.acquire
 
   private var resize_timeout: Option[Int] = None
+  private var window_loaded = false
 
-  def on_resize(): Unit = {
-    resize_timeout.foreach(dom.window.clearTimeout)
-    resize_timeout = Some(dom.window.setTimeout(() => handle_resize(), 500.0))
+  def on_resize(): Unit =
+    if (window_loaded) {
+      resize_timeout.foreach(dom.window.clearTimeout)
+      resize_timeout = Some(dom.window.setTimeout(() => handle_resize(), 500.0))
+    }
+
+  def on_load(): Unit = {
+    handle_resize()
+    window_loaded = true
   }
-
-  def on_load(): Unit = handle_resize()
 
   def get_symbol_width(): Double = {
     val test_string = "mix"
