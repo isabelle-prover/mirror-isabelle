@@ -14,7 +14,7 @@ import { LanguageClient } from "vscode-languageclient/node"
 import { Position } from "vscode"
 
 
-class Sledgehammer_Panel_Provider implements WebviewViewProvider{
+export class Sledgehammer_Panel_Provider implements WebviewViewProvider{
   public static readonly view_type = "isabelle-sledgehammer"
   private _view?: WebviewView
 
@@ -99,5 +99,3 @@ class Sledgehammer_Panel_Provider implements WebviewViewProvider{
       "sledgehammer.js", "sledgehammer.css")
   }
 }
-
-export { Sledgehammer_Panel_Provider }

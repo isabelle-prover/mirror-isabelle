@@ -13,7 +13,7 @@ import { commands } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
 
 
-class Documentation_Panel_Provider implements WebviewViewProvider {
+export class Documentation_Panel_Provider implements WebviewViewProvider {
   public static readonly view_type = "isabelle-documentation"
 
   private _view?: WebviewView
@@ -85,5 +85,3 @@ class Documentation_Panel_Provider implements WebviewViewProvider {
       '<div id="documentation-container">Loading documentation...</div>')
   }
 }
-
-export { Documentation_Panel_Provider }

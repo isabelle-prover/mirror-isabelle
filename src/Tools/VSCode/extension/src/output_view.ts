@@ -12,7 +12,7 @@ import * as webview from "./webview"
 import { LanguageClient } from "vscode-languageclient/node"
 
 
-class Output_View_Provider implements WebviewViewProvider {
+export class Output_View_Provider implements WebviewViewProvider {
 
   public static readonly view_type = "isabelle-output"
 
@@ -64,7 +64,7 @@ class Output_View_Provider implements WebviewViewProvider {
   }
 }
 
-function open_webview_link(link: string) {
+export function open_webview_link(link: string) {
   const uri = Uri.parse(link)
   const line = Number(uri.fragment) || 0
   const pos = new Position(line, 0)
@@ -72,5 +72,3 @@ function open_webview_link(link: string) {
     uri.with({ fragment: "" }),
     { preserveFocus: false, selection: new Selection(pos, pos) })
 }
-
-export { Output_View_Provider, open_webview_link }

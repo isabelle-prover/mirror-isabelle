@@ -15,7 +15,7 @@ import * as symbol from "./symbol"
 import { Entry } from "./symbol"
 
 
-class Symbols_Panel_Provider implements WebviewViewProvider {
+export class Symbols_Panel_Provider implements WebviewViewProvider {
   public static readonly view_type = "isabelle-symbols"
 
   private _view?: WebviewView
@@ -158,5 +158,3 @@ class Symbols_Panel_Provider implements WebviewViewProvider {
       "symbols.js", "symbols.css", '<div id="symbols-container"></div>')
   }
 }
-
-export { Symbols_Panel_Provider }
