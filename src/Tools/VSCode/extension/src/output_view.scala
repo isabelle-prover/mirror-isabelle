@@ -14,6 +14,21 @@ import isabelle._
 
 
 object Output_View {
+  def get_symbol_width(): Double = {
+    val test_string = "mix"
+    val test_span = dom.document.createElement("span")
+    test_span.textContent = test_string
+    dom.document.body.appendChild(test_span)
+    val symbol_width = test_span.getBoundingClientRect().width / test_string.length
+    dom.document.body.removeChild(test_span)
+    symbol_width
+  }
+
+  def get_window_margin(symbol_width: Double): Int = {
+    val width = dom.window.innerWidth / symbol_width
+    Math.max(width.toInt - 16, 1)
+  }
+
   def main(): Unit = {
     val vscode = Webview_Api.acquire
 
@@ -45,20 +60,9 @@ object Output_View {
       })
     }
 
-    val test_string = "mix"
-    val test_span = dom.document.createElement("span")
-    test_span.textContent = test_string
-    dom.document.body.appendChild(test_span)
-    val symbol_width = test_span.getBoundingClientRect().width / test_string.length
-    dom.document.body.removeChild(test_span)
-
-    def get_window_margin: Int = {
-      val width = dom.window.innerWidth / symbol_width
-      Math.max(width.toInt - 16, 1)
-    }
-
+    val symbol_width = get_symbol_width()
     def update_window_width(): Unit = {
-      vscode.post(JSON.Object("command" -> "resize", "margin" -> get_window_margin))
+      vscode.post(JSON.Object("command" -> "resize", "margin" -> get_window_margin(symbol_width)))
     }
 
     var timeout: Option[Int] = None
