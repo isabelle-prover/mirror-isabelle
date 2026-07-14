@@ -93,6 +93,22 @@ object Component_Scala {
       "https://mvnrepository.com/artifact/org.scala-js/scalajs-dom_{B}/{V}",
       physical_url = "https://repo1.maven.org/maven2/org/scala-js/scalajs-dom_{B}/{V}/scalajs-dom_{B}-{V}.jar",
       base_version = "sjs1_3"),
+    Download("scala-java-time", "2.7.0",
+      "https://mvnrepository.com/artifact/io.github.cquiroz/scala-java-time_{B}/{V}",
+      physical_url = "https://repo1.maven.org/maven2/io/github/cquiroz/scala-java-time_{B}/{V}/scala-java-time_{B}-{V}.jar",
+      base_version = "sjs1_3"),
+    Download("scala-java-locales", "1.5.4",
+      "https://mvnrepository.com/artifact/io.github.cquiroz/scala-java-locales_{B}/{V}",
+      physical_url = "https://repo1.maven.org/maven2/io/github/cquiroz/scala-java-locales_{B}/{V}/scala-java-locales_{B}-{V}.jar",
+      base_version = "sjs1_3"),
+    Download("cldr-api", "4.5.0",
+      "https://mvnrepository.com/artifact/io.github.cquiroz/cldr-api_{B}/{V}",
+      physical_url = "https://repo1.maven.org/maven2/io/github/cquiroz/cldr-api_{B}/{V}/cldr-api_{B}-{V}.jar",
+      base_version = "sjs1_3"),
+    Download("portable-scala-reflect", "1.1.3",
+      "https://mvnrepository.com/artifact/org.portable-scala/portable-scala-reflect_{B}/{V}",
+      physical_url = "https://repo1.maven.org/maven2/org/portable-scala/portable-scala-reflect_{B}/{V}/portable-scala-reflect_{B}-{V}.jar",
+      base_version = "sjs1_2.13"),
   )
 
 
