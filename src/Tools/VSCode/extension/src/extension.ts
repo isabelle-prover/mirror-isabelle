@@ -196,6 +196,9 @@ export async function activate(context: ExtensionContext) {
           params => provider.update_content(params.content))
       })
 
+
+    /* documentation panel */
+
     const documentation_provider =
       new Documentation_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
@@ -208,6 +211,9 @@ export async function activate(context: ExtensionContext) {
         documentation_provider.setupDocumentation(language_client)
       })
 
+
+    /* symbols panel */
+
     const symbols_provider = new Symbol_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
       window.registerWebviewViewProvider(Symbol_Panel.view_type, symbols_provider)
@@ -215,6 +221,8 @@ export async function activate(context: ExtensionContext) {
     language_client.onReady().then(() => symbols_provider.request(language_client))
     language_client.onReady().then(() => symbols_provider.setup(language_client))
 
+
+    /* sledgehammer panel */
 
     const sledgehammer_provider =
       new Sledgehammer_Panel.Provider(context.extensionUri, language_client)
