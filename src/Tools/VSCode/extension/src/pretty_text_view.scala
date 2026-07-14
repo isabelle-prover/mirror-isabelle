@@ -13,9 +13,15 @@ import isabelle._
 object Pretty_Text_View {
   private val vscode = Webview_Api.acquire
 
+
+  /* gui state */
+
   private var current_margin: Int = get_window_margin()
   private var resize_timeout: Option[Int] = None
   private var window_loaded = false
+
+
+  /* update */
 
   def on_resize(): Unit =
     if (window_loaded) {
