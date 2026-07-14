@@ -37,6 +37,7 @@ src/state_panel.ts
 src/symbol.ts
 src/symbol_panel.ts
 src/vscode_lib.ts
+src/webview.ts
 test/extension.test.ts
 test/index.ts
 tsconfig.json

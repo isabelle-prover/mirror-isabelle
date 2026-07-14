@@ -7,11 +7,9 @@ Control panel for Sledgehammer.
 'use strict';
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext, CancellationToken,
-  window, Webview } from "vscode"
-import * as path from "path"
-import { text_colors } from "./decorations"
-import * as vscode_lib from "./vscode_lib"
+  window } from "vscode"
 import * as lsp from "./lsp"
+import * as webview from "./webview"
 import { LanguageClient } from "vscode-languageclient/node"
 import { Position } from "vscode"
 
@@ -97,47 +95,9 @@ class Sledgehammer_Panel_Provider implements WebviewViewProvider{
   }
 
   private _get_html(): string {
-    return get_webview_html(this._view?.webview, this._extension_uri.fsPath)
+    return webview.get_html(this._view.webview, this._extension_uri.fsPath, "Sledgehammer Panel",
+      "sledgehammer.js", "sledgehammer.css")
   }
 }
 
-function get_webview_html(webview: Webview | undefined, extension_path: string): string {
-  const script_uri =
-    webview?.asWebviewUri(Uri.file(path.join(extension_path, "media", "sledgehammer.js")))
-  const css_uri =
-    webview?.asWebviewUri(Uri.file(path.join(extension_path, "media", "sledgehammer.css")))
-  const font_uri =
-    webview.asWebviewUri(Uri.file(path.join(extension_path, "fonts", "IsabelleDejaVuSansMono.ttf")))
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="${css_uri}" rel="stylesheet">
-        <style>
-            @font-face {
-                font-family: "Isabelle DejaVu Sans Mono";
-                src: url(${font_uri});
-            }
-            ${_get_decorations()}
-        </style>
-        <title>Sledgehammer Panel</title>
-      </head>
-      <body>
-        <script src="${script_uri}"></script>
-      </body>
-    </html>`
-}
-
-function _get_decorations(): string {
-  let style: string[] = []
-  for (const key of text_colors) {
-    style.push(`body.vscode-light .${key} { color: ${vscode_lib.get_color(key, true)} }\n`)
-    style.push(`body.vscode-dark .${key} { color: ${vscode_lib.get_color(key, false)} }\n`)
-  }
-  return style.join("")
-}
-
-export { Sledgehammer_Panel_Provider, get_webview_html }
+export { Sledgehammer_Panel_Provider }

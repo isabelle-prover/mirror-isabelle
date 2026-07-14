@@ -7,9 +7,10 @@ State panel via HTML webview inside VSCode.
 
 import * as vscode_lib from './vscode_lib'
 import * as lsp from './lsp'
+import * as webview from './webview'
 import { LanguageClient } from 'vscode-languageclient/node'
 import { ExtensionContext, Uri, ViewColumn, WebviewPanel, window } from 'vscode'
-import { get_webview_html, open_webview_link } from './output_view'
+import { open_webview_link } from './output_view'
 
 
 let language_client: LanguageClient
@@ -67,7 +68,6 @@ class Panel {
   }
 
   private _get_html(content: string, auto_update: boolean): string {
-    const webview = this.webview_panel.webview
     const checked = auto_update ? "checked" : ""
     const content_with_buttons = `<div id="controls">
       <input type="checkbox" id="auto_update" ${checked}/>
@@ -77,7 +77,8 @@ class Panel {
     </div>
     ${content}`
 
-    return get_webview_html(content_with_buttons, webview, this._extension_path)
+    return webview.get_html(this.webview_panel.webview, this._extension_path, "Output",
+      "output_view.js", "vscode.css", content_with_buttons)
   }
 }
 
