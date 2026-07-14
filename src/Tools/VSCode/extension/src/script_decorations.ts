@@ -3,11 +3,11 @@
 Non-unicode Isabelle symbols as text decorations.
 */
 
-'use strict';
+"use strict";
 
 import { DecorationRangeBehavior, ExtensionContext, Range,
-  TextDocument, TextEditor, window, workspace } from 'vscode'
-import * as symbol from './symbol'
+  TextDocument, TextEditor, window, workspace } from "vscode"
+import * as symbol from "./symbol"
 
 
 const arrows = {
@@ -19,7 +19,7 @@ const arrows = {
   bsup: symbol.control.bsup.decoded,
   esup: symbol.control.esup.decoded
 }
-const no_hide_list = [' ', '\n', '\r', ...Object.values(arrows)]
+const no_hide_list = [" ", "\n", "\r", ...Object.values(arrows)]
 
 function should_hide(next_char: string): boolean {
   return !no_hide_list.includes(next_char)
@@ -87,20 +87,20 @@ function extract_ranges(doc: TextDocument) {
 
 export function register_script_decorations(context: ExtensionContext) {
   const hide = window.createTextEditorDecorationType({
-    textDecoration: 'none; font-size: 0.001em',
+    textDecoration: "none; font-size: 0.001em",
     rangeBehavior: DecorationRangeBehavior.ClosedClosed
   })
 
   const superscript = window.createTextEditorDecorationType({
-    textDecoration: 'none; position: relative; top: -0.5em; font-size: 80%'
+    textDecoration: "none; position: relative; top: -0.5em; font-size: 80%"
   })
 
   const subscript = window.createTextEditorDecorationType({
-    textDecoration: 'none; position: relative; bottom: -0.5em; font-size: 80%'
+    textDecoration: "none; position: relative; bottom: -0.5em; font-size: 80%"
   })
 
   const bold = window.createTextEditorDecorationType({
-    textDecoration: 'none; font-weight: bold'
+    textDecoration: "none; font-weight: bold"
   })
 
   const set_editor_decorations = (editor: TextEditor, doc: TextDocument) =>

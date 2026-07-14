@@ -3,14 +3,14 @@
 PIDE document decorations.
 */
 
-'use strict';
+"use strict";
 
-import * as timers from 'timers'
-import {window, OverviewRulerLane, Uri} from 'vscode'
+import * as timers from "timers"
+import {window, OverviewRulerLane, Uri} from "vscode"
 import { Range, DecorationOptions, DecorationRenderOptions,
-  TextDocument, TextEditor, TextEditorDecorationType, ExtensionContext } from 'vscode'
-import { Document_Decorations } from './lsp'
-import * as vscode_lib from './vscode_lib'
+  TextDocument, TextEditor, TextEditorDecorationType, ExtensionContext } from "vscode"
+import { Document_Decorations } from "./lsp"
+import * as vscode_lib from "./vscode_lib"
 
 
 /* known decoration types */

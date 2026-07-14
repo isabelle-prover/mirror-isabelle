@@ -3,12 +3,12 @@
 Preview panel via HTML webview inside VSCode.
 */
 
-'use strict';
+"use strict";
 
-import { ExtensionContext, Uri, window, ViewColumn, WebviewPanel } from 'vscode'
-import { LanguageClient } from 'vscode-languageclient/node'
-import * as vscode_lib from './vscode_lib'
-import * as lsp from './lsp'
+import { ExtensionContext, Uri, window, ViewColumn, WebviewPanel } from "vscode"
+import { LanguageClient } from "vscode-languageclient/node"
+import * as vscode_lib from "./vscode_lib"
+import * as lsp from "./lsp"
 
 
 let language_client: LanguageClient

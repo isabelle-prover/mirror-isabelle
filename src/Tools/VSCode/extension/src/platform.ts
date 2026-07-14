@@ -3,9 +3,9 @@
 System platform identification (see Pure/System/platform.scala).
 */
 
-'use strict';
+"use strict";
 
-import * as os from 'os'
+import * as os from "os"
 
 
 /* platform family */

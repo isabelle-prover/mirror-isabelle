@@ -3,21 +3,21 @@
 Isabelle output panel as web view.
 */
 
-'use strict';
+"use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
-   CancellationToken, window, Position, Selection } from 'vscode'
-import * as lsp from './lsp'
-import * as webview from './webview'
-import { LanguageClient } from 'vscode-languageclient/node'
+   CancellationToken, window, Position, Selection } from "vscode"
+import * as lsp from "./lsp"
+import * as webview from "./webview"
+import { LanguageClient } from "vscode-languageclient/node"
 
 
 class Output_View_Provider implements WebviewViewProvider {
 
-  public static readonly view_type = 'isabelle-output'
+  public static readonly view_type = "isabelle-output"
 
   private _view?: WebviewView
-  private content: string = ''
+  private content: string = ""
 
   constructor(
     private readonly _extension_uri: Uri,
@@ -69,7 +69,7 @@ function open_webview_link(link: string) {
   const line = Number(uri.fragment) || 0
   const pos = new Position(line, 0)
   window.showTextDocument(
-    uri.with({ fragment: '' }),
+    uri.with({ fragment: "" }),
     { preserveFocus: false, selection: new Selection(pos, pos) })
 }
 

@@ -3,18 +3,18 @@
 Isabelle documentation panel as web view.
 */
 
-'use strict';
+"use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
-  CancellationToken, window, workspace } from 'vscode'
-import * as lsp from './lsp'
-import * as webview from './webview'
-import { commands } from 'vscode'
-import { LanguageClient } from 'vscode-languageclient/node'
+  CancellationToken, window, workspace } from "vscode"
+import * as lsp from "./lsp"
+import * as webview from "./webview"
+import { commands } from "vscode"
+import { LanguageClient } from "vscode-languageclient/node"
 
 
 class Documentation_Panel_Provider implements WebviewViewProvider {
-  public static readonly view_type = 'isabelle-documentation'
+  public static readonly view_type = "isabelle-documentation"
 
   private _view?: WebviewView
   private _documentation_sections: any[] = []
@@ -51,7 +51,7 @@ class Documentation_Panel_Provider implements WebviewViewProvider {
     if (Object.keys(this._documentation_sections).length > 0) this._update_webview()
 
     this._view.webview.onDidReceiveMessage(async message => {
-      if (message.command === 'open_document') {
+      if (message.command === "open_document") {
         this._open_document(message.platform_path)
       }
     })
@@ -60,7 +60,7 @@ class Documentation_Panel_Provider implements WebviewViewProvider {
   private _update_webview(): void {
     if (!this._view) { return }
 
-    this._view.webview.postMessage({ command: 'update', sections: this._documentation_sections, })
+    this._view.webview.postMessage({ command: "update", sections: this._documentation_sections, })
   }
 
   private _open_document(platform_path: string): void {

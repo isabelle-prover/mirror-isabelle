@@ -7,10 +7,10 @@ Isabelle text symbols versus UTF-8/Unicode encoding. See also:
   - https://encoding.spec.whatwg.org
 */
 
-'use strict';
+"use strict";
 
-import * as file from './file'
-import * as library from './library'
+import * as file from "./file"
+import * as library from "./library"
 
 
 /* ASCII characters */

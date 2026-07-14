@@ -5,24 +5,24 @@
 Isabelle/VSCode extension.
 */
 
-'use strict';
+"use strict";
 
-import * as platform from './platform'
-import * as library from './library'
-import * as file from './file'
-import * as vscode_lib from './vscode_lib'
-import * as decorations from './decorations'
-import * as preview_panel from './preview_panel'
-import * as lsp from './lsp'
-import * as state_panel from './state_panel'
+import * as platform from "./platform"
+import * as library from "./library"
+import * as file from "./file"
+import * as vscode_lib from "./vscode_lib"
+import * as decorations from "./decorations"
+import * as preview_panel from "./preview_panel"
+import * as lsp from "./lsp"
+import * as state_panel from "./state_panel"
 import { Uri, TextEditor, ViewColumn, Selection, Position, ExtensionContext, workspace, window,
-  commands, ProgressLocation } from 'vscode'
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node'
-import { Output_View_Provider } from './output_view'
-import { Symbols_Panel_Provider } from './symbol_panel'
-import { Documentation_Panel_Provider } from './documentation_panel'
-import { Sledgehammer_Panel_Provider } from './sledgehammer_panel'
-import { register_script_decorations } from './script_decorations'
+  commands, ProgressLocation } from "vscode"
+import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node"
+import { Output_View_Provider } from "./output_view"
+import { Symbols_Panel_Provider } from "./symbol_panel"
+import { Documentation_Panel_Provider } from "./documentation_panel"
+import { Sledgehammer_Panel_Provider } from "./sledgehammer_panel"
+import { register_script_decorations } from "./script_decorations"
 
 
 let last_caret_update: lsp.Caret_Update = {}

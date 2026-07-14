@@ -4,7 +4,7 @@
 Control panel for Sledgehammer.
 */
 
-'use strict';
+"use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext, CancellationToken,
   window } from "vscode"

@@ -4,15 +4,15 @@
 Isabelle symbols panel as web view.
 */
 
-'use strict';
+"use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
   CancellationToken, window } from "vscode"
 import * as lsp from "./lsp"
 import * as webview from "./webview"
 import { LanguageClient } from "vscode-languageclient/node"
-import * as symbol from './symbol'
-import { Entry } from './symbol'
+import * as symbol from "./symbol"
+import { Entry } from "./symbol"
 
 
 class Symbols_Panel_Provider implements WebviewViewProvider {

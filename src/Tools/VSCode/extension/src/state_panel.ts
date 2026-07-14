@@ -3,14 +3,14 @@
 State panel via HTML webview inside VSCode.
 */
 
-'use strict';
+"use strict";
 
-import * as vscode_lib from './vscode_lib'
-import * as lsp from './lsp'
-import * as webview from './webview'
-import { LanguageClient } from 'vscode-languageclient/node'
-import { ExtensionContext, Uri, ViewColumn, WebviewPanel, window } from 'vscode'
-import { open_webview_link } from './output_view'
+import * as vscode_lib from "./vscode_lib"
+import * as lsp from "./lsp"
+import * as webview from "./webview"
+import { LanguageClient } from "vscode-languageclient/node"
+import { ExtensionContext, Uri, ViewColumn, WebviewPanel, window } from "vscode"
+import { open_webview_link } from "./output_view"
 
 
 let language_client: LanguageClient

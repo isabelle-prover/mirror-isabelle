@@ -3,12 +3,12 @@
 Base functionality for web views.
 */
 
-'use strict';
+"use strict";
 
 import {Uri, Webview} from "vscode"
-import * as path from 'path'
-import {text_colors} from './decorations'
-import * as vscode_lib from './vscode_lib'
+import * as path from "path"
+import {text_colors} from "./decorations"
+import * as vscode_lib from "./vscode_lib"
 
 
 export function get_html(
@@ -19,17 +19,17 @@ export function get_html(
   css_name: string = "vscode.css",
   content: string = ""
 ): string {
-  const script_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, 'media', script_name)))
-  const css_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, 'media', css_name)))
+  const script_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, "media", script_name)))
+  const css_uri = webview.asWebviewUri(Uri.file(path.join(extension_path, "media", css_name)))
   const font_uri =
-    webview.asWebviewUri(Uri.file(path.join(extension_path, 'fonts', 'IsabelleDejaVuSansMono.ttf')))
+    webview.asWebviewUri(Uri.file(path.join(extension_path, "fonts", "IsabelleDejaVuSansMono.ttf")))
 
   return `<!DOCTYPE html>
-    <html lang='en'>
+    <html lang="en">
       <head>
-        <meta charset='UTF-8'>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <link href='${css_uri}' rel='stylesheet' type='text/css'>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="${css_uri}" rel="stylesheet" type="text/css">
         <style>
             @font-face {
                 font-family: "Isabelle DejaVu Sans Mono";
@@ -40,7 +40,7 @@ export function get_html(
         <title>${title}</title>
       </head>
       <body>
-        <script src='${script_uri}'></script>
+        <script src="${script_uri}"></script>
         ${content}
       </body>
     </html>`

@@ -3,9 +3,9 @@
 Misc library functions for VSCode.
 */
 
-'use strict';
+"use strict";
 
-import { TextEditor, Uri, ViewColumn, window, workspace } from 'vscode'
+import { TextEditor, Uri, ViewColumn, window, workspace } from "vscode"
 
 
 /* files */

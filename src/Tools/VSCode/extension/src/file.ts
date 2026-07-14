@@ -3,14 +3,14 @@
 File-system operations (see Pure/General/file.scala)
 */
 
-'use strict';
+"use strict";
 
-import * as path from 'path'
-import { readFile } from 'fs/promises'
-import { readFileSync } from 'fs'
-import { Buffer } from 'buffer'
-import * as platform from './platform'
-import * as library from './library'
+import * as path from "path"
+import { readFile } from "fs/promises"
+import { readFileSync } from "fs"
+import { Buffer } from "buffer"
+import * as platform from "./platform"
+import * as library from "./library"
 
 
 /* Windows/Cygwin */
