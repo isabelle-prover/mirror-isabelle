@@ -14,8 +14,9 @@ import * as LSP from "./lsp"
 import * as Webview from "./webview"
 
 
+export const view_type = "isabelle-sledgehammer"
+
 export class Provider implements WebviewViewProvider{
-  public static readonly view_type = "isabelle-sledgehammer"
   private _view?: WebviewView
 
   constructor(

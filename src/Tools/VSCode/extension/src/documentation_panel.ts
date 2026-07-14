@@ -13,8 +13,9 @@ import * as LSP from "./lsp"
 import * as Webview from "./webview"
 
 
+export const view_type = "isabelle-documentation"
+
 export class Provider implements WebviewViewProvider {
-  public static readonly view_type = "isabelle-documentation"
 
   private _view?: WebviewView
   private _documentation_sections: any[] = []

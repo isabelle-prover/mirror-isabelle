@@ -188,7 +188,7 @@ export async function activate(context: ExtensionContext) {
 
     const provider = new Output_View.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Output_View.Provider.view_type, provider))
+      window.registerWebviewViewProvider(Output_View.view_type, provider))
 
     language_client.onReady().then(() =>
       {
@@ -200,7 +200,7 @@ export async function activate(context: ExtensionContext) {
       new Documentation_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
       window.registerWebviewViewProvider(
-        Documentation_Panel.Provider.view_type, documentation_provider))
+        Documentation_Panel.view_type, documentation_provider))
 
     language_client.onReady().then(() =>
       {
@@ -210,7 +210,7 @@ export async function activate(context: ExtensionContext) {
 
     const symbols_provider = new Symbol_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Symbol_Panel.Provider.view_type, symbols_provider)
+      window.registerWebviewViewProvider(Symbol_Panel.view_type, symbols_provider)
     )
     language_client.onReady().then(() => symbols_provider.request(language_client))
     language_client.onReady().then(() => symbols_provider.setup(language_client))
@@ -219,7 +219,7 @@ export async function activate(context: ExtensionContext) {
     const sledgehammer_provider =
       new Sledgehammer_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Sledgehammer_Panel.Provider.view_type, sledgehammer_provider)
+      window.registerWebviewViewProvider(Sledgehammer_Panel.view_type, sledgehammer_provider)
     )
     language_client.onReady().then(() => sledgehammer_provider.request_provers(language_client))
 

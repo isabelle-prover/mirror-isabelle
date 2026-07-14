@@ -15,8 +15,9 @@ import * as Symbol from "./symbol"
 import * as Webview from "./webview"
 
 
+export const view_type = "isabelle-symbols"
+
 export class Provider implements WebviewViewProvider {
-  public static readonly view_type = "isabelle-symbols"
 
   private _view?: WebviewView
   private _grouped_symbols: { [key: string]: Symbol.Entry[] } = {}
