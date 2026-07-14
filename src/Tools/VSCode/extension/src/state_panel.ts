@@ -79,7 +79,7 @@ class Panel {
     ${content}`
 
     return Webview.get_html(this.webview_panel.webview, this._extension_path, "Output",
-      "output_view.js", "vscode.css", content_with_buttons)
+      "state_panel.js", "vscode.css", content_with_buttons)
   }
 }
 

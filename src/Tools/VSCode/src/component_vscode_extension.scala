@@ -223,7 +223,10 @@ object Symbol_Provider {
           (build_dir + symbol_provider) :: pure_sources.filterNot(_.base == symbol_provider) :::
             File.find_files(VSCode_Main.extension_dir + Path.basic("src"), pred = File.is_scala)
 
-        val modules = List(Scalajs.Module("output_view", "isabelle.vscode.extension.Output_View"))
+        val modules =
+          List(
+            Scalajs.Module("output_view", "isabelle.vscode.extension.Output_View"),
+            Scalajs.Module("state_panel", "isabelle.vscode.extension.State_Panel"))
 
         progress.echo("Compiling scalajs modules ...")
         val scalajs_result =
