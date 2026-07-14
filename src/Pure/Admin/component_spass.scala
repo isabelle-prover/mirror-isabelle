@@ -92,7 +92,7 @@ diff -Nru src-orig/misc.c src/misc.c
       val component_dir =
         Components.Directory(target_dir + Path.basic(component_name)).create(progress = progress)
 
-      val platform_name = Isabelle_Platform.local.ISABELLE_PLATFORM()
+      val platform_name = Isabelle_Platform.local.ISABELLE_PLATFORM(apple = true)
       val platform_dir =
         Isabelle_System.make_directory(component_dir.path + Path.basic(platform_name))
 
@@ -125,7 +125,7 @@ diff -Nru src-orig/misc.c src/misc.c
       /* settings */
 
       component_dir.write_settings("""
-SPASS_HOME="$COMPONENT/$ISABELLE_PLATFORM64"
+SPASS_HOME="$COMPONENT/${ISABELLE_APPLE_PLATFORM64:-$ISABELLE_PLATFORM64}"
 SPASS_VERSION=""" + quote(version) + """
 """)
 
