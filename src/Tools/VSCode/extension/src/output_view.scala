@@ -9,6 +9,8 @@ import isabelle._
 
 
 object Output_View {
+  /* main */
+
   def main(): Unit = {
     Pretty_Text_View.init()
   }

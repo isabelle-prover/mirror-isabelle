@@ -15,6 +15,9 @@ import isabelle._
 object State_Panel {
   private val vscode = Webview_Api.acquire
 
+
+  /* main */
+
   def main(): Unit = {
     Pretty_Text_View.init()
 
