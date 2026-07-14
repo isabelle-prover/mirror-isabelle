@@ -13,6 +13,15 @@ import isabelle._
 object Pretty_Text_View {
   private val vscode = Webview_Api.acquire
 
+  private var resize_timeout: Option[Int] = None
+
+  def on_resize(): Unit = {
+    resize_timeout.foreach(dom.window.clearTimeout)
+    resize_timeout = Some(dom.window.setTimeout(() => handle_resize(), 500.0))
+  }
+
+  def on_load(): Unit = handle_resize()
+
   def get_symbol_width(): Double = {
     val test_string = "mix"
     val test_span = dom.document.createElement("span")
@@ -28,11 +37,12 @@ object Pretty_Text_View {
     Math.max(width.toInt - 16, 1)
   }
 
-  def update_window_width(): Unit = {
+  def handle_resize(): Unit = {
     vscode.post(JSON.Object("command" -> "resize", "margin" -> get_window_margin()))
   }
 
-  private var timeout: Option[Int] = None
+
+  /* main */
 
   def init(): Unit = {
     for (link <- dom.document.querySelectorAll("""a[href^="file:"]""")) {
@@ -41,10 +51,7 @@ object Pretty_Text_View {
       })
     }
 
-    dom.window.onresize = { _ =>
-      timeout.foreach(dom.window.clearTimeout)
-      timeout = Some(dom.window.setTimeout(() => update_window_width(), 500.0))
-    }
-    dom.window.onload = { _ => update_window_width() }
+    dom.window.onresize = { _ => on_resize() }
+    dom.window.onload = { _ => on_load() }
   }
 }
