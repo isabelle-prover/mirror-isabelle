@@ -25,22 +25,15 @@ object Component_SPASS {
 
       /* component */
 
-      val Archive_Name = """^.*?([^/]+)$""".r
-      val Component_Name = """^(.+)-src\.tar.gz$""".r
-      val Version = """^[^-]+-([^-]+)$""".r
-
       val archive_name =
-        download_url match {
-          case Archive_Name(name) => name
-          case _ => error("Failed to determine source archive name from " + quote(download_url))
-        }
+        Url.get_base_name(download_url)
+          .getOrElse(error("Failed to determine source archive name from " + quote(download_url)))
 
       val component_name =
-        archive_name match {
-          case Component_Name(name) => name
-          case _ => error("Failed to determine component name from " + quote(archive_name))
-        }
+        Library.try_unsuffix("-src.tar.gz", archive_name)
+          .getOrElse(error("Failed to determine component name from " + quote(archive_name)))
 
+      val Version = """^[^-]+-([^-]+)$""".r
       val version =
         component_name match {
           case Version(version) => version
@@ -64,10 +57,11 @@ object Component_SPASS {
       val archive_path = tmp_dir + Path.basic(archive_name)
       Isabelle_System.download_file(download_url, archive_path, progress = progress)
 
-      Isabelle_System.extract(archive_path, tmp_dir)
-      val source_dir = File.get_dir(tmp_dir, title = download_url)
+      val source_dir = Isabelle_System.new_directory(tmp_dir + Path.explode("src"))
 
-      Isabelle_System.extract(archive_path, component_dir.src, strip = true)
+      for (src <- List(source_dir, component_dir.src)) {
+        Isabelle_System.extract(archive_path, src, strip = true)
+      }
 
 
       /* build */
@@ -85,16 +79,8 @@ object Component_SPASS {
         progress_stdout = progress.echo(_, verbose = true),
         progress_stderr = progress.echo(_, verbose = true)).check
 
-
-      /* install */
-
+      Isabelle_System.copy_file(source_dir + Path.explode("SPASS").platform_exe, platform_dir)
       Isabelle_System.copy_file(source_dir + Path.basic("LICENCE"), component_dir.LICENSE)
-
-      val install_files = List("SPASS")
-      for (name <- install_files ::: install_files.map(_ + ".exe")) {
-        val path = source_dir + Path.basic(name)
-        if (path.is_file) Isabelle_System.copy_file(path, platform_dir)
-      }
 
 
       /* settings */
