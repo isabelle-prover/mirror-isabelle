@@ -186,14 +186,14 @@ export async function activate(context: ExtensionContext) {
 
     /* dynamic output */
 
-    const provider = new Output_View.Provider(context.extensionUri, language_client)
+    const output_provider = new Output_View.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Output_View.view_type, provider))
+      window.registerWebviewViewProvider(Output_View.view_type, output_provider))
 
     language_client.onReady().then(() =>
       {
         language_client.onNotification(LSP.dynamic_output_type,
-          params => provider.update_content(params.content))
+          params => output_provider.update_content(params.content))
       })
 
 
