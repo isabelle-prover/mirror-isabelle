@@ -24,8 +24,8 @@ object Output_View {
     symbol_width
   }
 
-  def get_window_margin(symbol_width: Double): Int = {
-    val width = dom.window.innerWidth / symbol_width
+  def get_window_margin(): Int = {
+    val width = dom.window.innerWidth / get_symbol_width()
     Math.max(width.toInt - 16, 1)
   }
 
@@ -60,9 +60,8 @@ object Output_View {
       })
     }
 
-    val symbol_width = get_symbol_width()
     def update_window_width(): Unit = {
-      vscode.post(JSON.Object("command" -> "resize", "margin" -> get_window_margin(symbol_width)))
+      vscode.post(JSON.Object("command" -> "resize", "margin" -> get_window_margin()))
     }
 
     var timeout: Option[Int] = None
