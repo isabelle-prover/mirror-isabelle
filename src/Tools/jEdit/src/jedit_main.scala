@@ -35,6 +35,8 @@ object JEdit_Main {
 
           GUI.init_lafs()
 
+          Platform.check_jvm_platform()
+
 
           /* ROOTS template */
 

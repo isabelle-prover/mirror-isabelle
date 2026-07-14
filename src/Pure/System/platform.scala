@@ -29,6 +29,16 @@ object Platform {
 
   def jvm_platform: String = family.native
 
+  def check_jvm_platform(): Unit = {
+    val family0 = Platform_Family.parse(Isabelle_Platform.local.ISABELLE_PLATFORM_FAMILY)
+    if (family != family0) {
+      def print(fam: Platform_Family): String = quote(fam.toString) + " (" + fam.native + ")"
+      error("The Java platform is running as " + print(family) +
+        ", but the system is " + print(family0) + ":" +
+        "\nPlease use the correct Isabelle application for " + quote(family0.toString))
+    }
+  }
+
 
   /* platform info */
 
