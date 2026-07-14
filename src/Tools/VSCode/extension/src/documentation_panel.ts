@@ -6,14 +6,14 @@ Isabelle documentation panel as web view.
 "use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
-  CancellationToken, window, workspace } from "vscode"
-import * as lsp from "./lsp"
-import * as webview from "./webview"
-import { commands } from "vscode"
+  CancellationToken, window, workspace, commands } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
 
+import * as LSP from "./lsp"
+import * as Webview from "./webview"
 
-export class Documentation_Panel_Provider implements WebviewViewProvider {
+
+export class Provider implements WebviewViewProvider {
   public static readonly view_type = "isabelle-documentation"
 
   private _view?: WebviewView
@@ -25,11 +25,11 @@ export class Documentation_Panel_Provider implements WebviewViewProvider {
   ) { }
 
   request(language_client: LanguageClient) {
-    if (language_client)  this._language_client.sendNotification(lsp.documentation_request_type)
+    if (language_client)  this._language_client.sendNotification(LSP.documentation_request_type)
   }
 
   setupDocumentation(language_client: LanguageClient) {
-    language_client.onNotification(lsp.documentation_response_type, params =>
+    language_client.onNotification(LSP.documentation_response_type, params =>
       {
         if (!params || !params.sections || !Array.isArray(params.sections)) return
         this._documentation_sections = params.sections
@@ -76,7 +76,7 @@ export class Documentation_Panel_Provider implements WebviewViewProvider {
 
 
   private _get_html(): string {
-    return webview.get_html(
+    return Webview.get_html(
       this._view.webview,
       this._extension_uri.fsPath,
       "Documentation Panel",

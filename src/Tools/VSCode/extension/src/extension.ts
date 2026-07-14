@@ -7,25 +7,26 @@ Isabelle/VSCode extension.
 
 "use strict";
 
-import * as platform from "./platform"
-import * as library from "./library"
-import * as file from "./file"
-import * as vscode_lib from "./vscode_lib"
-import * as decorations from "./decorations"
-import * as preview_panel from "./preview_panel"
-import * as lsp from "./lsp"
-import * as state_panel from "./state_panel"
 import { Uri, TextEditor, ViewColumn, Selection, Position, ExtensionContext, workspace, window,
   commands, ProgressLocation } from "vscode"
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node"
-import { Output_View_Provider } from "./output_view"
-import { Symbols_Panel_Provider } from "./symbol_panel"
-import { Documentation_Panel_Provider } from "./documentation_panel"
-import { Sledgehammer_Panel_Provider } from "./sledgehammer_panel"
-import { register_script_decorations } from "./script_decorations"
+
+import * as Platform from "./platform"
+import * as Library from "./library"
+import * as File from "./file"
+import * as VSCode_Lib from "./vscode_lib"
+import * as Decorations from "./decorations"
+import * as Preview_Panel from "./preview_panel"
+import * as LSP from "./lsp"
+import * as State_Panel from "./state_panel"
+import * as Output_View from "./output_view"
+import * as Symbol_Panel from "./symbol_panel"
+import * as Documentation_Panel from "./documentation_panel"
+import * as Sledgehammer_Panel from "./sledgehammer_panel"
+import * as Script_Decorations from "./script_decorations"
 
 
-let last_caret_update: lsp.Caret_Update = {}
+let last_caret_update: LSP.Caret_Update = {}
 
 
 /* command-line arguments from "isabelle vscode" */
@@ -87,23 +88,23 @@ export async function activate(context: ExtensionContext) {
   /* server */
 
   try {
-    const isabelle_home = library.getenv_strict("ISABELLE_HOME")
+    const isabelle_home = Library.getenv_strict("ISABELLE_HOME")
     const isabelle_tool = isabelle_home + "/bin/isabelle"
-    const args = JSON.parse(library.getenv("ISABELLE_VSCODIUM_ARGS") || "{}")
+    const args = JSON.parse(Library.getenv("ISABELLE_VSCODIUM_ARGS") || "{}")
 
     const server_opts = isabelle_options(args)
     const server_options: ServerOptions =
-      platform.is_windows() ?
-        { command: file.cygwin_bash(),
+      Platform.is_windows() ?
+        { command: File.cygwin_bash(),
           args: ["-l", isabelle_tool, "vscode_server"].concat(server_opts) } :
         { command: isabelle_tool,
           args: ["vscode_server"].concat(server_opts) }
 
     const language_client_options: LanguageClientOptions = {
       documentSelector: [
-        { language: "isabelle", scheme: vscode_lib.file_scheme },
-        { language: "isabelle-ml", scheme: vscode_lib.file_scheme },
-        { language: "bibtex", scheme: vscode_lib.file_scheme }
+        { language: "isabelle", scheme: VSCode_Lib.file_scheme },
+        { language: "isabelle-ml", scheme: VSCode_Lib.file_scheme },
+        { language: "bibtex", scheme: VSCode_Lib.file_scheme }
       ]
     }
 
@@ -121,42 +122,42 @@ export async function activate(context: ExtensionContext) {
 
     /* decorations */
 
-    decorations.setup(context)
+    Decorations.setup(context)
     context.subscriptions.push(
-      workspace.onDidChangeConfiguration(() => decorations.setup(context)),
-      workspace.onDidChangeTextDocument(event => decorations.touch_document(event.document)),
-      window.onDidChangeActiveTextEditor(decorations.update_editor),
-      workspace.onDidCloseTextDocument(decorations.close_document))
+      workspace.onDidChangeConfiguration(() => Decorations.setup(context)),
+      workspace.onDidChangeTextDocument(event => Decorations.touch_document(event.document)),
+      window.onDidChangeActiveTextEditor(Decorations.update_editor),
+      workspace.onDidCloseTextDocument(Decorations.close_document))
 
     language_client.onReady().then(() =>
-      language_client.onNotification(lsp.decoration_type, decorations.apply_decoration))
+      language_client.onNotification(LSP.decoration_type, Decorations.apply_decoration))
 
 
     /* super-/subscript decorations */
 
-    register_script_decorations(context)
+    Script_Decorations.register_script_decorations(context)
 
 
     /* caret handling */
 
     function update_caret() {
       const editor = window.activeTextEditor
-      let caret_update: lsp.Caret_Update = {}
+      let caret_update: LSP.Caret_Update = {}
       if (editor) {
         const uri = editor.document.uri
         const cursor = editor.selection.active
-        if (vscode_lib.is_file(uri) && cursor)
+        if (VSCode_Lib.is_file(uri) && cursor)
           caret_update = { uri: uri.toString(), line: cursor.line, character: cursor.character }
       }
       if (last_caret_update !== caret_update) {
         if (caret_update.uri) {
-          language_client.sendNotification(lsp.caret_update_type, caret_update)
+          language_client.sendNotification(LSP.caret_update_type, caret_update)
         }
         last_caret_update = caret_update
       }
     }
 
-    function goto_file(caret_update: lsp.Caret_Update) {
+    function goto_file(caret_update: LSP.Caret_Update) {
       function move_cursor(editor: TextEditor) {
         const pos = new Position(caret_update.line || 0, caret_update.character || 0)
         editor.selections = [new Selection(pos, pos)]
@@ -165,7 +166,7 @@ export async function activate(context: ExtensionContext) {
       if (caret_update.uri) {
         workspace.openTextDocument(Uri.parse(caret_update.uri)).then(document =>
           {
-            const editor = vscode_lib.find_file_editor(document.uri)
+            const editor = VSCode_Lib.find_file_editor(document.uri)
             const column = editor ? editor.viewColumn : ViewColumn.One
             window.showTextDocument(document, column, !caret_update.focus).then(move_cursor)
           })
@@ -179,27 +180,27 @@ export async function activate(context: ExtensionContext) {
           window.onDidChangeTextEditorSelection(update_caret))
         update_caret()
 
-        language_client.onNotification(lsp.caret_update_type, goto_file)
+        language_client.onNotification(LSP.caret_update_type, goto_file)
       })
 
 
     /* dynamic output */
 
-    const provider = new Output_View_Provider(context.extensionUri, language_client)
+    const provider = new Output_View.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Output_View_Provider.view_type, provider))
+      window.registerWebviewViewProvider(Output_View.Provider.view_type, provider))
 
     language_client.onReady().then(() =>
       {
-        language_client.onNotification(lsp.dynamic_output_type,
+        language_client.onNotification(LSP.dynamic_output_type,
           params => provider.update_content(params.content))
       })
 
     const documentation_provider =
-      new Documentation_Panel_Provider(context.extensionUri, language_client)
+      new Documentation_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
       window.registerWebviewViewProvider(
-        Documentation_Panel_Provider.view_type, documentation_provider))
+        Documentation_Panel.Provider.view_type, documentation_provider))
 
     language_client.onReady().then(() =>
       {
@@ -207,30 +208,30 @@ export async function activate(context: ExtensionContext) {
         documentation_provider.setupDocumentation(language_client)
       })
 
-    const symbols_provider = new Symbols_Panel_Provider(context.extensionUri, language_client)
+    const symbols_provider = new Symbol_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Symbols_Panel_Provider.view_type, symbols_provider)
+      window.registerWebviewViewProvider(Symbol_Panel.Provider.view_type, symbols_provider)
     )
     language_client.onReady().then(() => symbols_provider.request(language_client))
     language_client.onReady().then(() => symbols_provider.setup(language_client))
 
 
     const sledgehammer_provider =
-      new Sledgehammer_Panel_Provider(context.extensionUri, language_client)
+      new Sledgehammer_Panel.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Sledgehammer_Panel_Provider.view_type, sledgehammer_provider)
+      window.registerWebviewViewProvider(Sledgehammer_Panel.Provider.view_type, sledgehammer_provider)
     )
     language_client.onReady().then(() => sledgehammer_provider.request_provers(language_client))
 
     language_client.onReady().then(() =>
       {
-        language_client.onNotification(lsp.sledgehammer_status_type, msg =>
+        language_client.onNotification(LSP.sledgehammer_status_type, msg =>
           sledgehammer_provider.update_status(msg.message))
-        language_client.onNotification(lsp.sledgehammer_output_type, msg =>
+        language_client.onNotification(LSP.sledgehammer_output_type, msg =>
           sledgehammer_provider.update_output(msg))
-        language_client.onNotification(lsp.sledgehammer_insert_type, msg =>
+        language_client.onNotification(LSP.sledgehammer_insert_type, msg =>
           sledgehammer_provider.insert(msg))
-        language_client.onNotification(lsp.sledgehammer_provers_response_type, msg =>
+        language_client.onNotification(LSP.sledgehammer_provers_response_type, msg =>
           sledgehammer_provider.update_provers(msg.provers))
       })
 
@@ -238,18 +239,18 @@ export async function activate(context: ExtensionContext) {
     /* state panel */
 
     context.subscriptions.push(
-      commands.registerCommand("isabelle.state", uri => state_panel.init(uri)))
+      commands.registerCommand("isabelle.state", uri => State_Panel.init(uri)))
 
-    language_client.onReady().then(() => state_panel.setup(context, language_client))
+    language_client.onReady().then(() => State_Panel.setup(context, language_client))
 
 
     /* preview panel */
 
     context.subscriptions.push(
-      commands.registerCommand("isabelle.preview", uri => preview_panel.request(uri, false)),
-      commands.registerCommand("isabelle.preview-split", uri => preview_panel.request(uri, true)))
+      commands.registerCommand("isabelle.preview", uri => Preview_Panel.request(uri, false)),
+      commands.registerCommand("isabelle.preview-split", uri => Preview_Panel.request(uri, true)))
 
-    language_client.onReady().then(() => preview_panel.setup(context, language_client))
+    language_client.onReady().then(() => Preview_Panel.setup(context, language_client))
 
 
     /* spell checker */
@@ -258,15 +259,15 @@ export async function activate(context: ExtensionContext) {
       {
         context.subscriptions.push(
           commands.registerCommand("isabelle.include-word", _uri =>
-            language_client.sendNotification(lsp.include_word_type)),
+            language_client.sendNotification(LSP.include_word_type)),
           commands.registerCommand("isabelle.include-word-permanently", _uri =>
-            language_client.sendNotification(lsp.include_word_permanently_type)),
+            language_client.sendNotification(LSP.include_word_permanently_type)),
           commands.registerCommand("isabelle.exclude-word", _uri =>
-            language_client.sendNotification(lsp.exclude_word_type)),
+            language_client.sendNotification(LSP.exclude_word_type)),
           commands.registerCommand("isabelle.exclude-word-permanently", _uri =>
-            language_client.sendNotification(lsp.exclude_word_permanently_type)),
+            language_client.sendNotification(LSP.exclude_word_permanently_type)),
           commands.registerCommand("isabelle.reset-words", _uri =>
-            language_client.sendNotification(lsp.reset_words_type)))
+            language_client.sendNotification(LSP.reset_words_type)))
       })
 
 

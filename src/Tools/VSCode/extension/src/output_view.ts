@@ -7,12 +7,13 @@ Isabelle output panel as web view.
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
    CancellationToken, window, Position, Selection } from "vscode"
-import * as lsp from "./lsp"
-import * as webview from "./webview"
 import { LanguageClient } from "vscode-languageclient/node"
 
+import * as LSP from "./lsp"
+import * as Webview from "./webview"
 
-export class Output_View_Provider implements WebviewViewProvider {
+
+export class Provider implements WebviewViewProvider {
 
   public static readonly view_type = "isabelle-output"
 
@@ -43,7 +44,7 @@ export class Output_View_Provider implements WebviewViewProvider {
             break
           case "resize":
             this._language_client.sendNotification(
-              lsp.output_set_margin_type, { margin: message.margin })
+              LSP.output_set_margin_type, { margin: message.margin })
             break
         }
       })
@@ -59,7 +60,7 @@ export class Output_View_Provider implements WebviewViewProvider {
   }
 
   private _get_html(content: string): string {
-    return webview.get_html(this._view.webview, this._extension_uri.fsPath, "Output",
+    return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Output",
       "output_view.js", "vscode.css", content)
   }
 }

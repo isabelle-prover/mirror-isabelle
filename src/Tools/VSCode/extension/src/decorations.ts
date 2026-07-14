@@ -5,12 +5,13 @@ PIDE document decorations.
 
 "use strict";
 
-import * as timers from "timers"
-import {window, OverviewRulerLane, Uri} from "vscode"
-import { Range, DecorationOptions, DecorationRenderOptions,
+import { Range, DecorationOptions, DecorationRenderOptions, window, OverviewRulerLane, Uri,
   TextDocument, TextEditor, TextEditorDecorationType, ExtensionContext } from "vscode"
-import { Document_Decorations } from "./lsp"
-import * as vscode_lib from "./vscode_lib"
+
+import * as Timers from "timers"
+
+import * as LSP from "./lsp"
+import * as VSCode_Lib from "./vscode_lib"
 
 
 /* known decoration types */
@@ -88,28 +89,28 @@ export function setup(context: ExtensionContext) {
 
   function background(color: string): TextEditorDecorationType {
     return decoration(
-      { light: { backgroundColor: vscode_lib.get_color(color, true) },
-        dark: { backgroundColor: vscode_lib.get_color(color, false) } })
+      { light: { backgroundColor: VSCode_Lib.get_color(color, true) },
+        dark: { backgroundColor: VSCode_Lib.get_color(color, false) } })
   }
 
   function text_color(color: string): TextEditorDecorationType {
     return decoration(
-      { light: { color: vscode_lib.get_color(color, true) },
-        dark: { color: vscode_lib.get_color(color, false) } })
+      { light: { color: VSCode_Lib.get_color(color, true) },
+        dark: { color: VSCode_Lib.get_color(color, false) } })
   }
 
   function text_overview_color(color: string): TextEditorDecorationType {
     return decoration(
       { overviewRulerLane: OverviewRulerLane.Right,
-        light: { overviewRulerColor: vscode_lib.get_color(color, true) },
-        dark: { overviewRulerColor: vscode_lib.get_color(color, false) } })
+        light: { overviewRulerColor: VSCode_Lib.get_color(color, true) },
+        dark: { overviewRulerColor: VSCode_Lib.get_color(color, false) } })
   }
 
   function bottom_border(width: string, style: string, color: string): TextEditorDecorationType {
     const border = `${width} none; border-bottom-style: ${style}; border-color: `
     return decoration(
-      { light: { border: border + vscode_lib.get_color(color, true) },
-        dark: { border: border + vscode_lib.get_color(color, false) } })
+      { light: { border: border + VSCode_Lib.get_color(color, true) },
+        dark: { border: border + VSCode_Lib.get_color(color, false) } })
   }
 
 
@@ -160,7 +161,7 @@ export function close_document(document: TextDocument) {
   document_decorations.delete(document.uri.toString())
 }
 
-export function apply_decoration(decorations: Document_Decorations) {
+export function apply_decoration(decorations: LSP.Document_Decorations) {
   const uri = Uri.parse(decorations.uri)
 
   for (const decoration of decorations.entries) {
@@ -217,7 +218,7 @@ function update_touched_documents() {
 }
 
 export function touch_document(document: TextDocument) {
-  if (touched_timer) timers.clearTimeout(touched_timer)
+  if (touched_timer) Timers.clearTimeout(touched_timer)
   touched_documents.add(document)
-  touched_timer = timers.setTimeout(update_touched_documents, 1000)
+  touched_timer = Timers.setTimeout(update_touched_documents, 1000)
 }

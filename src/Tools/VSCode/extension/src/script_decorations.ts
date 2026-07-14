@@ -7,17 +7,18 @@ Non-unicode Isabelle symbols as text decorations.
 
 import { DecorationRangeBehavior, ExtensionContext, Range,
   TextDocument, TextEditor, window, workspace } from "vscode"
-import * as symbol from "./symbol"
+
+import * as Symbol from "./symbol"
 
 
 const arrows = {
-  sub: symbol.control.sub.decoded,
-  sup: symbol.control.sup.decoded,
-  bold: symbol.control.bold.decoded,
-  bsub: symbol.control.bsub.decoded,
-  esub: symbol.control.esub.decoded,
-  bsup: symbol.control.bsup.decoded,
-  esup: symbol.control.esup.decoded
+  sub: Symbol.control.sub.decoded,
+  sup: Symbol.control.sup.decoded,
+  bold: Symbol.control.bold.decoded,
+  bsub: Symbol.control.bsub.decoded,
+  esub: Symbol.control.esub.decoded,
+  bsup: Symbol.control.bsup.decoded,
+  esup: Symbol.control.esup.decoded
 }
 const no_hide_list = [" ", "\n", "\r", ...Object.values(arrows)]
 

@@ -7,8 +7,9 @@ Preview panel via HTML webview inside VSCode.
 
 import { ExtensionContext, Uri, window, ViewColumn, WebviewPanel } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
-import * as vscode_lib from "./vscode_lib"
-import * as lsp from "./lsp"
+
+import * as LSP from "./lsp"
+import * as VSCode_Lib from "./vscode_lib"
 
 
 let language_client: LanguageClient
@@ -36,7 +37,7 @@ let panel: Panel
 
 export function setup(_context: ExtensionContext, client: LanguageClient) {
   language_client = client
-  language_client.onNotification(lsp.preview_response_type, params =>
+  language_client.onNotification(LSP.preview_response_type, params =>
     {
       if (!panel) { panel = new Panel(params.column) }
       else panel.reveal(params.column)
@@ -47,8 +48,8 @@ export function setup(_context: ExtensionContext, client: LanguageClient) {
 export function request(uri?: Uri, split: boolean = false) {
   const document_uri = uri || window.activeTextEditor.document.uri
   if (language_client) {
-    language_client.sendNotification(lsp.preview_request_type,
+    language_client.sendNotification(LSP.preview_request_type,
       { uri: document_uri.toString(),
-        column: vscode_lib.adjacent_editor_column(window.activeTextEditor, split) })
+        column: VSCode_Lib.adjacent_editor_column(window.activeTextEditor, split) })
   }
 }

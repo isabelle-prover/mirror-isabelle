@@ -5,18 +5,20 @@ File-system operations (see Pure/General/file.scala)
 
 "use strict";
 
-import * as path from "path"
 import { readFile } from "fs/promises"
 import { readFileSync } from "fs"
 import { Buffer } from "buffer"
-import * as platform from "./platform"
-import * as library from "./library"
+
+import * as Path from "path"
+
+import * as Platform from "./platform"
+import * as Library from "./library"
 
 
 /* Windows/Cygwin */
 
 export function cygwin_root(): string {
-  if (platform.is_windows()) { return library.getenv_strict("CYGWIN_ROOT") }
+  if (Platform.is_windows()) { return Library.getenv_strict("CYGWIN_ROOT") }
   else { return "" }
 }
 
@@ -32,10 +34,10 @@ function slashes(s: string): string {
 }
 
 export function standard_path(platform_path: string): string {
-  if (platform.is_windows()) {
+  if (Platform.is_windows()) {
     const backslashes = platform_path.replace(/\//g, "\\")
 
-    const root_pattern = new RegExp(library.escape_regex(cygwin_root()) + "(?:\\\\+|\\z)(.*)", "i")
+    const root_pattern = new RegExp(Library.escape_regex(cygwin_root()) + "(?:\\\\+|\\z)(.*)", "i")
     const root_match = backslashes.match(root_pattern)
 
     const drive_pattern = new RegExp("([a-zA-Z]):\\\\*(.*)")
@@ -66,7 +68,7 @@ export function platform_path(standard_path: string): string {
   function add(s: string): void { _result.push(s) }
   function separator(): void {
     const n = _result.length
-    if (n > 0 && _result[n - 1] !== path.sep) { add(path.sep) }
+    if (n > 0 && _result[n - 1] !== Path.sep) { add(Path.sep) }
   }
 
 
@@ -75,7 +77,7 @@ export function platform_path(standard_path: string): string {
   let rest = standard_path
   const is_root = standard_path.startsWith("/")
 
-  if (platform.is_windows()) {
+  if (Platform.is_windows()) {
     const cygdrive_pattern = new RegExp("/cygdrive/([a-zA-Z])($|/.*)")
     const cygdrive_match = standard_path.match(cygdrive_pattern)
 
@@ -88,14 +90,14 @@ export function platform_path(standard_path: string): string {
       clear()
       add(drive)
       add(":")
-      add(path.sep)
+      add(Path.sep)
     }
     else if (named_root_match) {
       const root = named_root_match[1]
       rest = named_root_match[2]
       clear()
-      add(path.sep)
-      add(path.sep)
+      add(Path.sep)
+      add(Path.sep)
       add(root)
     }
     else if (is_root) {
@@ -105,7 +107,7 @@ export function platform_path(standard_path: string): string {
   }
   else if (is_root) {
     clear()
-    add(path.sep)
+    add(Path.sep)
   }
 
 

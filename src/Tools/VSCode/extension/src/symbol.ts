@@ -9,8 +9,8 @@ Isabelle text symbols versus UTF-8/Unicode encoding. See also:
 
 "use strict";
 
-import * as file from "./file"
-import * as library from "./library"
+import * as File from "./file"
+import * as Library from "./library"
 
 
 /* ASCII characters */
@@ -81,10 +81,10 @@ export class Symbols {
 }
 
 function load_symbols(): Entry[] {
-  const vscodium_resources = library.getenv("ISABELLE_VSCODIUM_RESOURCES")
+  const vscodium_resources = Library.getenv("ISABELLE_VSCODIUM_RESOURCES")
   if (vscodium_resources) {
     const path = vscodium_resources + "/vscodium/out/vs/base/browser/ui/fonts/symbols.json"
-    return file.read_json_sync(file.platform_path(path))
+    return File.read_json_sync(File.platform_path(path))
   }
   else { return [] }
 }

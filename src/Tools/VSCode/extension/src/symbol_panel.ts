@@ -8,18 +8,18 @@ Isabelle symbols panel as web view.
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
   CancellationToken, window } from "vscode"
-import * as lsp from "./lsp"
-import * as webview from "./webview"
 import { LanguageClient } from "vscode-languageclient/node"
-import * as symbol from "./symbol"
-import { Entry } from "./symbol"
+
+import * as LSP from "./lsp"
+import * as Symbol from "./symbol"
+import * as Webview from "./webview"
 
 
-export class Symbols_Panel_Provider implements WebviewViewProvider {
+export class Provider implements WebviewViewProvider {
   public static readonly view_type = "isabelle-symbols"
 
   private _view?: WebviewView
-  private _grouped_symbols: { [key: string]: Entry[] } = {}
+  private _grouped_symbols: { [key: string]: Symbol.Entry[] } = {}
   private _abbrevs: [string, string][] = []
 
   constructor(
@@ -28,12 +28,12 @@ export class Symbols_Panel_Provider implements WebviewViewProvider {
   ) { }
 
   request(language_client: LanguageClient) {
-    if (language_client) { this._language_client.sendNotification(lsp.abbrevs_request_type) }
+    if (language_client) { this._language_client.sendNotification(LSP.abbrevs_request_type) }
   }
 
   setup(language_client: LanguageClient) {
-    language_client.onNotification(lsp.abbrevs_response_type, params => {
-      this._grouped_symbols = this._group_symbols(symbol.symbols.entries)
+    language_client.onNotification(LSP.abbrevs_response_type, params => {
+      this._grouped_symbols = this._group_symbols(Symbol.symbols.entries)
       this._abbrevs = params.abbrevs ?? []
       if (this._view) { this._update_webview() }
     })
@@ -70,7 +70,7 @@ export class Symbols_Panel_Provider implements WebviewViewProvider {
     if (!selected_text.trim() && !selection.isEmpty) return
 
     const control_symbols: { [key: string]: string } = {}
-    symbol.control_render.forEach(symbol => control_symbols[symbol.name] = symbol.decoded)
+    Symbol.control_render.forEach(symbol => control_symbols[symbol.name] = symbol.decoded)
 
     if (!control_symbols[action]) return
     const control_symbol = control_symbols[action]
@@ -116,7 +116,7 @@ export class Symbols_Panel_Provider implements WebviewViewProvider {
     if (!selected_text.trim() && !selection.isEmpty) return
 
     const control_symbols: { [key: string]: string } = {}
-    symbol.control_render.forEach(symbol => control_symbols[symbol.decoded] = symbol.name)
+    Symbol.control_render.forEach(symbol => control_symbols[symbol.decoded] = symbol.name)
 
     const all_control_symbols = Object.keys(control_symbols)
 
@@ -140,8 +140,8 @@ export class Symbols_Panel_Provider implements WebviewViewProvider {
     })
   }
 
-  private _group_symbols(symbols: Entry[]): { [key: string]: Entry[] } {
-    const grouped_symbols: { [key: string]: Entry[] } = {}
+  private _group_symbols(symbols: Symbol.Entry[]): { [key: string]: Symbol.Entry[] } {
+    const grouped_symbols: { [key: string]: Symbol.Entry[] } = {}
     for (const symbol of symbols) {
       if (symbol.groups && Array.isArray(symbol.groups)) {
         for (const group of symbol.groups) {
@@ -154,7 +154,7 @@ export class Symbols_Panel_Provider implements WebviewViewProvider {
   }
 
   private _get_html(): string {
-    return webview.get_html(this._view.webview, this._extension_uri.fsPath, "Symbols Panel",
+    return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Symbols Panel",
       "symbols.js", "symbols.css", '<div id="symbols-container"></div>')
   }
 }

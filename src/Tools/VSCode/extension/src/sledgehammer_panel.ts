@@ -7,14 +7,14 @@ Control panel for Sledgehammer.
 "use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext, CancellationToken,
-  window } from "vscode"
-import * as lsp from "./lsp"
-import * as webview from "./webview"
+  window, Position } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
-import { Position } from "vscode"
+
+import * as LSP from "./lsp"
+import * as Webview from "./webview"
 
 
-export class Sledgehammer_Panel_Provider implements WebviewViewProvider{
+export class Provider implements WebviewViewProvider{
   public static readonly view_type = "isabelle-sledgehammer"
   private _view?: WebviewView
 
@@ -36,7 +36,7 @@ export class Sledgehammer_Panel_Provider implements WebviewViewProvider{
 
   request_provers(language_client: LanguageClient) {
     if (language_client) {
-      this._language_client.sendNotification(lsp.sledgehammer_provers_request_type)
+      this._language_client.sendNotification(LSP.sledgehammer_provers_request_type)
     }
   }
 
@@ -46,22 +46,22 @@ export class Sledgehammer_Panel_Provider implements WebviewViewProvider{
         const editor = window.activeTextEditor
         const pos = editor?.selection.active
         if (editor && pos) {
-          this._language_client.sendNotification(lsp.caret_update_type,
+          this._language_client.sendNotification(LSP.caret_update_type,
             { uri: editor.document.uri.toString(), line: pos.line, character: pos.character })
         }
         switch (message.command) {
           case "apply":
-            this._language_client.sendNotification(lsp.sledgehammer_request_type,
+            this._language_client.sendNotification(LSP.sledgehammer_request_type,
               { provers: message.provers, isar: message.isar, try0: message.try0 })
             break
           case "cancel":
-            this._language_client.sendNotification(lsp.sledgehammer_cancel_type)
+            this._language_client.sendNotification(LSP.sledgehammer_cancel_type)
             break
           case "locate":
-            this._language_client.sendNotification(lsp.sledgehammer_locate_type)
+            this._language_client.sendNotification(LSP.sledgehammer_locate_type)
             break
           case "sendback":
-            this._language_client.sendNotification(lsp.sledgehammer_sendback_type,
+            this._language_client.sendNotification(LSP.sledgehammer_sendback_type,
               { text: message.text })
             break
         }
@@ -88,14 +88,14 @@ export class Sledgehammer_Panel_Provider implements WebviewViewProvider{
     }
   }
 
-  public update_output(result: lsp.Sledgehammer_Output): void {
+  public update_output(result: LSP.Sledgehammer_Output): void {
     if (this._view) {
       this._view.webview.postMessage({ command: "result", content: result.content })
     }
   }
 
   private _get_html(): string {
-    return webview.get_html(this._view.webview, this._extension_uri.fsPath, "Sledgehammer Panel",
+    return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Sledgehammer Panel",
       "sledgehammer.js", "sledgehammer.css")
   }
 }
