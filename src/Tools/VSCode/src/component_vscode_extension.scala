@@ -246,7 +246,7 @@ object Symbol_Provider {
         val manifest_text2 =
           manifest_text + cat_lines(
             Isabelle_Fonts.fonts().map(e => "fonts/" + e.path.file_name) :::
-              modules.map(m => "media/" + m.js_path.file_name))
+              scalajs_result.outputs.map(m => "media/" + m.file_name))
         val manifest_entries2 = split_lines(manifest_text2).filter(_.nonEmpty)
 
         val manifest_shasum: Shasum = {

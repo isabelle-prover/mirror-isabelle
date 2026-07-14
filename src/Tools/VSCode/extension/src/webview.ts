@@ -42,7 +42,7 @@ export function get_html(
         <title>${title}</title>
       </head>
       <body>
-        <script src="${script_uri}"></script>
+        <script type="module" src="${script_uri}"></script>
         ${content}
       </body>
     </html>`

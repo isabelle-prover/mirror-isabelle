@@ -18,7 +18,7 @@ import scala.scalajs.js.JSConverters._
 
 import org.scalajs.logging
 import org.scalajs.linker.{PathIRContainer, StandardImpl, PathOutputDirectory}
-import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer}
+import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer, ModuleKind}
 
 import dotty.tools.dotc.Driver
 import dotty.tools.dotc.interfaces.{Diagnostic, SimpleReporter}
@@ -108,7 +108,7 @@ object Scalajs {
 
       if (result.hasErrors) Result(msgs.toList)
       else {
-        val linker = StandardImpl.linker(StandardConfig())
+        val linker = StandardImpl.linker(StandardConfig().withModuleKind(ModuleKind.ESModule))
         val cache = StandardImpl.irFileCache().newCache
 
         val logger =
