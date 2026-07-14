@@ -152,37 +152,6 @@
                     "when": "editorLangId == bibtex",
                     "command": "isabelle.preview-split",
                     "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle",
-                    "command": "isabelle.openSymbolsPanel",
-                    "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle-ml",
-                    "command": "isabelle.openSymbolsPanel",
-                    "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle",
-                    "command": "isabelle.openDocumentationPanel",
-                    "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle-ml",
-                    "command": "isabelle.openDocumentationPanel",
-                    "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle",
-                    "command": "isabelle.openSledgehammerPanel",
-                    "group": "navigation"
-                },
-                {
-                    "when": "editorLangId == isabelle-ml",
-                    "command": "isabelle.openSledgehammerPanel",
-                    "group": "navigation"
-
                 }
             ],
             "explorer/context": [
