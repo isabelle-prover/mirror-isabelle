@@ -195,4 +195,40 @@ object Scalajs {
       }
     }
   }
+
+
+  /** registered functions **/
+
+  abstract class Fun_Any {
+    def invoke(arg: Any): Unit
+    val function = Functions.register(this)
+  }
+
+  abstract class Fun_Unit extends Fun_Any {
+    def apply(): Unit
+    def invoke(u: Any): Unit = apply()
+  }
+
+  abstract class Fun[A] extends Fun_Any {
+    def apply(a: A): Unit
+    def invoke(u: Any): Unit = apply(u.asInstanceOf[A])
+  }
+
+  object Functions {
+    private val functions = mutable.Map.empty[String, js.Function1[Any, Unit]]
+    if (Platform.is_scalajs) js.Dynamic.global.window.isabelle_functions = functions
+
+    def lookup(name: String): String = "window.isabelle_functions('" + name + "')"
+
+    def register(fun: Fun_Any): Function = {
+      val name = fun.class_name.replacing("." -> "$")
+      if (Platform.is_scalajs) functions.update(name, { arg => fun.invoke(arg) })
+      new Function(name)
+    }
+  }
+
+  class Function private[Scalajs](val name: String) {
+    override def toString: String = name
+    def apply(args: String*): String = Functions.lookup(name) + args.mkString("(", ", ", ")")
+  }
 }
