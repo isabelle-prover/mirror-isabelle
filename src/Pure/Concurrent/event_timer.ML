@@ -118,7 +118,7 @@ fun manager_loop () =
       (case next_event (Time.now (), ML_Heap.gc_now ()) requests of
         SOME (event, requests') =>
           let
-            val _ = Exn.capture_body event;  (*sic!*)
+            val _ = Exn.capture_trace Output.system_message event ();
             val state' = make_state (requests', status, manager);
           in SOME (true, state') end
       | NONE =>
