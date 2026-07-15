@@ -940,6 +940,8 @@ by (rule Eq_FalseI) auto
 
 subsubsection \<open>\<open>@\<close> -- append\<close>
 
+named_theorems append_eq_iffs "iffs for decomposing equations involving (@) - may create new vars"
+
 global_interpretation append: monoid append Nil
 proof
   fix xs ys zs :: "'a list"
@@ -970,7 +972,7 @@ lemma append_eq_append_conv [simp]:
   \<Longrightarrow> (xs@us = ys@vs) = (xs=ys \<and> us=vs)"
   by (induct xs arbitrary: ys; case_tac ys; force)
 
-lemma append_eq_append_conv2: "(xs @ ys = zs @ ts) =
+lemma append_eq_append_conv2[append_eq_iffs]: "(xs @ ys = zs @ ts) =
   (\<exists>us. xs = zs @ us \<and> us @ ys = ts \<or> xs @ us = zs \<and> ys = us @ ts)"
 proof (induct xs arbitrary: ys zs ts)
   case (Cons x xs)
@@ -1010,11 +1012,11 @@ by (simp add: tl_append split: list.split)
 lemma tl_append_if: "tl (xs @ ys) = (if xs = [] then tl ys else tl xs @ ys)"
 by (simp)
 
-lemma Cons_eq_append_conv: "x#xs = ys@zs =
+lemma Cons_eq_append_conv[append_eq_iffs]: "x#xs = ys@zs =
  (ys = [] \<and> x#xs = zs \<or> (\<exists>ys'. x#ys' = ys \<and> xs = ys'@zs))"
 by(cases ys) auto
 
-lemma append_eq_Cons_conv: "(ys@zs = x#xs) =
+lemma append_eq_Cons_conv[append_eq_iffs]: "(ys@zs = x#xs) =
  (ys = [] \<and> zs = x#xs \<or> (\<exists>ys'. ys = x#ys' \<and> ys'@zs = xs))"
 by(cases ys) auto
 
@@ -1035,6 +1037,7 @@ lemma Cons_eq_appendI: "\<lbrakk>x # xs1 = ys; xs = xs1 @ zs\<rbrakk> \<Longrigh
 
 lemma append_eq_appendI: "\<lbrakk>xs @ xs1 = zs; ys = xs1 @ us\<rbrakk> \<Longrightarrow> xs @ ys = zs @ us"
   by auto
+
 
 
 text \<open>
@@ -1154,7 +1157,7 @@ next
   with xs show ?case by simp
 qed
 
-lemma map_eq_append_conv:
+lemma map_eq_append_conv[append_eq_iffs]:
   "map f xs = ys @ zs \<longleftrightarrow> (\<exists>us vs. xs = us @ vs \<and> ys = map f us \<and> zs = map f vs)"
 proof(induction xs arbitrary: ys)
   case Nil
@@ -1179,6 +1182,8 @@ next
     then show ?L using IH map_eq_Cons_conv[of f "x # xs" "f x" "map f xs"] by force
   qed
 qed
+
+lemmas append_eq_map_conv[append_eq_iffs] = map_eq_append_conv[THEN eq_iff_swap]
 
 lemma map_inj_on:
   assumes map: "map f xs = map f ys" and inj: "inj_on f (set xs Un set ys)"
@@ -1532,7 +1537,7 @@ lemma set_minus_filter_out:
 lemma append_Cons_eq_iff:
   "\<lbrakk> x \<notin> set xs; x \<notin> set ys \<rbrakk> \<Longrightarrow>
    xs @ x # ys = xs' @ x # ys' \<longleftrightarrow> (xs = xs' \<and> ys = ys')"
-by(auto simp: append_eq_Cons_conv Cons_eq_append_conv append_eq_append_conv2)
+by(auto simp: append_eq_iffs)
 
 
 subsubsection \<open>\<^const>\<open>concat\<close>\<close>
@@ -1616,8 +1621,6 @@ next
     then show ?L by (auto simp add: map_concat)
   qed
 qed
-
-lemmas append_eq_map_conv = map_eq_append_conv[THEN eq_iff_swap]
 
 simproc_setup list_neq ("(xs::'a list) = ys") = \<open>
 (*
@@ -2331,6 +2334,14 @@ next
   case Suc
   then show ?case by (cases xs) simp_all
 qed
+
+lemma take_cong_le:
+  "take n xs = take n ys \<Longrightarrow> m \<le> n \<Longrightarrow> take m xs = take m ys"
+by (metis min_def take_take)
+
+lemma drop_cong_le:
+  "drop n xs = drop n ys \<Longrightarrow> n \<le> m \<Longrightarrow> drop m xs = drop m ys"
+using drop_drop[of "m-n" n xs] drop_drop[of "m-n" n ys] by simp
 
 lemma take_map: "take n (map f xs) = map f (take n xs)"
 proof (induct n arbitrary: xs)
