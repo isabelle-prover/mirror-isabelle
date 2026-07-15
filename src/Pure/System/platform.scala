@@ -128,4 +128,6 @@ object Platform {
   /* JVM name */
 
   val jvm_name: String = Isabelle_System.get_property("java.vm.name")
+
+  def is_scalajs: Boolean = jvm_name == "Scala.js"
 }
