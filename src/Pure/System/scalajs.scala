@@ -25,7 +25,7 @@ import dotty.tools.dotc.interfaces.{Diagnostic, SimpleReporter}
 
 
 object Scalajs {
-  /* compilation */
+  /** compilation **/
 
   final case class Module(name: String, class_name: String, main: String = "main") {
     def js_path: Path = Path.basic(name).ext("js")
@@ -155,7 +155,7 @@ object Scalajs {
   }
 
 
-  /* json conversions */
+  /** json conversions **/
 
   object JSON {
     def apply(json: isabelle.JSON.T): js.Any =
