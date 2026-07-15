@@ -10,10 +10,10 @@ package isabelle
 object Platform {
   /* platform family */
 
-  val is_windows: Boolean = isabelle.setup.Environment.is_windows()
-  val is_linux: Boolean = isabelle.setup.Environment.is_linux()
-  val is_macos: Boolean = isabelle.setup.Environment.is_macos()
-  val is_unix: Boolean = is_linux || is_macos
+  def is_windows: Boolean = isabelle.setup.Environment.is_windows()
+  def is_linux: Boolean = isabelle.setup.Environment.is_linux()
+  def is_macos: Boolean = isabelle.setup.Environment.is_macos()
+  def is_unix: Boolean = is_linux || is_macos
 
   def is_arm: Boolean = cpu_arch.startsWith("arm")
 
