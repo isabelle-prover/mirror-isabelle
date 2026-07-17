@@ -83,6 +83,7 @@ object Thy_Syntax {
         if (update_header) {
           val node1 = node.update_header(header)
           if (node.header.imports_no_pos != node1.header.imports_no_pos ||
+              node.header.options != node1.header.options ||
               node.header.keywords != node1.header.keywords ||
               node.header.abbrevs != node1.header.abbrevs ||
               node.header.errors != node1.header.errors) syntax_changed0 += name
