@@ -33,36 +33,33 @@ object Thy_Header {
   val AND = "and"
   val BEGIN = "begin"
 
-  val bootstrap_header: Keywords =
-    List(
-      ("%", Keyword.Spec()),
-      ("(", Keyword.Spec()),
-      (")", Keyword.Spec()),
-      (",", Keyword.Spec()),
-      ("::", Keyword.Spec()),
-      ("=", Keyword.Spec()),
-      (AND, Keyword.Spec()),
-      (BEGIN, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
-      (IMPORTS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
-      (KEYWORDS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
-      (ABBREVS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
-      (CHAPTER, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (SECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (SUBSECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (SUBSUBSECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (PARAGRAPH, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (SUBPARAGRAPH, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
-      (TEXT, Keyword.Spec(kind = Keyword.DOCUMENT_BODY)),
-      (TXT, Keyword.Spec(kind = Keyword.DOCUMENT_BODY)),
-      (TEXT_RAW, Keyword.Spec(kind = Keyword.DOCUMENT_RAW)),
-      (THEORY, Keyword.Spec(kind = Keyword.THY_BEGIN, tags = List("theory"))),
-      ("ML", Keyword.Spec(kind = Keyword.THY_DECL, tags = List("ML"))))
-
-  val bootstrap_keywords: Keyword.Keywords =
-    Keyword.Keywords.empty.add_keywords(bootstrap_header)
-
   val bootstrap_syntax: Outer_Syntax =
-    Outer_Syntax.empty.add_keywords(bootstrap_header)
+    Outer_Syntax.empty.add_keywords(
+      List(
+        ("%", Keyword.Spec()),
+        ("(", Keyword.Spec()),
+        (")", Keyword.Spec()),
+        (",", Keyword.Spec()),
+        ("::", Keyword.Spec()),
+        ("=", Keyword.Spec()),
+        (AND, Keyword.Spec()),
+        (BEGIN, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
+        (IMPORTS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
+        (KEYWORDS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
+        (ABBREVS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
+        (CHAPTER, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (SECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (SUBSECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (SUBSUBSECTION, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (PARAGRAPH, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (SUBPARAGRAPH, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
+        (TEXT, Keyword.Spec(kind = Keyword.DOCUMENT_BODY)),
+        (TXT, Keyword.Spec(kind = Keyword.DOCUMENT_BODY)),
+        (TEXT_RAW, Keyword.Spec(kind = Keyword.DOCUMENT_RAW)),
+        (THEORY, Keyword.Spec(kind = Keyword.THY_BEGIN, tags = List("theory"))),
+        ("ML", Keyword.Spec(kind = Keyword.THY_DECL, tags = List("ML")))))
+
+  def bootstrap_keywords: Keyword.Keywords = bootstrap_syntax.keywords
 
 
   /* file name vs. theory name */
