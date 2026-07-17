@@ -90,6 +90,7 @@ object Document {
 
     sealed case class Header(
       imports_pos: List[(Name, Position.T)] = Nil,
+      options: Options.Update = Nil,
       keywords: Thy_Header.Keywords = Nil,
       abbrevs: Thy_Header.Abbrevs = Nil,
       errors: List[String] = Nil

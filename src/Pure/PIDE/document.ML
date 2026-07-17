@@ -84,7 +84,7 @@ fun make_perspective (required, command_ids, overlays) : perspective =
   overlays = Inttab.make_list overlays};
 
 val no_header: node_header =
-  {master = "", header = Thy_Header.make ("", Position.none) [] [], errors = []};
+  {master = "", header = Thy_Header.make ("", Position.none) [] [] [], errors = []};
 
 val empty_perspective = make_perspective (false, [], []);
 
@@ -120,24 +120,29 @@ fun set_header master header errors =
 
 fun get_header (Node {header, ...}) = header;
 
+val header_options = map (apply2 #1) o #options o #header o get_header;
+
 fun set_keywords keywords =
   map_node (fn (header, _, perspective, entries, result, consolidated) =>
     (header, keywords, perspective, entries, result, consolidated));
 
 fun read_header node span =
   let
-    val (name, imports0) =
+    val (name, imports0, options0) =
       (case get_header node of
-        {errors = [], header = {name = (name, _), imports, ...}, ...} => (name, imports)
+        {errors = [], header = {name = (name, _), imports, options, ...}, ...} =>
+          (name, imports, options)
       | {errors, ...} =>
           cat_lines errors |>
           (case Position.id_of (Position.thread_data ()) of
             NONE => I
           | SOME id => Protocol_Message.command_positions_yxml id)
           |> error);
-    val {name = (_, pos), imports = imports1, keywords} = Thy_Header.read_tokens Position.none span;
+    val {name = (_, pos), imports = imports1, options = options1, keywords} =
+      Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
-  in Thy_Header.make (name, pos) imports keywords end;
+    val options = (map #1 options0 ~~ map #2 options1) handle ListPair.UnequalLengths => options0;
+  in Thy_Header.make (name, pos) imports options keywords end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;
 
@@ -682,8 +687,9 @@ fun last_common keywords the_command_name node_required node0 node =
                   val visible = command_visible node command_id;
                   val overlays = command_overlays node command_id;
                   val command_name = the_command_name command_id;
+                  val opts = header_options node;
                 in
-                  (case Command.print keywords visible overlays command_name eval prints of
+                  (case Command.print opts keywords visible overlays command_name eval prints of
                     SOME prints' => assign_update_new (command_id, SOME (eval, prints'))
                   | NONE => I)
                 end
@@ -711,10 +717,12 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val blobs = map (resolve_blob state) blob_digests;
       val span = Lazy.force span0;
 
+      val opts = header_options node;
       val eval' =
-        Command.eval keywords (master_directory node) (fn () => the_default illegal_init init span)
+        Command.eval opts keywords (master_directory node)
+          (fn () => the_default illegal_init init span)
           (blobs, blobs_index) command_id' span (#1 (#2 command_exec));
-      val prints' = perhaps (Command.print keywords visible overlays command_name eval') [];
+      val prints' = perhaps (Command.print opts keywords visible overlays command_name eval') [];
       val exec' = (eval', prints');
 
       val assign_update' = assign_update_new (command_id', SOME exec') assign_update;

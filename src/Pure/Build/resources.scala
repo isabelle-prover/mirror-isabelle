@@ -223,7 +223,7 @@ class Resources(
             }
             else (name, pos)
           })
-        Document.Node.Header(imports, header.keywords, header.abbrevs)
+        Document.Node.Header(imports, header.options, header.keywords, header.abbrevs)
       }
       catch { case exn: Throwable => Document.Node.bad_header(Exn.message(exn)) }
     }

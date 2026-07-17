@@ -346,7 +346,7 @@ fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keyw
               Context_Position.reports_global thy [(put_id pos, Theory.get_markup thy)])) ();
       in () end;
 
-    val header = Thy_Header.make (name, put_id header_pos) imports keywords;
+    val header = Thy_Header.make (name, put_id header_pos) imports [] keywords;
     val (theory, present) =
       Options.with_default_update opts (fn () =>
         eval_thy loading_theory dir header text_pos text
@@ -361,10 +361,12 @@ fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keyw
 
 fun check_thy_deps dir name =
   (case lookup_theory name of
-    SOME thy => (NONE, Position.none, Resources.imports_of thy, [])
+    SOME thy => (NONE, Position.none, Resources.imports_of thy, [], [])
   | NONE =>
-      let val {thy_path, text, theory_pos, imports, keywords} = Resources.check_thy dir name
-      in (SOME (thy_path, text), theory_pos, imports, keywords) end);
+      let
+        val {thy_path, text, theory_pos, imports, options, keywords} =
+          Resources.check_thy dir name;
+      in (SOME (thy_path, text), theory_pos, imports, options, keywords) end);
 
 fun task_finished (Task _) = false
   | task_finished (Finished _) = true;
@@ -383,8 +385,8 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
         let
           val _ = member (op =) initiators theory_name andalso error (cycle_msg initiators);
 
-          val (load, theory_pos, imports, keywords) = check_thy_deps master_dir theory_name
-            handle ERROR msg =>
+          val (load, theory_pos, imports, header_options, keywords) =
+            check_thy_deps master_dir theory_name handle ERROR msg =>
               cat_error msg
                 ("The error(s) above occurred for theory " ^ quote theory_name ^
                   Position.here require_pos ^ required_by "\n" initiators);
@@ -404,8 +406,10 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
           val task =
             if all_current then Finished (get_theory theory_name)
             else
-              Task (parents,
-                load_thy initiators (the load) ((theory_name, theory_pos), theory_opts) imports keywords);
+              let
+                val opts = map (apply2 fst) header_options @ theory_opts;
+                val thy = ((theory_name, theory_pos), opts);
+              in Task (parents, load_thy initiators (the load) thy imports keywords) end;
 
           val tasks'' = new_entry theory_name parents task tasks';
         in (all_current, tasks'') end)

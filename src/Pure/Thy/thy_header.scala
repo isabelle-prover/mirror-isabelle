@@ -28,6 +28,7 @@ object Thy_Header {
 
   val THEORY = "theory"
   val IMPORTS = "imports"
+  val OPTIONS = "options"
   val KEYWORDS = "keywords"
   val ABBREVS = "abbrevs"
   val AND = "and"
@@ -42,9 +43,12 @@ object Thy_Header {
         (",", Keyword.Spec()),
         ("::", Keyword.Spec()),
         ("=", Keyword.Spec()),
+        ("[", Keyword.Spec()),
+        ("]", Keyword.Spec()),
         (AND, Keyword.Spec()),
         (BEGIN, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
         (IMPORTS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
+        (OPTIONS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
         (KEYWORDS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
         (ABBREVS, Keyword.Spec(kind = Keyword.QUASI_COMMAND)),
         (CHAPTER, Keyword.Spec(kind = Keyword.DOCUMENT_HEADING)),
@@ -107,7 +111,7 @@ object Thy_Header {
 
   /* parser */
 
-  trait Parsers extends Parse.Parsers {
+  trait Parsers extends Options.Parsers {
     val header: Parser[Thy_Header] = {
       val load_command =
         ($$$("(") ~! (position(name) <~ $$$(")")) ^^ { case _ ~ x => x }) |
@@ -138,11 +142,13 @@ object Thy_Header {
         position(this.theory_name) ~
         (opt($$$(IMPORTS) ~! rep1(position(this.theory_name))) ^^
           { case None => Nil case Some(_ ~ xs) => xs }) ~
+        (opt($$$(OPTIONS) ~! options_update) ^^
+          { case None => Nil case Some(_ ~ xs) => xs }) ~
         (opt($$$(KEYWORDS) ~! keyword_decls) ^^
           { case None => Nil case Some(_ ~ xs) => xs }) ~
         (opt($$$(ABBREVS) ~! abbrevs) ^^
           { case None => Nil case Some(_ ~ xs) => xs }) ~
-        $$$(BEGIN) ^^ { case a ~ b ~ c ~ d ~ _ => Thy_Header(a._1, a._2, b, c, d) }
+        $$$(BEGIN) ^^ { case a ~ b ~ c ~ d ~ e ~ _ => Thy_Header(a._1, a._2, b, c, d, e) }
 
       val heading =
         (command(CHAPTER) |
@@ -211,12 +217,14 @@ sealed case class Thy_Header(
   name: String,
   pos: Position.T,
   imports: List[(String, Position.T)],
+  options: Options.Update,
   keywords: Thy_Header.Keywords,
   abbrevs: Thy_Header.Abbrevs
 ) {
   def map(f: String => String): Thy_Header =
     Thy_Header(f(name), pos,
       imports.map({ case (a, b) => (f(a), b) }),
+      options.map({ case spec => spec.copy(name = f(spec.name), value = spec.value.map(f)) }),
       keywords.map({ case (a, spec) => (f(a), spec.map(f)) }),
       abbrevs.map({ case (a, b) => (f(a), f(b)) }))
 
