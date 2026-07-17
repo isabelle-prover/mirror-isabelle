@@ -432,7 +432,7 @@ trait Protocol {
           { case Document.Node.Edits(a) => (Nil, list(pair(option(id), option(id)))(a)) },
           { case Document.Node.Deps(header) =>
               val master_dir = File.standard_url(name.master_dir)
-              val imports = header.imports.map(_.node)
+              val imports = header.imports.map({ case (name, _) => name.node })
               val options = header.options.map(spec => (spec.name, spec.value.get))
               val keywords = header.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
               (Nil,
