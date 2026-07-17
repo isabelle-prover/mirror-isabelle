@@ -34,7 +34,6 @@ sig
   val set_process_default: T option -> unit
   val load_process_default: unit -> unit
   val get_thread_update: unit -> update
-  val set_thread_update: update -> unit
   val setmp_thread_update: update -> ('a -> 'b) -> 'a -> 'b
   val default: update -> T
   val default_typ: string -> string
@@ -206,7 +205,6 @@ fun load_process_default () =
 val thread_update = Thread_Data.var () : update Thread_Data.var;
 
 fun get_thread_update () = Thread_Data.get thread_update |> these;
-val set_thread_update = Thread_Data.put thread_update o SOME;
 
 fun setmp_thread_update upd f x =
   if get_thread_update () = upd then f x
