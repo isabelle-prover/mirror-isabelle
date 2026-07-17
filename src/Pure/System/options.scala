@@ -6,7 +6,7 @@ System options with external string representation.
 
 package isabelle
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedSet, SortedMap}
 
 
 object Options {
@@ -361,6 +361,12 @@ final class Options private(
     val opt = check_name(name)
     if (opt.typ == typ) opt
     else error("Ill-typed option " + quote(name) + " : " + opt.typ.print + " vs. " + typ.print)
+  }
+
+  def check_update(specs: Options.Update): Options.Update = {
+    val options1 = this ++ specs
+    for (name <- SortedSet.from(specs.iterator.map(_.name)).toList)
+      yield Options.Spec(name, value = options1.get(name).map(_.value))
   }
 
 

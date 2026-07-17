@@ -55,10 +55,10 @@ fun build_theories qualifier (options, thys) =
         (Options.set_process_default (SOME options);
           Isabelle_Process.init_options ();
           Future.fork I;
-          (Thy_Info.use_theories options qualifier
+          (Thy_Info.use_theories qualifier
             |> Unsynchronized.setmp Print_Mode.print_mode print_mode) thys)
       else
-       (Output.physical_stderr ("Skipping theories " ^ commas_quote (map #1 thys) ^
+       (Output.physical_stderr ("Skipping theories " ^ commas_quote (map (#1 o #1) thys) ^
           " (undefined " ^ commas conds ^ ")\n"); [])
   in loaded_theories end;
 
@@ -75,7 +75,8 @@ val _ =
               let
                 open XML.Decode;
                 val position = Position.of_properties o properties;
-              in pair Options.decode (list (pair string position)) end);
+                val theory = pair (pair string position) (list (pair string string));
+              in pair Options.decode (list theory) end);
 
           val _ = Session.init session_name;
 

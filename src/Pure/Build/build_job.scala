@@ -440,13 +440,37 @@ object Build_Job {
                 case Exn.Res(_) =>
                   val prover_options = session.prover_options
                   val resources_xml = session.resources.init_session_xml
+
+                  type Thy = ((String, Position.T), Options.Update)
+                  sealed case class Theory(options: Options.Update, thy: Thy) {
+                    def options_eq(other: Theory): Boolean = options == other.options
+                  }
+
+                  val theories: List[(Options.Update, List[Thy])] =
+                    Library.runs[Theory](
+                      List.from(
+                        for {
+                          (opts, thys) <- info.theories.iterator
+                          (opts_for_ML_process, thy_opts) =
+                            process.options.check_update(opts)
+                              .partition(opt => process.options.get(opt.name).get.for_ML_process)
+                          thy <- thys.iterator
+                        } yield Theory(opts_for_ML_process, (thy, thy_opts))),
+                      eq = _ options_eq _)
+                      .map(ts => (ts.head.options ::: prover_options, ts.map(_.thy)))
+
                   val theories_xml =
-                    info.theories.map({ arg =>
+                    theories.map({ arg =>
                       import XML.Encode._
+                      val encode_spec: T[Options.Spec] =
+                        spec => pair(string, string)(spec.name, spec.value.get)
+                      val encode_thy: T[Thy] =
+                        pair(pair(string, properties), list(encode_spec))
                       val encode_options: T[Options.Update] =
-                        opts => (process.options ++ opts ++ prover_options).encode
-                      pair(encode_options, list(pair(string, properties)))(arg)
+                        opts => (process.options ++ opts).encode
+                      pair(encode_options, list(encode_thy))(arg)
                     })
+
                   session.protocol_command_args("build_session",
                     XML.string(session_name) :: resources_xml :: theories_xml)
                   session.errors_result()
