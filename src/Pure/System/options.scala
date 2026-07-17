@@ -212,6 +212,8 @@ object Options {
     val option_spec: Parser[Spec] =
       option_name ~ opt($$$("=") ~! option_value ^^ { case _ ~ x => x }) ^^
         { case x ~ y => Options.Spec(x, value = y) }
+    val options_update: Parser[Options.Update] =
+      $$$("[") ~> rep1sep(option_spec, $$$(",")) <~ $$$("]")
   }
 
   private object Parsers extends Parsers {
