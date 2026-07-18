@@ -128,20 +128,18 @@ fun set_keywords keywords =
 
 fun read_header node span =
   let
-    val (name, imports0, options0) =
+    val (name, imports0) =
       (case get_header node of
-        {errors = [], header = {name = (name, _), imports, options, ...}, ...} =>
-          (name, imports, options)
+        {errors = [], header = {name = (name, _), imports, ...}, ...} => (name, imports)
       | {errors, ...} =>
           cat_lines errors |>
           (case Position.id_of (Position.thread_data ()) of
             NONE => I
           | SOME id => Protocol_Message.command_positions_yxml id)
           |> error);
-    val {name = (_, pos), imports = imports1, options = options1, keywords} =
+    val {name = (_, pos), imports = imports1, options, keywords} =
       Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
-    val options = (map #1 options0 ~~ map #2 options1) handle ListPair.UnequalLengths => options0;
   in Thy_Header.make (name, pos) imports options keywords end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;
@@ -615,8 +613,7 @@ local
 fun init_theory deps node span =
   let
     val master_dir = master_directory node;
-    val header = read_header node span;
-    val imports = #imports header;
+    val header as {imports, options, ...} = read_header node span;
 
     fun maybe_eval_result eval = Command.eval_result_state eval
       handle Fail _ => Toplevel.make_state NONE;
@@ -640,6 +637,11 @@ fun init_theory deps node span =
     val _ = List.app (fn (thy, r) => Context_Position.reports_global thy [r]) parents_reports;
 
     val thy = Resources.begin_theory master_dir header parents;
+    val ctxt = Proof_Context.init_global thy;
+
+    val default = Options.the_process_default ();
+    val _ = List.app (fn spec => ignore (Completion.check_option_value ctxt spec default)) options;
+
     val _ = Output.status [YXML.output_markup_only Markup.initialized];
   in thy end;
 
