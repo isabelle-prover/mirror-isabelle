@@ -273,10 +273,11 @@ fun eval options keywords master_dir init blobs_info command_id span eval0 =
           Position.setmp_thread_data (Position.id_only (Document_ID.print exec_id))
             (fn () =>
               read keywords thy master_dir init blobs_info span |> Toplevel.exec_id exec_id) ();
-      in eval_state keywords span tr eval_state0 end;
+        val opts = if Toplevel.is_init tr then [] else options;
+      in Options.with_default_update opts (fn () => eval_state keywords span tr eval_state0) () end;
   in
     Eval {command_id = command_id, exec_id = exec_id,
-      eval_process = Lazy.lazy_name "Command.eval" (Options.with_default_update options process)}
+      eval_process = Lazy.lazy_name "Command.eval" process}
   end;
 
 end;
@@ -303,11 +304,13 @@ local
 val print_functions =
   Synchronized.var "Command.print_functions" ([]: (string * print_function) list);
 
-fun print_wrapper tr opt_context =
-  Toplevel.setmp_thread_position tr o Runtime.controlled_execution opt_context;
+fun print_wrapper options tr opt_context =
+  Options.with_default_update options o
+  Toplevel.setmp_thread_position tr o
+  Runtime.controlled_execution opt_context;
 
-fun print_error tr opt_context e =
-  (case Exn.result (fn () => print_wrapper tr opt_context e ()) () of
+fun print_error options tr opt_context e =
+  (case Exn.result (fn () => print_wrapper options tr opt_context e ()) () of
     Exn.Res res => res
   | Exn.Exn exn => List.app (Future.error_message (Toplevel.pos_of tr)) (Runtime.exn_messages exn));
 
@@ -327,13 +330,12 @@ fun make_print options (name, args) {delay, pri, persistent, strict, print_fn} e
         val opt_context = try Toplevel.generic_theory_of st';
       in
         if failed andalso strict then ()
-        else print_error tr opt_context (fn () => print_fn tr st')
+        else print_error options tr opt_context (fn () => print_fn tr st')
       end;
   in
     Print {
       name = name, args = args, delay = delay, pri = pri, persistent = persistent,
-      exec_id = exec_id,
-      print_process = Lazy.lazy_name "Command.print" (Options.with_default_update options process)}
+      exec_id = exec_id, print_process = Lazy.lazy_name "Command.print" process}
   end;
 
 fun bad_print name_args exn =
