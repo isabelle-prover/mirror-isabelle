@@ -21,8 +21,7 @@ sig
   val check_entity: string -> (string * Position.T) list ->
     Proof.context -> string * Position.T -> string
   val check_option: Options.T -> Proof.context -> string * Position.T -> string
-  val check_option_value: Proof.context ->
-    (string * Position.T) * (string * Position.T) -> Options.T -> string * Options.T
+  val check_option_value: Proof.context -> Options.spec_pos -> Options.T -> string * Options.T
 end;
 
 structure Completion: COMPLETION =
@@ -96,11 +95,12 @@ fun check_entity kind = check_item kind (Position.entity_markup kind);
 
 val check_option = check_entity Markup.system_optionN o Options.dest;
 
-fun check_option_value ctxt ((name, pos), (value, pos')) options =
+fun check_option_value ctxt ((name, pos), opt_value) options =
   let
     val _ = check_option options ctxt (name, pos);
+    val pos' = the_default pos (Option.map #2 opt_value);
     val options' =
-      Options.update [(name, value)] options
+      Options.update [(name, Option.map #1 opt_value)] options
         handle ERROR msg => error (msg ^ Position.here pos');
   in (name, options') end;
 

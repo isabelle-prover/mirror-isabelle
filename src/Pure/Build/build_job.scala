@@ -463,7 +463,7 @@ object Build_Job {
                     theories.map({ arg =>
                       import XML.Encode._
                       val encode_spec: T[Options.Spec] =
-                        spec => pair(string, string)(spec.name, spec.value.get)
+                        spec => pair(string, option(string))(spec.name, spec.value)
                       val encode_thy: T[Thy] =
                         pair(pair(string, properties), list(encode_spec))
                       val encode_options: T[Options.Update] =

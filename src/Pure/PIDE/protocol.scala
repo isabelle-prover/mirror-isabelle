@@ -433,10 +433,10 @@ trait Protocol {
           { case Document.Node.Deps(header) =>
               val master_dir = File.standard_url(name.master_dir)
               val imports = header.imports.map({ case (name, _) => name.node })
-              val options = header.options.map(spec => (spec.name, spec.value.get))
+              val options = header.options.map(spec => (spec.name, spec.value))
               val keywords = header.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
               (Nil,
-                pair(string, pair(string, pair(list(string), pair(list(pair(string, string)),
+                pair(string, pair(string, pair(list(string), pair(list(pair(string, option(string))),
                   pair(list(pair(string, pair(string, list(string)))), list(string))))))(
                 (master_dir, (name.theory, (imports, (options, (keywords, header.errors))))))) },
           { case Document.Node.Perspective(a, b, c) =>

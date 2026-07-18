@@ -117,11 +117,11 @@ val _ =
                         let
                           val (master, (name, (imports, (options, (keywords, errors))))) =
                             pair string (pair string (pair (list string)
-                              (pair (list (pair string string))
+                              (pair (list (pair string (option string)))
                               ((pair (list (pair string (pair string (list string))))
                                 (list YXML.string_of_body)))))) a;
                           val imports' = map (rpair Position.none) imports;
-                          val options' = map (apply2 (rpair Position.none)) options;
+                          val options' = Options.update_pos_none options;
                           val keywords' =
                             map (fn (x, y) => ((x, Position.none), Keyword.command_spec y)) keywords;
                           val header =

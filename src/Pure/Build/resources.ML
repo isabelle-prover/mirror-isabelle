@@ -35,7 +35,7 @@ sig
   val check_thy: Path.T -> string ->
    {thy_path: Path.T, text: string, theory_pos: Position.T,
     imports: (string * Position.T) list,
-    options: ((string * Position.T) * (string * Position.T)) list,
+    options: Options.update_pos,
     keywords: Thy_Header.keywords}
   val read_file_node: string -> Path.T -> Path.T * Position.T -> Token.file
   val read_file: Path.T -> Path.T * Position.T -> Token.file

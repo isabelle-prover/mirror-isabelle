@@ -75,7 +75,7 @@ val _ =
               let
                 open XML.Decode;
                 val position = Position.of_properties o properties;
-                val theory = pair (pair string position) (list (pair string string));
+                val theory = pair (pair string position) (list (pair string (option string)));
               in pair Options.decode (list theory) end);
 
           val _ = Session.init session_name;

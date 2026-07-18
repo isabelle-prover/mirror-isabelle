@@ -24,10 +24,19 @@ sig
   val put_int: string -> int -> T -> T
   val put_real: string -> real -> T -> T
   val put_string: string -> string -> T -> T
-  val declare: {pos: Position.T, name: string, typ: string, value: string} -> T -> T
-  type spec = string * string
+  type entry = {pos: Position.T, typ: string, value: string, standard_value: string option}
+  val declare: string * entry -> T -> T
+  type spec = string * string option
+  val spec1: string -> spec
+  val spec: string -> string -> spec
   type update = spec list
   val update: update -> T -> T
+  type spec_pos = (string * Position.T) * (string * Position.T) option
+  type update_pos = spec_pos list
+  val spec_no_pos: spec_pos -> spec
+  val update_no_pos: update_pos -> update
+  val spec_pos_none: spec -> spec_pos
+  val update_pos_none: update -> update_pos
   val encode: T XML.Encode.T
   val decode: T XML.Decode.T
   val the_process_default: unit -> T
@@ -57,7 +66,8 @@ val realT = "real";
 val stringT = "string";
 val unknownT = "unknown";
 
-datatype T = Options of {pos: Position.T, typ: string, value: string} Symtab.table;
+type entry = {pos: Position.T, typ: string, value: string, standard_value: string option};
+datatype T = Options of entry Symtab.table;
 
 val empty = Options Symtab.empty;
 
@@ -89,8 +99,10 @@ fun typ options name = #typ (check_name options name);
 (* basic operations *)
 
 fun put T print name x (options as Options tab) =
-  let val opt = check_type options name T
-  in Options (Symtab.update (name, {pos = #pos opt, typ = #typ opt, value = print x}) tab) end;
+  let
+    val {pos, typ, standard_value, ...} = check_type options name T;
+    val opt' = {pos = pos, typ = typ, value = print x, standard_value = standard_value};
+  in Options (Symtab.update (name, opt') tab) end;
 
 fun get T parse options name =
   let val opt = check_type options name T in
@@ -127,14 +139,14 @@ fun check_value options name =
     else ()
   end;
 
-fun declare {pos, name, typ, value} (Options tab) =
+fun declare (name, entry as {pos, typ, ...}: entry) (Options tab) =
   let
     val options' =
       (case Symtab.lookup tab name of
         SOME other =>
           error ("Duplicate declaration of system option " ^ quote name ^ Position.here pos ^
             Position.here (#pos other))
-      | NONE => Options (Symtab.update (name, {pos = pos, typ = typ, value = value}) tab));
+      | NONE => Options (Symtab.update (name, entry) tab));
     val _ =
       typ = boolT orelse typ = intT orelse typ = realT orelse typ = stringT orelse
         error ("Unknown type for system option " ^ quote name ^ " : " ^ quote typ ^
@@ -142,17 +154,38 @@ fun declare {pos, name, typ, value} (Options tab) =
     val _ = check_value options' name;
   in options' end;
 
-type spec = string * string;
+type spec = string * string option;
+fun spec1 name : spec = (name, NONE);
+fun spec name value : spec = (name, SOME value);
 
 type update = spec list;
 
-val update = fold (fn ((name, value): spec) => fn options as Options tab =>
+val update = fold (fn ((name, opt_value): spec) => fn options as Options tab =>
   let
-    val opt = check_name options name;
-    val options' =
-      Options (Symtab.update (name, {pos = #pos opt, typ = #typ opt, value = value}) tab);
+    val {pos, typ, standard_value, ...} = check_name options name;
+    val value =
+      (case opt_value of
+        SOME value => value
+      | NONE =>
+          (case standard_value of
+            SOME value => value
+          | NONE =>
+              if typ = boolT then "true"
+              else error ("Missing value for option " ^ quote name ^ " : " ^ typ)));
+    val opt' = {pos = pos, typ = typ, value = value, standard_value = standard_value};
+    val options' = Options (Symtab.update (name, opt') tab);
     val _ = check_value options' name;
   in options' end);
+
+type spec_pos = (string * Position.T) * (string * Position.T) option;
+type update_pos = spec_pos list;
+
+fun spec_no_pos (opt: spec_pos) : spec = (#1 (#1 opt), Option.map #1 (#2 opt));
+val update_no_pos = map spec_no_pos;
+
+fun spec_pos_none (opt: spec) : spec_pos =
+  ((#1 opt, Position.none), Option.map (rpair Position.none) (#2 opt));
+val update_pos_none = map spec_pos_none;
 
 
 (* XML data *)
@@ -160,18 +193,21 @@ val update = fold (fn ((name, value): spec) => fn options as Options tab =>
 fun encode (Options tab) =
   let
     val opts =
-      build (tab |> Symtab.fold (fn (name, {pos, typ, value}) =>
-        cons (Position.properties_of pos, (name, (typ, value)))));
+      build (tab |> Symtab.fold (fn (name, {pos, typ, value, standard_value}) =>
+        cons (Position.properties_of pos, (name, (typ, (value, standard_value))))));
     open XML.Encode;
-  in list (pair properties (pair string (pair string string))) opts end;
+  in list (pair properties (pair string (pair string (pair string (option string))))) opts end;
 
 fun decode body =
   let
     open XML.Decode;
     val decode_options =
-      list (pair properties (pair string (pair string string)))
-      #> map (fn (props, (name, (typ, value))) =>
-          {pos = Position.of_properties props, name = name, typ = typ, value = value});
+      list (pair properties (pair string (pair string (pair string (option string)))))
+      #> map (fn (props, (name, (typ, (value, standard_value)))) =>
+        let
+          val entry = {pos = Position.of_properties props, typ = typ, value = value,
+            standard_value = standard_value};
+        in (name, entry) end);
   in fold declare (decode_options body) empty end;
 
 

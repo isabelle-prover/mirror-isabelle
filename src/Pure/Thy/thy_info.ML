@@ -407,7 +407,7 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
             if all_current then Finished (get_theory theory_name)
             else
               let
-                val opts = map (apply2 fst) header_options @ theory_opts;
+                val opts = Options.update_no_pos header_options @ theory_opts;
                 val thy = ((theory_name, theory_pos), opts);
               in Task (parents, load_thy initiators (the load) thy imports keywords) end;
 

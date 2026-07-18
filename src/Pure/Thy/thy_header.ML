@@ -10,10 +10,10 @@ sig
   type header =
    {name: string * Position.T,
     imports: (string * Position.T) list,
-    options: ((string * Position.T) * (string * Position.T)) list,
+    options: Options.update_pos,
     keywords: keywords}
   val make: string * Position.T -> (string * Position.T) list ->
-    ((string * Position.T) * (string * Position.T)) list -> keywords -> header
+    Options.update_pos -> keywords -> header
   val theoryN: string
   val bootstrap_keywords: Keyword.keywords
   val add_keywords: keywords -> theory -> theory
@@ -46,7 +46,7 @@ type keywords = ((string * Position.T) * Keyword.spec) list;
 type header =
  {name: string * Position.T,
   imports: (string * Position.T) list,
-  options: ((string * Position.T) * (string * Position.T)) list,
+  options: Options.update_pos,
   keywords: keywords};
 
 fun make name imports options keywords : header =

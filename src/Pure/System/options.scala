@@ -526,10 +526,10 @@ final class Options private(
   def encode: XML.Body = {
     val opts =
       for ((_, opt) <- options.toList; if !opt.unknown)
-        yield (opt.pos, (opt.name, (opt.typ.print, opt.value)))
+        yield (opt.pos, (opt.name, (opt.typ.print, (opt.value, opt.standard_value))))
 
     import XML.Encode.{string => string_, _}
-    list(pair(properties, pair(string_, pair(string_, string_))))(opts)
+    list(pair(properties, pair(string_, pair(string_, pair(string_, option(string_))))))(opts)
   }
 
 

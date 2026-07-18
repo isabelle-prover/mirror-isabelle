@@ -120,7 +120,7 @@ fun set_header master header errors =
 
 fun get_header (Node {header, ...}) = header;
 
-val header_options = map (apply2 #1) o #options o #header o get_header;
+val header_options = Options.update_no_pos o #options o #header o get_header;
 
 fun set_keywords keywords =
   map_node (fn (header, _, perspective, entries, result, consolidated) =>
