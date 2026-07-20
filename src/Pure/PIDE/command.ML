@@ -265,7 +265,7 @@ in
 fun eval options keywords master_dir init blobs_info command_id span eval0 =
   let
     val exec_id = Document_ID.make ();
-    fun process () =
+    val process = Options.with_default_update options (fn () =>
       let
         val eval_state0 = eval_result eval0;
         val thy = read_thy (#state eval_state0);
@@ -273,8 +273,7 @@ fun eval options keywords master_dir init blobs_info command_id span eval0 =
           Position.setmp_thread_data (Position.id_only (Document_ID.print exec_id))
             (fn () =>
               read keywords thy master_dir init blobs_info span |> Toplevel.exec_id exec_id) ();
-        val opts = if Toplevel.is_init tr then [] else options;
-      in Options.with_default_update opts (fn () => eval_state keywords span tr eval_state0) () end;
+      in eval_state keywords span tr eval_state0 end);
   in
     Eval {command_id = command_id, exec_id = exec_id,
       eval_process = Lazy.lazy_name "Command.eval" process}

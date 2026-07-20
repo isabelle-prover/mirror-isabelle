@@ -721,7 +721,10 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
 
       val opts = header_options node;
       val eval' =
-        Command.eval opts keywords (master_directory node)
+        Command.eval
+          (if exists Token.is_command_theory span then [] else opts)
+          keywords
+          (master_directory node)
           (fn () => the_default illegal_init init span)
           (blobs, blobs_index) command_id' span (#1 (#2 command_exec));
       val prints' = perhaps (Command.print opts keywords visible overlays command_name eval') [];
