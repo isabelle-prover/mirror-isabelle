@@ -199,7 +199,8 @@ object Thy_Header {
 
   def read(node_name: Document.Node.Name, reader: Reader[Char],
     command: Boolean = true,
-    strict: Boolean = true
+    strict: Boolean = true,
+    unicode_symbols: Boolean = true
   ): Thy_Header = {
     val (_, tokens0) = read_tokens(reader, true)
     val text = Scan.reader_decode_utf8(reader, Token.implode(tokens0))
@@ -209,7 +210,7 @@ object Thy_Header {
       if (command) Token.Pos.command
       else skip_tokens.foldLeft(Token.Pos.file(node_name.node))(_ advance _)
 
-    Parsers.parse_header(tokens, pos).map(Symbol.decode).check(node_name)
+    Parsers.parse_header(tokens, pos).output(unicode_symbols).check(node_name)
   }
 }
 
@@ -221,12 +222,14 @@ sealed case class Thy_Header(
   keywords: Thy_Header.Keywords,
   abbrevs: Thy_Header.Abbrevs
 ) {
-  def map(f: String => String): Thy_Header =
+  def output(unicode_symbols: Boolean): Thy_Header = {
+    def f(s: String): String = Symbol.output(unicode_symbols, s)
     Thy_Header(f(name), pos,
       imports.map({ case (a, b) => (f(a), b) }),
       options.map({ case spec => spec.copy(name = f(spec.name), value = spec.value.map(f)) }),
       keywords.map({ case (a, spec) => (f(a), spec.map(f)) }),
       abbrevs.map({ case (a, b) => (f(a), f(b)) }))
+  }
 
   def check(node_name: Document.Node.Name): Thy_Header = {
     val base_name = node_name.theory_base_name
