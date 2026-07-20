@@ -719,10 +719,11 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val blobs = map (resolve_blob state) blob_digests;
       val span = Lazy.force span0;
 
+      val command_is_theory = command_name = Thy_Header.theoryN;
       val opts = header_options node;
       val eval' =
         Command.eval
-          (if exists Token.is_command_theory span then [] else opts)
+          (if command_is_theory then [] else opts)
           keywords
           (master_directory node)
           (fn () => the_default illegal_init init span)
@@ -731,7 +732,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val exec' = (eval', prints');
 
       val assign_update' = assign_update_new (command_id', SOME exec') assign_update;
-      val init' = if command_name = Thy_Header.theoryN then NONE else init;
+      val init' = if command_is_theory then NONE else init;
     in SOME (assign_update', (command_id', exec'), init') end;
 
 fun removed_execs node0 (command_id, exec_ids) =

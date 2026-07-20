@@ -45,7 +45,6 @@ sig
   val is_kind: kind -> T -> bool
   val get_control: T -> Antiquote.control option
   val is_command: T -> bool
-  val is_command_theory: T -> bool
   val keyword_with: (string -> bool) -> T -> bool
   val is_command_modifier: T -> bool
   val ident_with: (string -> bool) -> T -> bool
@@ -249,9 +248,6 @@ fun get_control tok =
   (case kind_of tok of Control control => SOME control | _ => NONE);
 
 val is_command = is_kind Command;
-
-fun is_command_theory (Token (_, (Command, "theory"), _)) = true
-  | is_command_theory _ = false;
 
 fun keyword_with pred (Token (_, (Keyword, x), _)) = pred x
   | keyword_with _ _ = false;
