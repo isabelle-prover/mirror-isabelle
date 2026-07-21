@@ -89,12 +89,13 @@ object Document {
     /* header and name */
 
     sealed case class Header(
-      imports_pos: List[(Name, Position.T)] = Nil,
+      imports: List[(Name, Position.T)] = Nil,
+      options: Options.Update = Nil,
       keywords: Thy_Header.Keywords = Nil,
       abbrevs: Thy_Header.Abbrevs = Nil,
       errors: List[String] = Nil
     ) {
-      def imports: List[Name] = imports_pos.map(_._1)
+      def imports_no_pos: List[Name] = imports.map(_._1)
 
       def append_errors(msgs: List[String]): Header =
         copy(errors = errors ::: msgs)
@@ -406,7 +407,7 @@ object Document {
 
     def + (entry: (Node.Name, Node)): Nodes = {
       val (name, node) = entry
-      val imports = node.header.imports
+      val imports = node.header.imports_no_pos
       val graph1 = (name :: imports).foldLeft(graph)(Nodes.init)
       val graph2 =
         graph1.imm_preds(name).foldLeft(graph1) { case (g, dep) => g.del_edge(dep, name) }

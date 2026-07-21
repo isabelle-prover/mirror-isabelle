@@ -47,6 +47,7 @@ sig
   include EXN0
   val capture: ('a -> 'b) -> 'a -> 'b result  (*managed interrupts*)
   val capture_body: (unit -> 'a) -> 'a result
+  val capture_trace: (string -> unit) -> ('a -> 'b) -> 'a -> 'b result
 end;
 
 structure Exn: EXN0 =

@@ -162,6 +162,15 @@ struct
   open Exn;
   fun capture f x = Res (f x) handle e => Exn (check_interrupt e);
   fun capture_body e = capture e ();
+  fun capture_trace output f x =
+    let
+      val res = capture f x;
+      val _ =
+        (case res of
+          Exn.Res _ => ()
+        | Exn.Exn exn =>
+            output ("Failure of thread \"" ^ print (self ()) ^ "\":\n" ^ General.exnMessage exn));
+    in res end;
 end;
 
 fun expose_interrupt_result () =

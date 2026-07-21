@@ -227,8 +227,8 @@ object Headless {
                 dep_graph.topological_order.foldLeft(already_committed) {
                   case (committed, name) =>
                     def parents_committed: Boolean =
-                      version.nodes(name).header.imports.forall(parent =>
-                        resources.loaded_theory(parent) || committed.isDefinedAt(parent))
+                      version.nodes(name).header.imports.forall({ case (parent, _) =>
+                      resources.loaded_theory(parent) || committed.isDefinedAt(parent) })
                     if (!committed.isDefinedAt(name) && parents_committed &&
                         state.node_consolidated(version, name)) {
                       val snapshot = stable_snapshot(state, version, name)
@@ -550,7 +550,7 @@ object Headless {
       lazy val theory_graph: Document.Node.Name.Graph[Unit] =
         Document.Node.Name.make_graph(
           for ((name, theory) <- theories.toList)
-          yield ((name, ()), theory.node_header.imports.filter(theories.isDefinedAt)))
+          yield ((name, ()), theory.node_header.imports_no_pos.filter(theories.isDefinedAt)))
 
       def is_required(name: Document.Node.Name): Boolean = required.isDefinedAt(name)
 

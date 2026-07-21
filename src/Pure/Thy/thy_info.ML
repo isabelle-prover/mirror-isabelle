@@ -20,7 +20,7 @@ sig
   val get_theory_segments: string -> Document_Output.segment list
   val get_theory_elements: string -> Document_Output.segment Thy_Element.element list
   val check_theory: Proof.context -> string * Position.T -> theory
-  val use_theories: Options.T -> string -> (string * Position.T) list ->
+  val use_theories: string -> ((string * Position.T) * Options.update) list ->
     (theory * Document_Output.segment list) list
 end;
 
@@ -255,8 +255,10 @@ end;
 
 (* eval theory *)
 
-fun eval_thy loading_theory options master_dir header text_pos text parents =
+fun eval_thy loading_theory master_dir header text_pos text parents =
   let
+    val options = Options.default [];
+
     val (name, _) = #name header;
     val keywords =
       fold (curry Keyword.merge_keywords o Thy_Header.get_keywords) parents
@@ -317,7 +319,7 @@ local
 fun required_by _ [] = ""
   | required_by s initiators = s ^ "(required by " ^ show_path (rev initiators) ^ ")";
 
-fun load_thy options initiators (thy_path, text) (name, header_pos) imports keywords parents =
+fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keywords parents =
   let
     val dir = Path.dir thy_path;
 
@@ -344,31 +346,36 @@ fun load_thy options initiators (thy_path, text) (name, header_pos) imports keyw
               Context_Position.reports_global thy [(put_id pos, Theory.get_markup thy)])) ();
       in () end;
 
-    val header = Thy_Header.make (name, put_id header_pos) imports keywords;
+    val header = Thy_Header.make (name, put_id header_pos) imports [] keywords;
     val (theory, present) =
-      eval_thy loading_theory options dir header text_pos text
-        (if name = Context.PureN then [Context.the_global_context ()] else parents);
+      Options.strict_thread_update opts (fn () =>
+        eval_thy loading_theory dir header text_pos text
+          (if name = Context.PureN then [Context.the_global_context ()] else parents)) ();
 
     fun commit segments =
-      commit_thy (theory,
-        if Options.bool options \<^system_option>\<open>record_theories\<close> then segments else []);
+      let
+        val options = Options.default opts;
+        val record_theories = Options.bool options \<^system_option>\<open>record_theories\<close>;
+      in commit_thy (theory, if record_theories then segments else []) end;
   in Result {theory = theory, exec_id = exec_id, present = SOME o present, commit = commit} end;
 
 fun check_thy_deps dir name =
   (case lookup_theory name of
-    SOME thy => (NONE, Position.none, Resources.imports_of thy, [])
+    SOME thy => (NONE, Position.none, Resources.imports_of thy, [], [])
   | NONE =>
-      let val {thy_path, text, theory_pos, imports, keywords} = Resources.check_thy dir name
-      in (SOME (thy_path, text), theory_pos, imports, keywords) end);
+      let
+        val {thy_path, text, theory_pos, imports, options, keywords} =
+          Resources.check_thy dir name;
+      in (SOME (thy_path, text), theory_pos, imports, options, keywords) end);
 
 fun task_finished (Task _) = false
   | task_finished (Finished _) = true;
 
 in
 
-fun require_thys options initiators qualifier dir strs tasks =
-      fold_map (require_thy options initiators qualifier dir) strs tasks |>> forall I
-and require_thy options initiators qualifier dir (s, require_pos) tasks =
+fun require_thys initiators qualifier dir imports tasks =
+      fold_map (require_thy initiators qualifier dir) imports tasks |>> forall I
+and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
   let
     val {master_dir, theory_name, ...} = Resources.import_name qualifier dir s;
   in
@@ -378,8 +385,8 @@ and require_thy options initiators qualifier dir (s, require_pos) tasks =
         let
           val _ = member (op =) initiators theory_name andalso error (cycle_msg initiators);
 
-          val (load, theory_pos, imports, keywords) = check_thy_deps master_dir theory_name
-            handle ERROR msg =>
+          val (load, theory_pos, imports, header_options, keywords) =
+            check_thy_deps master_dir theory_name handle ERROR msg =>
               cat_error msg
                 ("The error(s) above occurred for theory " ^ quote theory_name ^
                   Position.here require_pos ^ required_by "\n" initiators);
@@ -389,17 +396,20 @@ and require_thy options initiators qualifier dir (s, require_pos) tasks =
             (case load of
               NONE => dir
             | SOME (thy_path, _) => dir + Path.dir thy_path);
+          val imports' = map (rpair theory_opts) imports;
 
           val parents = map (#theory_name o Resources.import_name qualifier' dir' o #1) imports;
           val (parents_current, tasks') =
-            require_thys options (theory_name :: initiators) qualifier' dir' imports tasks;
+            require_thys (theory_name :: initiators) qualifier' dir' imports' tasks;
 
           val all_current = is_none load andalso parents_current;
           val task =
             if all_current then Finished (get_theory theory_name)
             else
-              Task (parents,
-                load_thy options initiators (the load) (theory_name, theory_pos) imports keywords);
+              let
+                val opts = Options.update_no_pos header_options @ theory_opts;
+                val thy = ((theory_name, theory_pos), opts);
+              in Task (parents, load_thy initiators (the load) thy imports keywords) end;
 
           val tasks'' = new_entry theory_name parents task tasks';
         in (all_current, tasks'') end)
@@ -410,7 +420,7 @@ end;
 
 (* use theories *)
 
-fun use_theories options qualifier imports =
-  schedule_theories (#2 (require_thys options [] qualifier Path.current imports String_Graph.empty));
+fun use_theories qualifier imports =
+  schedule_theories (#2 (require_thys [] qualifier Path.current imports String_Graph.empty));
 
 end;

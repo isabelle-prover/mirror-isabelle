@@ -6,7 +6,7 @@ System options with external string representation.
 
 package isabelle
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedSet, SortedMap}
 
 
 object Options {
@@ -212,6 +212,8 @@ object Options {
     val option_spec: Parser[Spec] =
       option_name ~ opt($$$("=") ~! option_value ^^ { case _ ~ x => x }) ^^
         { case x ~ y => Options.Spec(x, value = y) }
+    val options_update: Parser[Options.Update] =
+      $$$("[") ~> rep1sep(option_spec, $$$(",")) <~ $$$("]")
   }
 
   private object Parsers extends Parsers {
@@ -361,6 +363,12 @@ final class Options private(
     val opt = check_name(name)
     if (opt.typ == typ) opt
     else error("Ill-typed option " + quote(name) + " : " + opt.typ.print + " vs. " + typ.print)
+  }
+
+  def check_update(specs: Options.Update): Options.Update = {
+    val options1 = this ++ specs
+    for (name <- SortedSet.from(specs.iterator.map(_.name)).toList)
+      yield Options.Spec(name, value = options1.get(name).map(_.value))
   }
 
 
@@ -518,10 +526,10 @@ final class Options private(
   def encode: XML.Body = {
     val opts =
       for ((_, opt) <- options.toList; if !opt.unknown)
-        yield (opt.pos, (opt.name, (opt.typ.print, opt.value)))
+        yield (opt.pos, (opt.name, (opt.typ.print, (opt.value, opt.standard_value))))
 
     import XML.Encode.{string => string_, _}
-    list(pair(properties, pair(string_, pair(string_, string_))))(opts)
+    list(pair(properties, pair(string_, pair(string_, pair(string_, option(string_))))))(opts)
   }
 
 

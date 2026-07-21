@@ -119,7 +119,7 @@ sig
   val thm_sel: Facts.interval list parser
   val thm: (Facts.ref * Token.src list) parser
   val thms1: (Facts.ref * Token.src list) list parser
-  val options: ((string * Position.T) * (string * Position.T)) list parser
+  val options: Options.update_pos parser
   val embedded_ml: ML_Lex.token Antiquote.antiquote list parser
   val read_antiq: Keyword.keywords -> 'a parser -> Symbol_Pos.T list * Position.T -> 'a
   val read_embedded: Proof.context -> Keyword.keywords -> 'a parser -> Input.source -> 'a
@@ -486,10 +486,7 @@ val thms1 = Scan.repeat1 thm;
 val option_name = group (fn () => "option name") name_position;
 val option_value = group (fn () => "option value") ((token real || token name) >> Token.content_of);
 
-val option =
-  option_name :-- (fn (_, pos) =>
-    Scan.optional ($$$ "=" |-- !!! (position option_value)) ("true", pos));
-
+val option = option_name -- Scan.option ($$$ "=" |-- !!! (position option_value));
 val options = $$$ "[" |-- list1 option --| $$$ "]";
 
 

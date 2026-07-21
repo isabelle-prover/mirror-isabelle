@@ -200,7 +200,7 @@ definition left_options :: "game \<Rightarrow> game zet" where
 definition right_options :: "game \<Rightarrow> game zet" where
   "right_options g \<equiv> zimage Abs_game (zexplode (Snd (Rep_game g)))"
 
-definition options :: "game \<Rightarrow> game zet" where
+definition "options" :: "game \<Rightarrow> game zet" where
   "options g \<equiv> zunion (left_options g) (right_options g)"
 
 definition Game :: "game zet \<Rightarrow> game zet \<Rightarrow> game" where

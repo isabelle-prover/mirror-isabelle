@@ -10,8 +10,10 @@ sig
   type header =
    {name: string * Position.T,
     imports: (string * Position.T) list,
+    options: Options.update_pos,
     keywords: keywords}
-  val make: string * Position.T -> (string * Position.T) list -> keywords -> header
+  val make: string * Position.T -> (string * Position.T) list ->
+    Options.update_pos -> keywords -> header
   val theoryN: string
   val bootstrap_keywords: Keyword.keywords
   val add_keywords: keywords -> theory -> theory
@@ -44,10 +46,11 @@ type keywords = ((string * Position.T) * Keyword.spec) list;
 type header =
  {name: string * Position.T,
   imports: (string * Position.T) list,
+  options: Options.update_pos,
   keywords: keywords};
 
-fun make name imports keywords : header =
-  {name = name, imports = imports, keywords = keywords};
+fun make name imports options keywords : header =
+  {name = name, imports = imports, options = options, keywords = keywords};
 
 
 (* bootstrap keywords *)
@@ -64,6 +67,7 @@ val text_rawN = "text_raw";
 
 val theoryN = "theory";
 val importsN = "imports";
+val optionsN = "options";
 val keywordsN = "keywords";
 val abbrevsN = "abbrevs";
 val beginN = "begin";
@@ -77,9 +81,12 @@ val bootstrap_keywords =
      ((",", \<^here>), Keyword.no_spec),
      (("::", \<^here>), Keyword.no_spec),
      (("=", \<^here>), Keyword.no_spec),
+     (("[", \<^here>), Keyword.no_spec),
+     (("]", \<^here>), Keyword.no_spec),
      (("and", \<^here>), Keyword.no_spec),
      ((beginN, \<^here>), Keyword.quasi_command_spec),
      ((importsN, \<^here>), Keyword.quasi_command_spec),
+     ((optionsN, \<^here>), Keyword.quasi_command_spec),
      ((keywordsN, \<^here>), Keyword.quasi_command_spec),
      ((abbrevsN, \<^here>), Keyword.quasi_command_spec),
      ((chapterN, \<^here>), Keyword.document_heading_spec),
@@ -168,9 +175,10 @@ in
 val args =
   Parse.theory_name :|-- (fn (name, pos) =>
     imports name --
+    Scan.optional (Parse.$$$ optionsN |-- Parse.!!! Parse.options) [] --
     Scan.optional (Parse.$$$ keywordsN |-- Parse.!!! keyword_decls) [] --|
     (Scan.optional (Parse.$$$ abbrevsN |-- Parse.!!! abbrevs) [] -- Parse.$$$ beginN)
-    >> (fn (imports, keywords) => make (name, pos) imports keywords));
+    >> (fn ((imports, options), keywords) => make (name, pos) imports options keywords));
 
 end;
 

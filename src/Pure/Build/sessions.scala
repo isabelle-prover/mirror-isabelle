@@ -349,7 +349,7 @@ object Sessions {
                 dependencies.entries.foldLeft(graph0) {
                   case (g, entry) =>
                     val a = node(entry.name)
-                    val bs = entry.header.imports.map(node).filterNot(_ == a)
+                    val bs = entry.header.imports_no_pos.map(node).filterNot(_ == a)
                     bs.foldLeft((a :: bs).foldLeft(g)(_.default_node(_, Nil)))(_.add_edge(_, a))
                 }
               }
@@ -1180,14 +1180,12 @@ object Sessions {
       in_path_parens("export") ~ prune ~ rep1(embedded) ^^ { case x ~ y ~ z => (x, y, z) }
 
     private val session_entry: Parser[Session_Entry] = {
-      val options = $$$("[") ~> rep1sep(option_spec, $$$(",")) <~ $$$("]")
-
       val theory_entry =
         position(theory_name) ~ opt_keyword(GLOBAL) ^^ { case x ~ y => (x, y) }
 
       val theories =
         $$$(THEORIES) ~!
-          ((options | success(Nil)) ~ rep1(theory_entry)) ^^
+          ((options_update | success(Nil)) ~ rep1(theory_entry)) ^^
           { case _ ~ (x ~ y) => (x, y) }
 
       val document_theories =
@@ -1208,7 +1206,7 @@ object Sessions {
         (position(session_name) ~ groups ~ in_path(".") ~
           ($$$("=") ~!
             (opt(session_name ~! $$$("+") ^^ { case x ~ _ => x }) ~ description ~
-              (($$$(OPTIONS) ~! options ^^ { case _ ~ x => x }) | success(Nil)) ~
+              (($$$(OPTIONS) ~! options_update ^^ { case _ ~ x => x }) | success(Nil)) ~
               (($$$(SESSIONS) ~! rep1(session_name)  ^^ { case _ ~ x => x }) | success(Nil)) ~
               (($$$(DIRECTORIES) ~! rep1(path) ^^ { case _ ~ x => x }) | success(Nil)) ~
               rep(theories) ~

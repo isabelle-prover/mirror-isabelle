@@ -317,7 +317,7 @@ text \<open>
     user directory and may be loaded from both directories. For
     \<^verbatim>\<open>system_heaps=true\<close>, store and load happens only in the system directory.
 
-  The @{tool_def options} tool prints Isabelle system options. Its
+  The @{tool_def "options"} tool prints Isabelle system options. Its
   command-line usage is:
   @{verbatim [display]
 \<open>Usage: isabelle options [OPTIONS] [MORE_OPTIONS ...]

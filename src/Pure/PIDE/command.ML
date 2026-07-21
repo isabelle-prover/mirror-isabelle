@@ -21,12 +21,12 @@ sig
   val eval_finished: eval -> bool
   val eval_result_command: eval -> Toplevel.transition
   val eval_result_state: eval -> Toplevel.state
-  val eval: Keyword.keywords -> Path.T -> (unit -> theory) ->
+  val eval: Options.update -> Keyword.keywords -> Path.T -> (unit -> theory) ->
     blob Exn.result list * int -> Document_ID.command -> Token.T list -> eval -> eval
   type print
   type print_fn = Toplevel.transition -> Toplevel.state -> unit
   val print0: {pri: int, print_fn: print_fn} -> eval -> print
-  val print: Keyword.keywords -> bool -> (string * string list) list -> string ->
+  val print: Options.update -> Keyword.keywords -> bool -> (string * string list) list -> string ->
     eval -> print list -> print list option
   val parallel_print: print -> bool
   type print_function =
@@ -262,10 +262,10 @@ fun eval_state keywords span tr ({state, ...}: eval_state) =
 
 in
 
-fun eval keywords master_dir init blobs_info command_id span eval0 =
+fun eval options keywords master_dir init blobs_info command_id span eval0 =
   let
     val exec_id = Document_ID.make ();
-    fun process () =
+    val process = Options.permissive_thread_update options (fn () =>
       let
         val eval_state0 = eval_result eval0;
         val thy = read_thy (#state eval_state0);
@@ -273,7 +273,7 @@ fun eval keywords master_dir init blobs_info command_id span eval0 =
           Position.setmp_thread_data (Position.id_only (Document_ID.print exec_id))
             (fn () =>
               read keywords thy master_dir init blobs_info span |> Toplevel.exec_id exec_id) ();
-      in eval_state keywords span tr eval_state0 end;
+      in eval_state keywords span tr eval_state0 end);
   in
     Eval {command_id = command_id, exec_id = exec_id,
       eval_process = Lazy.lazy_name "Command.eval" process}
@@ -303,11 +303,13 @@ local
 val print_functions =
   Synchronized.var "Command.print_functions" ([]: (string * print_function) list);
 
-fun print_wrapper tr opt_context =
-  Toplevel.setmp_thread_position tr o Runtime.controlled_execution opt_context;
+fun print_wrapper options tr opt_context =
+  Options.permissive_thread_update options o
+  Toplevel.setmp_thread_position tr o
+  Runtime.controlled_execution opt_context;
 
-fun print_error tr opt_context e =
-  (case Exn.result (fn () => print_wrapper tr opt_context e ()) () of
+fun print_error options tr opt_context e =
+  (case Exn.result (fn () => print_wrapper options tr opt_context e ()) () of
     Exn.Res res => res
   | Exn.Exn exn => List.app (Future.error_message (Toplevel.pos_of tr)) (Runtime.exn_messages exn));
 
@@ -317,7 +319,7 @@ fun print_persistent (Print {persistent, ...}) = persistent;
 
 val overlay_ord = prod_ord string_ord (list_ord string_ord);
 
-fun make_print (name, args) {delay, pri, persistent, strict, print_fn} eval =
+fun make_print options (name, args) {delay, pri, persistent, strict, print_fn} eval =
   let
     val exec_id = Document_ID.make ();
     fun process () =
@@ -327,7 +329,7 @@ fun make_print (name, args) {delay, pri, persistent, strict, print_fn} eval =
         val opt_context = try Toplevel.generic_theory_of st';
       in
         if failed andalso strict then ()
-        else print_error tr opt_context (fn () => print_fn tr st')
+        else print_error options tr opt_context (fn () => print_fn tr st')
       end;
   in
     Print {
@@ -336,16 +338,16 @@ fun make_print (name, args) {delay, pri, persistent, strict, print_fn} eval =
   end;
 
 fun bad_print name_args exn =
-  make_print name_args {delay = NONE, pri = 0, persistent = false,
+  make_print [] name_args {delay = NONE, pri = 0, persistent = false,
     strict = false, print_fn = fn _ => fn _ => Exn.reraise exn};
 
 in
 
 fun print0 {pri, print_fn} =
-  make_print ("", [serial_string ()])
+  make_print [] ("", [serial_string ()])
     {delay = NONE, pri = pri, persistent = true, strict = true, print_fn = print_fn};
 
-fun print keywords visible overlays command_name eval old_prints =
+fun print options keywords visible overlays command_name eval old_prints =
   let
     val print_functions = Synchronized.value print_functions;
 
@@ -359,7 +361,7 @@ fun print keywords visible overlays command_name eval old_prints =
       in
         (case Exn.capture (Runtime.controlled_execution NONE get_pr) params of
           Exn.Res NONE => NONE
-        | Exn.Res (SOME pr) => SOME (make_print (name, args) pr eval)
+        | Exn.Res (SOME pr) => SOME (make_print options (name, args) pr eval)
         | Exn.Exn exn => SOME (bad_print (name, args) exn eval))
       end;
 

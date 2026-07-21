@@ -115,14 +115,17 @@ val _ =
                      [fn ([], a) => Document.Edits (list (pair (option int) (option int)) a),
                       fn ([], a) =>
                         let
-                          val (master, (name, (imports, (keywords, errors)))) =
+                          val (master, (name, (imports, (options, (keywords, errors))))) =
                             pair string (pair string (pair (list string)
-                              (pair (list (pair string (pair string (list string))))
-                                (list YXML.string_of_body)))) a;
+                              (pair (list (pair string (option string)))
+                              ((pair (list (pair string (pair string (list string))))
+                                (list YXML.string_of_body)))))) a;
                           val imports' = map (rpair Position.none) imports;
+                          val options' = Options.update_pos_none options;
                           val keywords' =
                             map (fn (x, y) => ((x, Position.none), Keyword.command_spec y)) keywords;
-                          val header = Thy_Header.make (name, Position.none) imports' keywords';
+                          val header =
+                            Thy_Header.make (name, Position.none) imports' options' keywords';
                         in Document.Deps {master = master, header = header, errors = errors} end,
                       fn (a :: b, c) =>
                         Document.Perspective (bool_atom a, map int_atom b,

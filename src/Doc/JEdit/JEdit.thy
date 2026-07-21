@@ -177,7 +177,7 @@ text \<open>
   in \<^path>\<open>$ISABELLE_HOME_USER/etc/preferences\<close>, independently of
   other jEdit properties. See also \<^cite>\<open>"isabelle-system"\<close>, especially the
   coverage of sessions and command-line tools like @{tool build} or @{tool
-  options}.
+  "options"}.
 
   Those Isabelle options that are declared as \<^verbatim>\<open>public\<close> are configurable in
   Isabelle/jEdit via \<^emph>\<open>Options~/ Isabelle Options~/ General\<close>. Moreover, there
