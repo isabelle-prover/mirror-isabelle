@@ -265,7 +265,7 @@ in
 fun eval options keywords master_dir init blobs_info command_id span eval0 =
   let
     val exec_id = Document_ID.make ();
-    val process = Options.with_default_update options (fn () =>
+    val process = Options.permissive_thread_update options (fn () =>
       let
         val eval_state0 = eval_result eval0;
         val thy = read_thy (#state eval_state0);
@@ -304,7 +304,7 @@ val print_functions =
   Synchronized.var "Command.print_functions" ([]: (string * print_function) list);
 
 fun print_wrapper options tr opt_context =
-  Options.with_default_update options o
+  Options.permissive_thread_update options o
   Toplevel.setmp_thread_position tr o
   Runtime.controlled_execution opt_context;
 

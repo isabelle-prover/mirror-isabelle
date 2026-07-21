@@ -348,7 +348,7 @@ fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keyw
 
     val header = Thy_Header.make (name, put_id header_pos) imports [] keywords;
     val (theory, present) =
-      Options.with_default_update opts (fn () =>
+      Options.strict_thread_update opts (fn () =>
         eval_thy loading_theory dir header text_pos text
           (if name = Context.PureN then [Context.the_global_context ()] else parents)) ();
 

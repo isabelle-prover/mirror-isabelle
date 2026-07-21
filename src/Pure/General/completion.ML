@@ -100,7 +100,7 @@ fun check_option_value ctxt ((name, pos), opt_value) options =
     val _ = check_option options ctxt (name, pos);
     val pos' = the_default pos (Option.map #2 opt_value);
     val options' =
-      Options.update [(name, Option.map #1 opt_value)] options
+      Options.update (name, Option.map #1 opt_value) options
         handle ERROR msg => error (msg ^ Position.here pos');
   in (name, options') end;
 

@@ -30,7 +30,7 @@ sig
   val spec1: string -> spec
   val spec: string -> string -> spec
   type update = spec list
-  val update: update -> T -> T
+  val update: spec -> T -> T
   type spec_pos = (string * Position.T) * (string * Position.T) option
   type update_pos = spec_pos list
   val spec_no_pos: spec_pos -> spec
@@ -43,6 +43,8 @@ sig
   val set_process_default: T option -> unit
   val load_process_default: unit -> unit
   val inherit_thread_update: unit -> ('a -> 'b) -> 'a -> 'b
+  val strict_thread_update: update -> ('a -> 'b) -> 'a -> 'b
+  val permissive_thread_update: update -> ('a -> 'b) -> 'a -> 'b
   val default: update -> T
   val default_typ: string -> string
   val default_bool: string -> bool
@@ -51,7 +53,6 @@ sig
   val default_seconds: string -> Time.time
   val default_string: string -> string
   val get_default: string -> string
-  val with_default_update: update -> ('a -> 'b) -> 'a -> 'b
 end;
 
 structure Options: OPTIONS =
@@ -159,7 +160,7 @@ fun spec name value : spec = (name, SOME value);
 
 type update = spec list;
 
-val update = fold (fn ((name, opt_value): spec) => fn options as Options tab =>
+fun update ((name, opt_value): spec) (options as Options tab) =
   let
     val {pos, typ, standard_value, ...} = check_name options name;
     val value =
@@ -174,7 +175,9 @@ val update = fold (fn ((name, opt_value): spec) => fn options as Options tab =>
     val opt' = {pos = pos, typ = typ, value = value, standard_value = standard_value};
     val options' = Options (Symtab.update (name, opt') tab);
     val _ = check_value options' name;
-  in options' end);
+  in options' end;
+
+fun update_ok options spec = is_some (try (update spec) options);
 
 type spec_pos = (string * Position.T) * (string * Position.T) option;
 type update_pos = spec_pos list;
@@ -249,10 +252,18 @@ fun inherit_thread_update () =
   let val upd = get_thread_update ()
   in setmp_thread_update upd end;
 
+fun strict_thread_update upd =
+  let val _ = fold update upd (the_process_default ())
+  in fn f => fn x => setmp_thread_update (get_thread_update () @ upd) f x end;
+
+fun permissive_thread_update upd =
+  let val upd_ok = filter (update_ok (the_process_default ())) upd
+  in fn f => fn x => setmp_thread_update (get_thread_update () @ upd_ok) f x end;
+
 
 (* generic default *)
 
-fun default upd = the_process_default () |> update (get_thread_update ()) |> update upd;
+fun default upd = the_process_default () |> fold update (get_thread_update ()) |> fold update upd;
 
 fun default_typ name = typ (default []) name;
 fun default_bool name = bool (default []) name;
@@ -263,10 +274,6 @@ fun default_string name = string (default []) name;
 
 fun get_default name =
   let val options = default [] in get (typ options name) SOME options name end;
-
-fun with_default_update upd f x =
-  if null upd then f x
-  else setmp_thread_update (get_thread_update () @ upd) f x;
 
 
 (* Pure bootstrap *)
