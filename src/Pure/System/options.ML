@@ -42,8 +42,7 @@ sig
   val the_process_default: unit -> T
   val set_process_default: T option -> unit
   val load_process_default: unit -> unit
-  val get_thread_update: unit -> update
-  val setmp_thread_update: update -> ('a -> 'b) -> 'a -> 'b
+  val inherit_thread_update: unit -> ('a -> 'b) -> 'a -> 'b
   val default: update -> T
   val default_typ: string -> string
   val default_bool: string -> bool
@@ -245,6 +244,10 @@ fun get_thread_update () = Thread_Data.get thread_update |> these;
 fun setmp_thread_update upd f x =
   if get_thread_update () = upd then f x
   else Thread_Data.setmp thread_update (SOME upd) f x;
+
+fun inherit_thread_update () =
+  let val upd = get_thread_update ()
+  in setmp_thread_update upd end;
 
 
 (* generic default *)
