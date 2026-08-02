@@ -16,12 +16,6 @@ end;
 structure Isabelle_Process: ISABELLE_PROCESS =
 struct
 
-(* print modes *)
-
-val protocol_modes1 = [Syntax_Trans.no_bracketsN, Syntax_Trans.no_type_bracketsN];
-val protocol_modes2 = [Print_Mode.PIDE];
-
-
 (* restricted tracing messages *)
 
 val tracing_messages =
@@ -137,7 +131,7 @@ fun init_protocol modes = Thread_Attributes.uninterruptible (fn _ => fn (address
       Unsynchronized.setmp Private_Output.protocol_message_fn
         (fn props => fn chunks => message Markup.protocolN props chunks) #>
       Unsynchronized.setmp print_mode
-        ((! print_mode @ #1 modes) |> fold (update op =) (#2 modes));
+        ((! print_mode @ modes) |> update (op =) Print_Mode.PIDE);
 
 
     (* protocol *)
@@ -219,7 +213,7 @@ fun init_modes modes =
     else init_options ()
   end;
 
-fun init () = init_modes (protocol_modes1, protocol_modes2);
-fun init_build () = init_modes ([], protocol_modes2);
+fun init () = init_modes [Syntax_Trans.no_bracketsN, Syntax_Trans.no_type_bracketsN];
+fun init_build () = init_modes [];
 
 end;
