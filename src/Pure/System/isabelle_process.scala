@@ -17,7 +17,7 @@ object Isabelle_Process {
     session_background: Sessions.Background,
     session_heaps: List[Path],
     use_prelude: List[String] = Nil,
-    eval_main: String = "",
+    eval_main: String = "Isabelle_Process.init ()",
     modes: List[String] = Nil,
     cwd: Path = Path.current,
     env: JMap[String, String] = Isabelle_System.Settings.env()

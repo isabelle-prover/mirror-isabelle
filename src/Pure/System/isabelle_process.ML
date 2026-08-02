@@ -8,9 +8,9 @@ signature ISABELLE_PROCESS =
 sig
   val reset_tracing: Document_ID.exec -> unit
   val crashes: exn list Synchronized.var
-  val init_options: unit -> unit
   val init: unit -> unit
   val init_build: unit -> unit
+  val init_options: unit -> unit
 end;
 
 structure Isabelle_Process: ISABELLE_PROCESS =
@@ -70,13 +70,15 @@ fun ml_statistics () =
 
 in
 
-fun init_protocol modes = Thread_Attributes.uninterruptible (fn _ => fn (address, password) =>
+val init_protocol = Thread_Attributes.uninterruptible (fn _ => fn modes =>
   let
     val _ = Output.physical_stderr Symbol.STX;
 
 
     (* streams *)
 
+    val address = Options.default_string \<^system_option>\<open>system_channel_address\<close>;
+    val password = Options.default_string \<^system_option>\<open>system_channel_password\<close>;
     val (in_stream, out_stream) = Socket_IO.open_streams address;
     val _ = Byte_Message.write_line out_stream (Bytes.string password);
 
@@ -182,6 +184,9 @@ fun init_protocol modes = Thread_Attributes.uninterruptible (fn _ => fn (address
 
 end;
 
+fun init () = init_protocol [Syntax_Trans.no_bracketsN, Syntax_Trans.no_type_bracketsN];
+fun init_build () = init_protocol [];
+
 
 (* init options *)
 
@@ -199,21 +204,5 @@ fun init_options () =
     Context.proof_tracing := Options.default_bool \<^system_option>\<open>context_proof_tracing\<close>;
     Context.data_timing := Options.default_bool \<^system_option>\<open>context_data_timing\<close>
   end;
-
-
-(* generic init *)
-
-fun init_modes modes =
-  let
-    val address = Options.default_string \<^system_option>\<open>system_channel_address\<close>;
-    val password = Options.default_string \<^system_option>\<open>system_channel_password\<close>;
-  in
-    if address <> "" andalso password <> ""
-    then init_protocol modes (address, password)
-    else init_options ()
-  end;
-
-fun init () = init_modes [Syntax_Trans.no_bracketsN, Syntax_Trans.no_type_bracketsN];
-fun init_build () = init_modes [];
 
 end;

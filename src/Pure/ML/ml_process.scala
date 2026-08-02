@@ -79,7 +79,7 @@ object ML_Process {
         if (session_bootstrap) {
           "PolyML.print_depth " + ML_Syntax.print_int(ml_options.int("ML_print_depth"))
         }
-        else "Isabelle_Process.init ()")
+        else "Isabelle_Process.init_options ()")
 
     // ISABELLE_TMP
     val isabelle_tmp = Isabelle_System.tmp_dir("process")
