@@ -225,7 +225,9 @@ final class Other_Isabelle private(
             case Pattern(a) if result.ok && a.nonEmpty => a
             case _ =>
               error("Cannot get ML_PLATFORM from other Isabelle: " + isabelle_home +
-                if_proper(result.err, "\n" + result.err) + error_context)
+                if_proper(result.out, "\n" + Library.prefix_lines("stdout: ", result.out)) +
+                if_proper(result.err, "\n" + Library.prefix_lines("stderr: ", result.err)) +
+                error_context)
           }
         }
         else getenv_strict("ML_PLATFORM")
