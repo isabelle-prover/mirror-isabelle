@@ -25,18 +25,14 @@ object Isabelle_Process {
     val channel = System_Channel()
     val (process_options, process) =
       try {
-        val channel_options =
-          options.
-            string.update("system_channel_address", channel.address).
-            string.update("system_channel_password", channel.password)
-        ML_Process(channel_options, session_background, session_heaps,
+        ML_Process(options, session_background, session_heaps,
           use_prelude = use_prelude, eval_main = eval_main,
           modes = modes, cwd = cwd, env = env)
       }
       catch { case exn @ ERROR(_) => channel.shutdown(); throw exn }
 
+
     val isabelle_process = new Isabelle_Process(session, process, process_options)
-    process.stdin.close()
     session.start(receiver => new Prover(receiver, session.cache, channel, process))
 
     isabelle_process

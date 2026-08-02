@@ -141,6 +141,9 @@ class Prover(
       exit_message(Process_Result.startup_failure)
     }
     else {
+      process.stdin.write(channel.address + " " + channel.password)
+      process.stdin.flush()
+      process.stdin.close()
       val (command_stream, message_stream) = channel.rendezvous()
 
       command_input_init(command_stream)

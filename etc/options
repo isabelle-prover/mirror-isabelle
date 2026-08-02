@@ -543,12 +543,6 @@ option build_manager_database_ssh_user : string = "" for connection
 option build_manager_database_ssh_port : int = 0 for connection
 
 
-section "Isabelle/Scala/ML system channel"
-
-option system_channel_address : string = "" for connection
-option system_channel_password : string = "" for connection
-
-
 section "Bash process execution server"
 
 option bash_process_debugging : bool = false for connection

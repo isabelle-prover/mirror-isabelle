@@ -77,8 +77,10 @@ val init_protocol = Thread_Attributes.uninterruptible (fn _ => fn modes =>
 
     (* streams *)
 
-    val address = Options.default_string \<^system_option>\<open>system_channel_address\<close>;
-    val password = Options.default_string \<^system_option>\<open>system_channel_password\<close>;
+    val (address, password) =
+      (case TextIO.inputLine TextIO.stdIn |> Option.map (trim_line #> space_explode " ") of
+        SOME [address, password] => (address, password)
+      | _ => raise Fail "Cannot determine system channel address/password");
     val (in_stream, out_stream) = Socket_IO.open_streams address;
     val _ = Byte_Message.write_line out_stream (Bytes.string password);
 
