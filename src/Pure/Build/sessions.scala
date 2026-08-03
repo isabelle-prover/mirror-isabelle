@@ -63,7 +63,8 @@ object Sessions {
   val UNSORTED = "Unsorted"
   val DRAFT = "Draft"
 
-  def is_pure(name: String): Boolean = name == Thy_Header.PURE
+  val Pure = "Pure"
+  def is_Pure(name: String): Boolean = name == Pure
 
   def illegal_session(name: String): Boolean = name == "" || name == DRAFT
   def illegal_theory(name: String): Boolean =
@@ -617,8 +618,8 @@ object Sessions {
           else if (illegal_session(entry.name)) error("Illegal session name " + quote(entry.name))
           else entry.name
 
-        if (is_pure(name) && entry.parent.isDefined) error("Illegal parent session")
-        if (!is_pure(name) && !entry.parent.isDefined) error("Missing parent session")
+        if (is_Pure(name) && entry.parent.isDefined) error("Illegal parent session")
+        if (!is_Pure(name) && !entry.parent.isDefined) error("Missing parent session")
 
         val session_path = dir + Path.explode(entry.path)
         val directories = entry.directories.map(dir => session_path + Path.explode(dir))

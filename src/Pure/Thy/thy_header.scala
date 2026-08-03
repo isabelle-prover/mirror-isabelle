@@ -68,13 +68,12 @@ object Thy_Header {
 
   /* file name vs. theory name */
 
-  val PURE = "Pure"
   val ML_BOOTSTRAP = "ML_Bootstrap"
   val ml_roots: List[(String, String)] = List("ROOT0.ML" -> "ML_Root0", "ROOT.ML" -> "ML_Root")
-  private val bootstrap_thys = List(PURE, ML_BOOTSTRAP).map(a => a -> ("Bootstrap_" + a))
+  private val bootstrap_thys = List(Sessions.Pure, ML_BOOTSTRAP).map(a => a -> ("Bootstrap_" + a))
 
   val bootstrap_global_theories: List[(String, String)] =
-    (Sessions.root_name :: (ml_roots ::: bootstrap_thys).map(_._2)).map(_ -> PURE)
+    (Sessions.root_name :: (ml_roots ::: bootstrap_thys).map(_._2)).map(_ -> Sessions.Pure)
 
   def import_name(s: String): String =
     Url.get_base_name(s) match {

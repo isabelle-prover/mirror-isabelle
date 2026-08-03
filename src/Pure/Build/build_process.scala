@@ -93,7 +93,7 @@ object Build_Process {
       for (name <- graph.topological_order.iterator) yield apply(name)
 
     def store_heap(name: String): Boolean =
-      isabelle.Sessions.is_pure(name) || iterator.exists(_.ancestors.contains(name))
+      isabelle.Sessions.is_Pure(name) || iterator.exists(_.ancestors.contains(name))
 
     def data: Name.Data[Build_Job.Session_Context] =
       Map.from(for ((_, (session, _)) <- graph.iterator) yield session.name -> session)

@@ -241,7 +241,7 @@ class Resources(
     val imports =
       if (name.theory == Sessions.root_name) List(import_name(name, Sessions.theory_import))
       else if (Thy_Header.is_ml_root(name.theory)) List(import_name(name, Thy_Header.ML_BOOTSTRAP))
-      else if (Thy_Header.is_bootstrap(name.theory)) List(import_name(name, Thy_Header.PURE))
+      else if (Thy_Header.is_bootstrap(name.theory)) List(import_name(name, Sessions.Pure))
       else Nil
     if (imports.isEmpty) None
     else Some(Document.Node.Header(imports = imports.map((_, Position.none))))
@@ -379,7 +379,7 @@ class Resources(
           val graph1 = (name :: imports).foldLeft(graph)(_.default_node(_, Outer_Syntax.empty))
           val graph2 = imports.foldLeft(graph1)(_.add_edge(_, name))
 
-          val syntax0 = if (name == Thy_Header.PURE) List(Thy_Header.bootstrap_syntax) else Nil
+          val syntax0 = if (Sessions.is_Pure(name)) List(Thy_Header.bootstrap_syntax) else Nil
           val syntax1 = (name :: graph2.imm_preds(name).toList).map(graph2.get_node)
           val syntax = Outer_Syntax.merge(syntax0 ::: syntax1) + entry.header
 
@@ -402,7 +402,7 @@ class Resources(
       val theory = name.theory
       val syntax = get_syntax(name)
       val files1 = resources.loaded_files(syntax, name, spans)
-      val files2 = if (theory == Thy_Header.PURE) pure_files(syntax) else Nil
+      val files2 = if (Sessions.is_Pure(theory)) pure_files(syntax) else Nil
       (theory, files1 ::: files2)
     }
 

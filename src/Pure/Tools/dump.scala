@@ -163,11 +163,10 @@ object Dump {
         else List(new Session(context, session_logic, log, selected_sessions, record_proofs))
       }
 
-      val PURE = isabelle.Thy_Header.PURE
-
+      val is_Pure = Sessions.is_Pure(logic)
       val base =
-        if ((logic == PURE && !pure_base) || skip_base) Nil
-        else make_session(base_sessions, session_logic = PURE, strict = logic == PURE)
+        if ((is_Pure && !pure_base) || skip_base) Nil
+        else make_session(base_sessions, session_logic = Sessions.Pure, strict = is_Pure)
 
       val main =
         make_session(
@@ -175,7 +174,7 @@ object Dump {
             base_sessions.contains(name) ||
             proof_sessions.contains(name)))
 
-      val proofs = make_session(proof_sessions, session_logic = PURE, record_proofs = true)
+      val proofs = make_session(proof_sessions, session_logic = Sessions.Pure, record_proofs = true)
 
       proofs ::: base ::: main
     }
@@ -343,7 +342,7 @@ object Dump {
   /* dump */
 
   val default_output_dir: Path = Path.explode("dump")
-  val default_logic: String = Thy_Header.PURE
+  val default_logic: String = Sessions.Pure
 
   def dump(
     options: Options,
