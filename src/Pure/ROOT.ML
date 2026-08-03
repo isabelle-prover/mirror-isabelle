@@ -337,7 +337,6 @@ ML_file "PIDE/document.ML";
 ML_file "ML/ml_pp.ML";
 ML_file "ML/ml_instantiate.ML";
 ML_file "ML/ml_file.ML";
-ML_file "ML/ml_pid.ML";
 
 (*theory and proof operations*)
 ML_file "Isar/isar_cmd.ML";

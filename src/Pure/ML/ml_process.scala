@@ -32,6 +32,12 @@ object ML_Process {
     val ml_settings = ML_Settings(ml_options)
     val session_bootstrap = session_heaps.isEmpty
 
+    val ml_pid =
+      if (Platform.is_windows) {
+        """Foreign.buildCall0 (Foreign.getSymbol (Foreign.loadLibrary "kernel32.dll") "GetCurrentProcessId", (), Foreign.cInt)"""
+      }
+      else """SysWord.toLargeInt o Posix.Process.pidToWord o Posix.ProcEnv.getpid"""
+
     val eval_init =
       if (session_bootstrap) {
         List(
@@ -42,6 +48,7 @@ object ML_Process {
           fun subsubsection (_: string) = ();
           fun paragraph (_: string) = ();
           fun subparagraph (_: string) = ();
+          structure PolyML = struct open PolyML val ml_pid = """ + ml_pid + """ end;
           val ML_file = PolyML.use;
           PolyML.Compiler.prompt1 := "Poly/ML> ";
           PolyML.Compiler.prompt2 := "Poly/ML# ";

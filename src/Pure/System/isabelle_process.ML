@@ -66,7 +66,7 @@ fun recover crash =
 
 fun ml_statistics () =
   Output.protocol_message
-    (Markup.ML_statistics {pid = ML_Pid.get (), stats_dir = getenv "POLYSTATSDIR"}) [];
+    (Markup.ML_statistics {pid = PolyML.ml_pid (), stats_dir = getenv "POLYSTATSDIR"}) [];
 
 in
 
