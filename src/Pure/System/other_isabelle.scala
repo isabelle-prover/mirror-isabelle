@@ -218,7 +218,7 @@ final class Other_Isabelle private(
         val isabelle_console = isabelle_home + Path.explode("lib/Tools/console")
         if (ssh.is_file(isabelle_console) &&
             ssh.read(isabelle_console).containsSlice("isabelle.ML_Console")) {
-          val Pattern = """.*val ML_PLATFORM = "(.*)".*""".r
+          val Pattern = """(?s).*val ML_PLATFORM = "(.*)".*""".r
           val input = """val ML_PLATFORM = Option.getOpt (OS.Process.getEnv "ML_PLATFORM", "")"""
           val result = bash("bin/isabelle console -r", input = input)
           result.out match {
