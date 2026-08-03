@@ -1637,6 +1637,12 @@ struct
 end;
 
 structure Posix = struct end;
+
+structure PolyML =
+struct
+  open PolyML;
+  fun exit (_: int) = raise Fail "Cannot exit process from Isabelle/ML"
+end;
 \<close>
 
 declare [[ML_write_global = false]]
