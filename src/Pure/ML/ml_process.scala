@@ -48,7 +48,12 @@ object ML_Process {
           fun subsubsection (_: string) = ();
           fun paragraph (_: string) = ();
           fun subparagraph (_: string) = ();
-          structure PolyML = struct open PolyML val ml_pid = """ + ml_pid + """ end;
+          structure PolyML =
+          struct
+            open PolyML
+            fun exit rc = OS.Process.exit (RunCall.unsafeCast (Word8.fromInt rc))
+            val ml_pid = """ + ml_pid + """
+          end;
           val ML_file = PolyML.use;
           PolyML.Compiler.prompt1 := "Poly/ML> ";
           PolyML.Compiler.prompt2 := "Poly/ML# ";

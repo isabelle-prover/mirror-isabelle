@@ -26,6 +26,7 @@ ML \<open>
       structure PolyML =
       struct
         val pointerEq = pointer_eq;
+        val exit = PolyML.exit;
         structure IntInf = PolyML.IntInf;
         datatype context = datatype PolyML.context;
         datatype pretty = datatype PolyML.pretty;

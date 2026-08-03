@@ -23,10 +23,6 @@ fun tool main =
             (case Exn.capture print_failure exn of
               Exn.Res rc => rc
             | Exn.Exn crash => Exn.failure_rc crash));
-    in
-      if rc = 0 then OS.Process.exit OS.Process.success
-      else if rc = 1 then OS.Process.exit OS.Process.failure
-      else OS.Process.exit (RunCall.unsafeCast (Word8.fromInt rc))
-    end);
+    in PolyML.exit rc end);
 
 end;
