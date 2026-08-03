@@ -12,14 +12,11 @@ end;
 structure ML_Pid: ML_PID =
 struct
 
+val get =
 \<^if_windows>\<open>
-  val get =
-    Foreign.buildCall0
-      (Foreign.getSymbol (Foreign.loadLibrary "kernel32.dll") "GetCurrentProcessId", (), Foreign.cInt);
+  Foreign.buildCall0
+    (Foreign.getSymbol (Foreign.loadLibrary "kernel32.dll") "GetCurrentProcessId", (), Foreign.cInt);
 \<close>
-
-\<^if_unix>\<open>
-  val get = Posix.ProcEnv.getpid #> Posix.Process.pidToWord #> SysWord.toLargeInt;
-\<close>
+\<^if_unix>\<open>SysWord.toLargeInt o Posix.Process.pidToWord o Posix.ProcEnv.getpid;\<close>
 
 end;
