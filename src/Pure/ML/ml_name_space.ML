@@ -64,7 +64,7 @@ val forget_val = PolyML.Compiler.forgetValue;
 val forget_type = PolyML.Compiler.forgetType;
 val forget_structure = PolyML.Compiler.forgetStructure;
 
-val hidden_structures = ["CInterface", "Foreign", "RunCall", "Signal"];
+val hidden_structures = ["RunCall"];
 
 
 (* bootstrap environment *)

@@ -52,6 +52,7 @@ object ML_Process {
           val ML_file = PolyML.use;
           PolyML.Compiler.prompt1 := "Poly/ML> ";
           PolyML.Compiler.prompt2 := "Poly/ML# ";
+          List.app PolyML.Compiler.forgetStructure ["CInterface", "Foreign", "Signal"];
           """)
       }
       else {
