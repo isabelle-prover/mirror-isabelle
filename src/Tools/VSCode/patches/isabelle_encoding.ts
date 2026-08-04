@@ -3,7 +3,7 @@
 UTF-8-Isabelle symbol encoding: for use inside VSCode.
 */
 
-'use strict';
+"use strict";
 
 
 /* VSCode interfaces */

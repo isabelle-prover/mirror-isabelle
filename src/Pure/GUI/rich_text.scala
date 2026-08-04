@@ -42,10 +42,16 @@ object Rich_Text {
     unicode_symbols: Boolean,
     cache: Cache = Cache.none
   ): List[Formatted] = {
+    def recode(s: String): String = Symbol.output(unicode_symbols, s)
+
+    def run(msg: XML.Elem): Formatted =
+      Formatted(Protocol_Message.get_serial(msg),
+        cache.body(Pretty.formatted(List(msg), recode = recode, margin = margin, metric = metric)))
+
     val result = new mutable.ListBuffer[Formatted]
     for (msg <- msgs) {
       if (result.nonEmpty) result += Formatted(Document_ID.make(), Pretty.Separator)
-      result += cache.format(msg, margin, metric, unicode_symbols)
+      result += cache.formatted(Cache.Args(msg, margin, metric, unicode_symbols), run(msg))
       Exn.Interrupt.expose()
     }
     result.toList
@@ -70,42 +76,31 @@ object Rich_Text {
         compress: Compress.Cache = Compress.Cache.make(),
         max_string: Int = isabelle.Cache.default_max_string,
         initial_size: Int = isabelle.Cache.default_initial_size): Cache =
-      new Cache(compress, initial_size, max_string)
+      new Memory_Cache(compress, initial_size, max_string)
 
-    val none: Cache = make(max_string = 0)
+    val none: Cache = new Cache { }
 
     sealed case class Args(
       msg: XML.Elem, margin: Double, metric: Font_Metric, unicode_symbols: Boolean)
   }
 
-  class Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
-  extends Term.Cache(compress, max_string, initial_size) {
-    cache =>
+  trait Cache extends Term.Cache {
+    def formatted(args: Cache.Args, run: => Formatted): Formatted = run
+  }
 
-    def format(
-      msg: XML.Elem,
-      margin: Double,
-      metric: Font_Metric,
-      unicode_symbols: Boolean
-    ): Formatted = {
-      def recode(s: String): String = Symbol.output(unicode_symbols, s)
-
-      def run: Formatted =
-        Formatted(Protocol_Message.get_serial(msg),
-          cache.body(Pretty.formatted(List(msg), recode = recode, margin = margin, metric = metric)))
-
-      if (cache.table == null) run
+  class Memory_Cache(compress: Compress.Cache, max_string: Int, initial_size: Int)
+  extends Term.Memory_Cache(compress, max_string, initial_size) with Cache {
+    override def formatted(x: Cache.Args, run: => Formatted): Formatted = {
+      if (table == null) run
       else {
-        val x = Cache.Args(msg, margin, metric, unicode_symbols)
-
-        def get: Option[Formatted] =
-          cache.table.get(x) match {
+        val get: Option[Formatted] =
+          table.get(x) match {
             case ref: WeakReference[Any] => proper_value(ref.get.asInstanceOf[Formatted])
             case null => None
-          }
+        }
 
         val y = get.getOrElse(run)
-        cache.table.synchronized { if (get.isEmpty) cache.table.put(x, new WeakReference[Any](y)) }
+        table.synchronized { if (get.isEmpty) table.put(x, new WeakReference[Any](y)) }
         y
       }
     }

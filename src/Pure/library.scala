@@ -157,7 +157,7 @@ object Library {
   def split_lines(str: String): List[String] = space_explode('\n', str)
 
   def prefix_lines(prfx: String, str: String): String =
-    isabelle.setup.Library.prefix_lines(prfx, str).nn
+    cat_lines(split_lines(str).map(prfx + _))
 
   def indent_lines(n: Int, str: String): String =
     if (n == 0) str else prefix_lines(Symbol.spaces(n), str)
@@ -180,9 +180,9 @@ object Library {
 
   /* locales */
 
-  val locale_root: Locale = Locale.ROOT.nn
-  val locale_english: Locale = Locale.ENGLISH.nn
-  val locale_german: Locale = Locale.GERMAN.nn
+  def locale_root: Locale = Locale.ROOT.nn
+  def locale_english: Locale = Locale.ENGLISH.nn
+  def locale_german: Locale = Locale.GERMAN.nn
 
 
   /* strings */

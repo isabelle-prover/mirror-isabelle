@@ -392,8 +392,7 @@ object Symbol {
       code.map(c => new String(Character.toChars(c)))
   }
 
-  lazy val symbols: Symbols =
-    Symbols.make(cat_lines(Symbols.files().map(File.read)))
+  lazy val symbols: Symbols = Symbol_Provider.symbols
 
   object Symbols {
     def files(): List[Path] =

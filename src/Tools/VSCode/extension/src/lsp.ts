@@ -6,10 +6,10 @@ Message formats for Language Server Protocol, with adhoc PIDE extensions
 (see Tools/VSCode/src/lsp.scala).
 */
 
-'use strict';
+"use strict";
 
-import { MarkdownString } from 'vscode'
-import { NotificationType, RequestType0 } from 'vscode-languageclient'
+import { MarkdownString } from "vscode"
+import { NotificationType, RequestType0 } from "vscode-languageclient"
 
 
 /* decorations */

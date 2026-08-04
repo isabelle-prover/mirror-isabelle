@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 import { ExtensionContext, window } from 'vscode'
 

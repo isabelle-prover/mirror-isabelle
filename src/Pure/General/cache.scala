@@ -18,13 +18,18 @@ object Cache {
   def make(
       max_string: Int = default_max_string,
       initial_size: Int = default_initial_size): Cache =
-    new Cache(max_string, initial_size)
+    new Memory_Cache(max_string, initial_size)
 
-  val none: Cache = make(max_string = 0)
+  val none: Cache = new Cache { }
 }
 
-class Cache(max_string: Int, initial_size: Int) {
-  val no_cache: Boolean = max_string == 0
+trait Cache {
+  def no_cache: Boolean = true
+  def string(x: String): String = x
+}
+
+class Memory_Cache(max_string: Int, initial_size: Int) extends Cache {
+  override val no_cache: Boolean = max_string == 0
 
   private type Table = JMap[Any, WeakReference[Any]]
   protected val table: Table | Null =
@@ -73,6 +78,5 @@ class Cache(max_string: Int, initial_size: Int) {
   }
 
   // main methods
-  def string(x: String): String =
-    if (no_cache) x else synchronized { cache_string(x) }
+  override def string(x: String): String = synchronized { cache_string(x) }
 }

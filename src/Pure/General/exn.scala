@@ -127,7 +127,7 @@ object Exn {
     if (exn.isInstanceOf[User_Error] || exn.getClass == classOf[RuntimeException]) {
       Some(proper_string(exn.getMessage) getOrElse "Error")
     }
-    else if (exn.isInstanceOf[java.sql.SQLException]) {
+    else if (exn.class_name == "java.sql.SQLException") {
       Some(proper_string(exn.getMessage) getOrElse "SQL error")
     }
     else if (exn.isInstanceOf[java.io.IOException]) {

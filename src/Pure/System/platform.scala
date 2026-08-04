@@ -10,10 +10,10 @@ package isabelle
 object Platform {
   /* platform family */
 
-  val is_windows: Boolean = isabelle.setup.Environment.is_windows()
-  val is_linux: Boolean = isabelle.setup.Environment.is_linux()
-  val is_macos: Boolean = isabelle.setup.Environment.is_macos()
-  val is_unix: Boolean = is_linux || is_macos
+  def is_windows: Boolean = isabelle.setup.Environment.is_windows()
+  def is_linux: Boolean = isabelle.setup.Environment.is_linux()
+  def is_macos: Boolean = isabelle.setup.Environment.is_macos()
+  def is_unix: Boolean = is_linux || is_macos
 
   def family: Platform_Family = {
     val arch = Isabelle_System.get_property("os.arch")
@@ -87,4 +87,6 @@ object Platform {
   /* JVM name */
 
   val jvm_name: String = Isabelle_System.get_property("java.vm.name")
+
+  def is_scalajs: Boolean = jvm_name == "Scala.js"
 }

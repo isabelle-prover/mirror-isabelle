@@ -5,22 +5,28 @@ Support for compiling Scala to JavaScript.
  */
 package isabelle
 
+import scala.language.unsafeNulls
+
 import java.io.{File => JFile}
 
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 
 import org.scalajs.logging
 import org.scalajs.linker.{PathIRContainer, StandardImpl, PathOutputDirectory}
-import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer}
+import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer, ModuleKind}
 
 import dotty.tools.dotc.Driver
 import dotty.tools.dotc.interfaces.{Diagnostic, SimpleReporter}
 
 
 object Scalajs {
+  /** compilation **/
+
   final case class Module(name: String, class_name: String, main: String = "main") {
     def js_path: Path = Path.basic(name).ext("js")
   }
@@ -102,7 +108,7 @@ object Scalajs {
 
       if (result.hasErrors) Result(msgs.toList)
       else {
-        val linker = StandardImpl.linker(StandardConfig())
+        val linker = StandardImpl.linker(StandardConfig().withModuleKind(ModuleKind.ESModule))
         val cache = StandardImpl.irFileCache().newCache
 
         val logger =
@@ -146,5 +152,83 @@ object Scalajs {
         Result(msgs.toList, report, results)
       }
     }
+  }
+
+
+  /** json conversions **/
+
+  object JSON {
+    def apply(json: isabelle.JSON.T): js.Any =
+      json match {
+        case x: String => x
+        case x: Double => x
+        case x: Long => x.toDouble
+        case x: Int => x
+        case x: Boolean => x
+        case null => null
+        case xs: List[isabelle.JSON.T] => xs.map(apply).toJSArray
+        case isabelle.JSON.Object(obj) => Object(obj)
+        case x => error("Bad JSON value: " + x.toString)
+      }
+
+    def unapply(json: Any): Option[isabelle.JSON.T] =
+      json match {
+        case x: String => Some(x)
+        case x: Double => Some(x)
+        case x: Int => Some(x)
+        case x: Boolean => Some(x)
+        case null => Some(null)
+        case xs: js.Array[_] =>
+          val arr = xs.map(unapply)
+          if (arr.forall(_.isDefined)) Some(arr.map(_.get)) else None
+        case Object(m) => Some(m)
+        case _ => None
+      }
+
+    object Object {
+      def apply(json: isabelle.JSON.Object.T): js.Object =
+        js.Dynamic.literal(json.toList.map((k, v) => k -> JSON(v)): _*)
+
+      def unapply(json: js.Object): Option[isabelle.JSON.Object.T] = {
+        val entries = js.Object.entries(json).map(t => t._1 -> JSON.unapply(t._2))
+        if (entries.forall(_._2.isDefined)) Some(entries.toMap) else None
+      }
+    }
+  }
+
+
+  /** registered functions **/
+
+  abstract class Fun_Any {
+    def invoke(arg: Any): Unit
+    val function = Functions.register(this)
+  }
+
+  abstract class Fun_Unit extends Fun_Any {
+    def apply(): Unit
+    def invoke(u: Any): Unit = apply()
+  }
+
+  abstract class Fun[A] extends Fun_Any {
+    def apply(a: A): Unit
+    def invoke(u: Any): Unit = apply(u.asInstanceOf[A])
+  }
+
+  object Functions {
+    private val functions = mutable.Map.empty[String, js.Function1[Any, Unit]]
+    if (Platform.is_scalajs) js.Dynamic.global.window.isabelle_functions = functions
+
+    def lookup(name: String): String = "window.isabelle_functions('" + name + "')"
+
+    def register(fun: Fun_Any): Function = {
+      val name = fun.class_name.replacing("." -> "$")
+      if (Platform.is_scalajs) functions.update(name, { arg => fun.invoke(arg) })
+      new Function(name)
+    }
+  }
+
+  class Function private[Scalajs](val name: String) {
+    override def toString: String = name
+    def apply(args: String*): String = Functions.lookup(name) + args.mkString("(", ", ", ")")
   }
 }

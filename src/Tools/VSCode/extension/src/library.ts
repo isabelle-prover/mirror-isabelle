@@ -3,7 +3,7 @@
 Basic library (see Pure/library.scala).
 */
 
-'use strict';
+"use strict";
 
 
 /* regular expressions */
