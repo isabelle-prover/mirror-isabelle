@@ -7,12 +7,13 @@ Resources for theories and auxiliary files.
 signature RESOURCES =
 sig
   val default_qualifier: string
+  type scala_fun = {single: bool, bytes: bool, pos: Position.T}
   val init_session:
     {session_positions: (string * Properties.T) list,
      session_directories: (string * string) list,
      command_timings: Properties.T list,
      load_commands: (string * Position.T) list,
-     scala_functions: (string * ((bool * bool) * Position.T)) list,
+     scala_functions: (string * scala_fun) list,
      global_theories: (string * string) list,
      loaded_theories: string list} -> unit
   val init_session_yxml: Bytes.T -> unit
@@ -23,7 +24,7 @@ sig
   val check_session: Proof.context -> string * Position.T -> string
   val last_timing: Toplevel.transition -> Time.time
   val check_load_command: Proof.context -> string * Position.T -> string
-  val check_scala_function: Proof.context -> string * Position.T -> string * (bool * bool)
+  val check_scala_function: Proof.context -> string * Position.T -> string * scala_fun
   val master_directory: theory -> Path.T
   val imports_of: theory -> (string * Position.T) list
   val begin_theory: Path.T -> Thy_Header.header -> theory list -> theory
@@ -89,6 +90,8 @@ fun get_timings timings tr =
 
 (* session base *)
 
+type scala_fun = {single: bool, bytes: bool, pos: Position.T};
+
 val default_qualifier = "Draft";
 
 type entry = {pos: Position.T, serial: serial};
@@ -101,7 +104,7 @@ val empty_session_base =
     session_directories = Symtab.empty: Path.T list Symtab.table,
     timings = empty_timings,
     load_commands = []: (string * Position.T) list,
-    scala_functions = Symtab.empty: ((bool * bool) * Position.T) Symtab.table},
+    scala_functions = Symtab.empty: scala_fun Symtab.table},
    {global_theories = Symtab.empty: string Symtab.table,
     loaded_theories = Symset.empty: Symset.T});
 
@@ -128,12 +131,17 @@ fun init_session_yxml yxml =
     val (session_positions, (session_directories, (command_timings,
         (load_commands, (scala_functions, (global_theories, loaded_theories)))))) =
       YXML.parse_body_bytes yxml |>
-        let open XML.Decode in
+        let
+          open XML.Decode;
+          val scala_fun =
+            triple bool bool properties #>
+            (fn (a, b, p) => {single = a, bytes = b, pos = Position.of_properties p});
+        in
           (pair (list (pair string properties))
             (pair (list (pair string string))
               (pair (list properties)
                 (pair (list (pair string properties))
-                  (pair (list (pair string (pair (pair bool bool) properties)))
+                  (pair (list (pair string scala_fun))
                     (pair (list (pair string string)) (list string)))))))
         end;
   in
@@ -142,7 +150,7 @@ fun init_session_yxml yxml =
        session_directories = session_directories,
        command_timings = command_timings,
        load_commands = (map o apsnd) Position.of_properties load_commands,
-       scala_functions = (map o apsnd o apsnd) Position.of_properties scala_functions,
+       scala_functions = scala_functions,
        global_theories = global_theories,
        loaded_theories = loaded_theories}
   end;
@@ -184,10 +192,9 @@ fun check_load_command ctxt arg =
 fun check_scala_function ctxt arg =
   let
     val table = get_session_base1 #scala_functions;
-    val funs = Symtab.fold (fn (a, (_, pos)) => cons (a, pos)) table [] |> sort_by #1;
+    val funs = Symtab.fold (fn (a, {pos, ...}) => cons (a, pos)) table [] |> sort_by #1;
     val name = Completion.check_entity Markup.scala_functionN funs ctxt arg;
-    val flags = #1 (the (Symtab.lookup table name));
-  in (name, flags) end;
+  in (name, the (Symtab.lookup table name)) end;
 
 val _ = Theory.setup
  (Document_Output.antiquotation_verbatim_embedded \<^binding>\<open>scala_function\<close>
@@ -198,7 +205,7 @@ val _ = Theory.setup
   ML_Antiquotation.value_embedded \<^binding>\<open>scala\<close>
     (Args.context -- Scan.lift Parse.embedded_position >> (fn (ctxt, arg) =>
       let
-        val (name, (single, bytes)) = check_scala_function ctxt arg;
+        val (name, {single, bytes, ...}) = check_scala_function ctxt arg;
         val func =
           (if single then "Scala.function1" else "Scala.function") ^
           (if bytes then "_bytes" else "");
