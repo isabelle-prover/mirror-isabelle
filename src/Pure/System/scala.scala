@@ -64,12 +64,6 @@ object Scala {
     def apply(arg: Bytes): Bytes
   }
 
-  val encode_fun: XML.Encode.T[Fun] = { fun =>
-    import XML.Encode._
-    pair(string, triple(bool, bool, properties))(
-      fun.name, (fun.single, fun.bytes, fun.position))
-  }
-
   class Functions(val functions: Fun*) extends Isabelle_System.Service
 
   lazy val functions: List[Fun] =
