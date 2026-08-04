@@ -163,7 +163,7 @@ dependencies {
         context <- contexts.iterator
         path <- context.sources.iterator
         if File.is_scala(path) || File.is_java(path)
-      } yield path).toList
+      } yield path).toList.distinct
 
     (jars, sources)
   }
