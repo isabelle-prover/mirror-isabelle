@@ -2,7 +2,8 @@
     Author:     Fabian Huch
 
 Support for compiling Scala to JavaScript.
- */
+*/
+
 package isabelle
 
 import scala.language.unsafeNulls
@@ -128,7 +129,7 @@ object Scalajs {
           for (m <- modules)
           yield ModuleInitializer.mainMethod(m.class_name, m.main).withModuleID(m.name)
 
-        val futures = 
+        val futures =
           for {
             containers <- PathIRContainer.fromClasspath(ir_dir :: classpath.jars.map(_.toPath.nn))
             ir_files <- cache.cached(containers._1)
