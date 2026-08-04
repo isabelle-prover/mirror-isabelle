@@ -373,6 +373,14 @@ object Library {
 
   /* reflection */
 
+  def has_super_class_name(a: AnyRef, name: String): Boolean = {
+    import scala.language.existentials
+    @tailrec def check_name(c: Class[_]): Boolean = {
+      c.getName.nn == name || { val d = c.getSuperclass; d != null && check_name(d) }
+    }
+    check_name(a.getClass.nn)
+  }
+
   def is_subclass[A, B](a: Class[A], b: Class[B]): Boolean = {
     import scala.language.existentials
     @tailrec def subclass(c: Class[_]): Boolean = {
