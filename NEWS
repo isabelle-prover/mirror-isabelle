@@ -393,6 +393,10 @@ relevant modules: All reachable methods must be linked to JavaScript,
 which is not possible for many Java libraries (e.g., java.io) or JNI
 calls.
 
+* Directory src/Tools/Scalajs_Demo provides a demonstration on how to
+compile an Isabelle/Scala component via Scala.js and run it on an
+Isabelle JavaScript environment.
+
 
 New in Isabelle2025-2 (January 2026)
 ------------------------------------
