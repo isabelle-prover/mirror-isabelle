@@ -219,7 +219,7 @@ object Scalajs {
     private val functions = mutable.Map.empty[String, js.Function1[Any, Unit]]
     if (Platform.is_scalajs) js.Dynamic.global.window.isabelle_functions = functions
 
-    def lookup(name: String): String = "window.isabelle_functions('" + name + "')"
+    def lookup(name: String): String = JS.function("window.isabelle_functions", quote(name))
 
     def register(fun: Fun_Any): Function = {
       val name = fun.class_name.replacing("." -> "$")
@@ -230,6 +230,6 @@ object Scalajs {
 
   class Function private[Scalajs](val name: String) {
     override def toString: String = name
-    def apply(args: String*): String = Functions.lookup(name) + args.mkString("(", ", ", ")")
+    def apply(args: JS.Source*): String = JS.function(Functions.lookup(name), args: _*)
   }
 }
