@@ -6,6 +6,7 @@ Build the Isabelle/VSCode extension as component.
 
 package isabelle.vscode
 
+import scala.jdk.CollectionConverters._
 
 import isabelle._
 
@@ -216,12 +217,14 @@ object Symbol_Provider {
             platform_context = Isabelle_Platform.Bash_Context(progress = progress),
             packages = List("yarn", "vsce"))
 
+        val extension_dir = Path.explode("$ISABELLE_VSCODE_HOME/extension")
+        val context = setup.Build.component_context(extension_dir.java_path).nn
+        val extension_sources =
+          for (name <- context.sources.nn.asScala.toList if File.is_scala(name))
+          yield extension_dir + Path.explode(name)
+
         make_symbol_provider().write(build_dir)
-        val pure_sources =
-          File.find_files(Path.explode("$ISABELLE_HOME/src/Pure"), pred = File.is_scala)
-        val scala_sources =
-          (build_dir + symbol_provider) :: pure_sources.filterNot(_.base == symbol_provider) :::
-            File.find_files(VSCode_Main.extension_dir + Path.basic("src"), pred = File.is_scala)
+        val scala_sources = (build_dir + symbol_provider) :: extension_sources
 
         val modules =
           List(
