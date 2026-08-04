@@ -4,6 +4,7 @@ src/Tools/Find_Facts
 src/Tools/jEdit
 src/Tools/GraphBrowser
 src/Tools/Graphview
+src/Tools/Scalajs_Demo
 src/Tools/Setup
 src/Tools/VSCode
 src/HOL/Mutabelle

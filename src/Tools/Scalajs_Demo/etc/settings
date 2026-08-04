@@ -1,0 +1,3 @@
+# -*- shell-script -*- :mode=shellscript:
+
+ISABELLE_SCALAJS_DEMO_HOME="$COMPONENT"

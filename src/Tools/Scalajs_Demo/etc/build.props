@@ -1,0 +1,8 @@
+title = Isabelle/Scalajs demo tool
+module = lib/scalajs_demo.jar
+requirements = \
+  env:ISABELLE_SCALA_JAR
+sources = \
+  src/scalajs_demo_tool.scala
+services = \
+  isabelle.scalajs_demo.Tools
