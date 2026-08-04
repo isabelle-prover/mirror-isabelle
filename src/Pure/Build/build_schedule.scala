@@ -1793,7 +1793,7 @@ Usage: isabelle build_schedule [OPTIONS] [SESSIONS ...]
 
       output_file match {
         case Some(output_file) if !schedule.is_empty =>
-          if (File.is_pdf(output_file.file_name) || File.is_png(output_file.file_name))
+          if (File.is_pdf(output_file) || File.is_png(output_file))
             write_schedule_graphic(schedule, output_file)
           else Schedule.write(schedule, output_file)
         case _ =>
