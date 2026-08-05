@@ -776,8 +776,9 @@ abstract class Session extends Document.Session {
                 syslog_messages.post(output)
               }
 
-              if (output.is_stdout || output.is_stderr)
+              if (output.is_stdout || output.is_stderr) {
                 raw_output_messages.post(output)
+              }
               else handle_output(output)
 
               all_messages.post(output)
