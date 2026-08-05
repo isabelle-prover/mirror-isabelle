@@ -75,6 +75,7 @@ class Prover(
   cache: XML.Cache,
   channel: System_Channel,
   process: Bash.Process,
+  default_options: Options,
   log: Logger
 ) extends Protocol {
   /** receiver output **/
@@ -281,6 +282,25 @@ class Prover(
       stream.close()
 
       system_output(thread_name + " terminated")
+    }
+  }
+
+
+
+  /** options **/
+
+  private var _options = default_options
+
+  def get_options(): Options = synchronized { _options }
+
+  def update_options(options: Options): Unit = synchronized {
+    val update =
+      for (ch <- options.changed(defaults = _options) if !ch.unknown)
+        yield ch.name -> ch.value
+    if (update.nonEmpty) {
+      protocol_command("Prover.update_options",
+        { import XML.Encode._; list(pair(string, string))(update) })
+      _options = options
     }
   }
 

@@ -41,6 +41,7 @@ sig
   val decode: T XML.Decode.T
   val the_process_default: unit -> T
   val set_process_default: T option -> unit
+  val update_process_default: update -> unit
   val load_process_default: unit -> unit
   val inherit_thread_update: unit -> ('a -> 'b) -> 'a -> 'b
   val strict_thread_update: update -> ('a -> 'b) -> 'a -> 'b
@@ -229,6 +230,11 @@ fun the_process_default () =
   | NONE => missing_process_default ());
 
 fun set_process_default opt = Synchronized.change process_default (K opt);
+
+fun update_process_default upd =
+  Synchronized.change process_default
+    (fn NONE => missing_process_default ()
+      | SOME options => SOME (fold update upd options));
 
 fun load_process_default () =
   (case getenv "ISABELLE_PROCESS_OPTIONS" of

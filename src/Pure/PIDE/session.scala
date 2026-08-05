@@ -650,7 +650,7 @@ abstract class Session extends Document.Session {
         }
 
       if (init_ok) {
-        prover.get.options(session_options ++ prover_options)
+        prover.get.update_options(session_options ++ prover_options)
         prover.get.init_session(resources)
 
         phase = Session.Ready
@@ -827,7 +827,7 @@ abstract class Session extends Document.Session {
 
             case Update_Options(options) =>
               if (prover.defined && is_ready) {
-                prover.get.options(options ++ prover_options)
+                prover.get.update_options(options ++ prover_options)
                 handle_raw_edits()
               }
               global_options.post(Session.Global_Options(options))

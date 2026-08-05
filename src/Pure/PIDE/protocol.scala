@@ -332,12 +332,6 @@ trait Protocol {
   def protocol_command(name: String, args: XML.Body*): Unit
 
 
-  /* options */
-
-  def options(opts: Options): Unit =
-    protocol_command("Prover.options", opts.encode)
-
-
   /* resources */
 
   def init_session(resources: Resources): Unit =

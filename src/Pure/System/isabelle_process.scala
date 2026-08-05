@@ -33,7 +33,8 @@ object Isabelle_Process {
       catch { case exn @ ERROR(_) => channel.shutdown(); throw exn }
 
     val isabelle_process = new Isabelle_Process(session, process, process_options)
-    session.start(receiver => new Prover(receiver, session.cache, channel, process, log))
+    session.start(receiver =>
+      new Prover(receiver, session.cache, channel, process, process_options, log))
 
     isabelle_process
   }
