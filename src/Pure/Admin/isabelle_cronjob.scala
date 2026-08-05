@@ -394,7 +394,7 @@ object Isabelle_Cronjob {
           args = "-a -d '~~/src/Benchmarks'",
           count = () => 3)),
       List(
-        Remote_Build("AFP Windows", "windows2",
+        Remote_Build("AFP Windows", "windows2", history = 120,
           java_heap = "8g",
           options = "-m32 -M1x5 -t AFP",
           args = "-a -X large -X slow",
