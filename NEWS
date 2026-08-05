@@ -314,6 +314,12 @@ operations, notably Time.sleep instead of OS.Process.sleep.
 
 *** System ***
 
+* System option "system_log" is enabled by default, so output from
+Output.system_message etc. appears on the PIDE session log: for
+command-line tools like "isabelle dump", "isabelle build", and
+derivatives, this is the console. Potential INCOMPATIBILITY: e.g. use
+"isabelle build -o system_log='' ..." to disable it explicitly.
+
 * Poly/ML 5.9.2 has been patched to support larger heap size in the
 special x86_64_32/arm64_32 mode with 32-bit values: the limit is now 32
 GiB, instead of 16 GiB before. The cost is a factor of 1.2 .. 1.5 more
