@@ -171,10 +171,10 @@ class Prover(
       val message = message_output(message_stream)
 
       val result = process_result.join
-      system_message("process terminated")
+      if (verbose) system_message("Prover process terminated")
       command_input_close()
       for (thread <- List(stdout, stderr, message)) thread.join()
-      system_message("process_manager terminated")
+      if (verbose) system_message("Prover process_manager terminated")
       exit_message(result)
     }
     channel.shutdown()
@@ -186,7 +186,7 @@ class Prover(
   def join(): Unit = process_manager.join()
 
   def terminate(): Unit = {
-    system_message("Terminating prover process")
+    if (verbose) system_message("Prover process terminating ...")
     command_input_close()
 
     var count = 10
@@ -220,9 +220,16 @@ class Prover(
               stream.flush
               true
             }
-            catch { case e: IOException => system_message(name + ": " + Exn.message(e)); false }
+            catch {
+              case e: IOException =>
+                system_message("Prover " + name + ": " + Exn.message(e))
+                false
+            }
           },
-          finish = { () => stream.close(); system_message(name + " terminated") }
+          finish = { () =>
+            stream.close()
+            if (verbose) system_message("Prover " + name + " terminated")
+          }
         )
       )
   }
@@ -259,8 +266,8 @@ class Prover(
           //}}}
         }
       }
-      catch { case e: IOException => system_message(name + ": " + Exn.message(e)) }
-      system_message(name + " terminated")
+      catch { case e: IOException => system_message("Prover " + name + ": " + Exn.message(e)) }
+      if (verbose) system_message("Prover " + name + " terminated")
     }
   }
 
@@ -294,12 +301,12 @@ class Prover(
         }
       }
       catch {
-        case e: IOException => system_message("Cannot read message:\n" + Exn.message(e))
+        case e: IOException => system_message("Failed to read prover message:\n" + Exn.message(e))
         case e: Prover.Malformed => system_message(Exn.message(e))
       }
       stream.close()
 
-      system_message(thread_name + " terminated")
+      if (verbose) system_message("Prover " + thread_name + " terminated")
     }
   }
 
