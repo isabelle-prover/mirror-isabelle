@@ -301,7 +301,7 @@ class Prover(
 
   def options: Options = synchronized { current_options }
 
-  def pide_protocol_trace: Boolean = options.bool("pide_protocol_trace")
+  def pide_prover_verbose: Boolean = options.bool("pide_prover_verbose")
 
 
 
@@ -310,7 +310,7 @@ class Prover(
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =
     command_input match {
       case Some(thread) if thread.is_active() =>
-        if (pide_protocol_trace) {
+        if (pide_prover_verbose) {
           val payload = args.foldLeft(0L) { case (n, b) => n + b.size }
           log("protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
         }
