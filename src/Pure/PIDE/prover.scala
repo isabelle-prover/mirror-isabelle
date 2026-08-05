@@ -109,9 +109,7 @@ class Prover(
 
   private def terminate_process(): Unit = {
     try { process.terminate() }
-    catch {
-      case exn @ ERROR(msg) => system_output("Failed to terminate prover process: " + msg)
-    }
+    catch { case ERROR(msg) => system_output("Failed to terminate prover process: " + msg) }
   }
 
   private val process_manager = Isabelle_Thread.fork(name = "process_manager") {
