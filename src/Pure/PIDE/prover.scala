@@ -77,6 +77,27 @@ class Prover(
   default_options: Options,
   log: Logger
 ) extends Protocol {
+  /** options **/
+
+  private var current_options = default_options
+
+  def update_options(new_options: Options): Unit = synchronized {
+    val update =
+      for (ch <- new_options.changed(defaults = current_options) if !ch.unknown)
+        yield ch.name -> ch.value
+    if (update.nonEmpty) {
+      protocol_command("Prover.update_options",
+        { import XML.Encode._; list(pair(string, string))(update) })
+      current_options = new_options
+    }
+  }
+
+  def options: Options = synchronized { current_options }
+
+  def verbose: Boolean = options.bool("pide_prover_verbose")
+
+
+
   /** receiver output **/
 
   private def system_output(text: String): Unit =
@@ -281,27 +302,6 @@ class Prover(
       system_output(thread_name + " terminated")
     }
   }
-
-
-
-  /** options **/
-
-  private var current_options = default_options
-
-  def update_options(new_options: Options): Unit = synchronized {
-    val update =
-      for (ch <- new_options.changed(defaults = current_options) if !ch.unknown)
-        yield ch.name -> ch.value
-    if (update.nonEmpty) {
-      protocol_command("Prover.update_options",
-        { import XML.Encode._; list(pair(string, string))(update) })
-      current_options = new_options
-    }
-  }
-
-  def options: Options = synchronized { current_options }
-
-  def verbose: Boolean = options.bool("pide_prover_verbose")
 
 
 
