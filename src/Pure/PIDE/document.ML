@@ -818,7 +818,7 @@ fun print_consolidation options the_command_span node_name (assign_update, node)
 in
 
 fun update old_version_id new_version_id edits consolidate state =
-  Runtime.exn_trace_system (fn () =>
+  Runtime.exn_trace_system_message (fn () =>
   let
     val options = Options.default [];
     val the_command_name = #1 o the_command state;
@@ -843,7 +843,7 @@ fun update old_version_id new_version_id edits consolidate state =
               deps = map (Future.task_of o #2) deps, pri = 1, interrupts = false}
             (fn () =>
               timeit ("Document.update " ^ name) (fn () =>
-                Runtime.exn_trace_system (fn () =>
+                Runtime.exn_trace_system_message (fn () =>
                   let
                     val special_parent = get_special_parent node;
                     val keywords = node_keywords name node;
