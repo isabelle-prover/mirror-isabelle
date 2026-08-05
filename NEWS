@@ -394,6 +394,7 @@ which is not possible for many Java libraries (e.g., java.io) or JNI
 calls.
 
 
+
 New in Isabelle2025-2 (January 2026)
 ------------------------------------
 
