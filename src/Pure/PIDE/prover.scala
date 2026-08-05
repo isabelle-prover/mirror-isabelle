@@ -288,20 +288,22 @@ class Prover(
 
   /** options **/
 
-  private var _options = default_options
+  private var current_options = default_options
 
-  def get_options(): Options = synchronized { _options }
-
-  def update_options(options: Options): Unit = synchronized {
+  def update_options(new_options: Options): Unit = synchronized {
     val update =
-      for (ch <- options.changed(defaults = _options) if !ch.unknown)
+      for (ch <- new_options.changed(defaults = current_options) if !ch.unknown)
         yield ch.name -> ch.value
     if (update.nonEmpty) {
       protocol_command("Prover.update_options",
         { import XML.Encode._; list(pair(string, string))(update) })
-      _options = options
+      current_options = new_options
     }
   }
+
+  def options: Options = synchronized { current_options }
+
+  def pide_protocol_trace: Boolean = options.bool("pide_protocol_trace")
 
 
 
@@ -310,7 +312,7 @@ class Prover(
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =
     command_input match {
       case Some(thread) if thread.is_active() =>
-        if (get_options().bool("pide_protocol_trace")) {
+        if (pide_protocol_trace) {
           val payload = args.foldLeft(0L) { case (n, b) => n + b.size }
           log("protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
         }
