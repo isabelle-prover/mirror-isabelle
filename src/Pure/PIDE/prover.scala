@@ -74,7 +74,8 @@ class Prover(
   receiver: Prover.Receiver,
   cache: XML.Cache,
   channel: System_Channel,
-  process: Bash.Process
+  process: Bash.Process,
+  log: Logger
 ) extends Protocol {
   /** receiver output **/
 
@@ -294,8 +295,7 @@ class Prover(
       case Some(thread) if thread.is_active() =>
         if (trace) {
           val payload = args.foldLeft(0L) { case (n, b) => n + b.size }
-          Output.writeln(
-            "protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
+          log("protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
         }
         thread.send(Bytes(name) :: args)
       case _ => error("Inactive prover input thread for command " + quote(name))

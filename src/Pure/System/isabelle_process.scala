@@ -22,6 +22,7 @@ object Isabelle_Process {
     cwd: Path = Path.current,
     env: JMap[String, String] = Isabelle_System.Settings.env()
   ): Isabelle_Process = {
+    val log = session.resources.log
     val channel = System_Channel()
     val (process_options, process) =
       try {
@@ -31,9 +32,8 @@ object Isabelle_Process {
       }
       catch { case exn @ ERROR(_) => channel.shutdown(); throw exn }
 
-
     val isabelle_process = new Isabelle_Process(session, process, process_options)
-    session.start(receiver => new Prover(receiver, session.cache, channel, process))
+    session.start(receiver => new Prover(receiver, session.cache, channel, process, log))
 
     isabelle_process
   }
