@@ -308,12 +308,10 @@ class Prover(
 
   /** protocol commands **/
 
-  var trace: Boolean = false
-
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =
     command_input match {
       case Some(thread) if thread.is_active() =>
-        if (trace) {
+        if (get_options().bool("pide_protocol_trace")) {
           val payload = args.foldLeft(0L) { case (n, b) => n + b.size }
           log("protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
         }

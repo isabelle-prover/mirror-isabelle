@@ -173,6 +173,9 @@ option system_log : string = "" (standard "-") for build
 option system_heaps : bool = false for build
   -- "store session heaps in $ISABELLE_HEAPS_SYSTEM, not $ISABELLE_HEAPS"
 
+option pide_protocol_trace : bool = false for build
+  -- "output trace of PIDI protocol commands"
+
 
 section "ML System"
 
