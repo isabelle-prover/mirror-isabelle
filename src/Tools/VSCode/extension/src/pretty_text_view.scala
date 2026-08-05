@@ -31,6 +31,7 @@ object Pretty_Text_View {
 
   def on_load(): Unit = {
     handle_resize()
+    handle_links()
     window_loaded = true
   }
 
@@ -58,17 +59,10 @@ object Pretty_Text_View {
     }
   }
 
-
-  /* main */
-
-  def init(): Unit = {
+  def handle_links(): Unit =
     for (link <- dom.document.querySelectorAll("""a[href^="file:"]""")) {
       link.addEventListener("click", { _ =>
         vscode.post(JSON.Object("command" -> "open", "link" -> link.getAttribute("href")))
       })
     }
-
-    dom.window.onresize = { _ => on_resize() }
-    dom.window.onload = { _ => on_load() }
-  }
 }

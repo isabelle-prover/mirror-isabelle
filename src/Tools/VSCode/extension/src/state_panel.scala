@@ -19,7 +19,8 @@ object State_Panel {
   /* main */
 
   def main(): Unit = {
-    Pretty_Text_View.init()
+    dom.window.onresize = { _ => Pretty_Text_View.on_resize() }
+    dom.window.onload = { _ => Pretty_Text_View.on_load() }
 
     val auto_update = dom.document.getElementById("auto_update")
     if (auto_update != null) {
