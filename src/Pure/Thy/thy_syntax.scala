@@ -200,7 +200,7 @@ object Thy_Syntax {
         node.update_commands(node_commands)
 
       case Exn.Exn(exn) =>
-        session.system_output(Output.error_message_text(Exn.print(exn)))
+        session.system_message(Output.error_message_text(Exn.print(exn)))
         node
     }
   }
