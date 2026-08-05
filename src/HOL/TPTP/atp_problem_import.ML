@@ -315,7 +315,7 @@ fun translate_tptp_file thy format_str file_name =
 
     val lines = lines_of_atp_problem format (K []) atp_problem
   in
-    List.app Output.physical_stdout lines
+    writeln (cat_lines lines)
   end
 
 end;
