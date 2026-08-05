@@ -34,7 +34,7 @@ object Compress {
     def xz: org.tukaani.xz.ArrayCache =
       for_xz.getOrElse(org.tukaani.xz.ArrayCache.getDummyCache().nn)
     def zstd: com.github.luben.zstd.BufferPool =
-      com.github.luben.zstd.NoPool.INSTANCE.nn
+      for_zstd.getOrElse(com.github.luben.zstd.NoPool.INSTANCE.nn)
   }
 
   object Cache {
