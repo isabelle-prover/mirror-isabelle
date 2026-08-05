@@ -222,9 +222,8 @@ object Scalajs {
     def lookup(name: String): String = JS.function("window.isabelle_functions", quote(name))
 
     def register(fun: Fun_Any): Function = {
-      val name = fun.class_name.replacing("." -> "$")
-      if (Platform.is_scalajs) functions.update(name, { arg => fun.invoke(arg) })
-      new Function(name)
+      if (Platform.is_scalajs) functions.update(fun.class_name, { arg => fun.invoke(arg) })
+      new Function(fun.class_name)
     }
   }
 
