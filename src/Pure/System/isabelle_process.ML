@@ -11,6 +11,7 @@ sig
   val init: unit -> unit
   val init_build: unit -> unit
   val init_options: unit -> unit
+  val update_options: Options.update -> unit
 end;
 
 structure Isabelle_Process: ISABELLE_PROCESS =
@@ -203,5 +204,8 @@ fun init_options () =
     Context.proof_tracing := Options.default_bool \<^system_option>\<open>context_proof_tracing\<close>;
     Context.data_timing := Options.default_bool \<^system_option>\<open>context_data_timing\<close>
   end;
+
+fun update_options upd =
+  (Options.update_process_default upd; init_options ());
 
 end;

@@ -35,7 +35,6 @@ object Prover {
     def is_system: Boolean = kind == Markup.SYSTEM
     def is_status: Boolean = kind == Markup.STATUS
     def is_report: Boolean = kind == Markup.REPORT
-    def is_syslog: Boolean = is_init || is_exit || is_system || is_stderr
 
     override def toString: String = {
       val res =
@@ -74,14 +73,37 @@ class Prover(
   receiver: Prover.Receiver,
   cache: XML.Cache,
   channel: System_Channel,
-  process: Bash.Process
+  process: Bash.Process,
+  default_options: Options,
+  log: Logger
 ) extends Protocol {
+  /** options **/
+
+  private var current_options = default_options
+
+  def update_options(new_options: Options): Unit = synchronized {
+    val update =
+      for (ch <- new_options.changed(defaults = current_options) if !ch.unknown)
+        yield ch.name -> ch.value
+    if (update.nonEmpty) {
+      protocol_command("Prover.update_options",
+        { import XML.Encode._; list(pair(string, string))(update) })
+      current_options = new_options
+    }
+  }
+
+  def options: Options = synchronized { current_options }
+
+  def verbose: Boolean = options.bool("pide_prover_verbose")
+
+
+
   /** receiver output **/
 
-  private def system_output(text: String): Unit =
+  private def system_message(text: String): Unit =
     receiver(new Prover.System_Output(text))
 
-  private def protocol_output(props: Properties.T, chunks: List[Bytes]): Unit =
+  private def protocol_message(props: Properties.T, chunks: List[Bytes]): Unit =
     receiver(new Prover.Protocol_Output(props, chunks))
 
   private def output(kind: String, props: Properties.T, body: XML.Body): Unit = {
@@ -108,9 +130,7 @@ class Prover(
 
   private def terminate_process(): Unit = {
     try { process.terminate() }
-    catch {
-      case exn @ ERROR(msg) => system_output("Failed to terminate prover process: " + msg)
-    }
+    catch { case ERROR(msg) => system_message("Failed to terminate prover process: " + msg) }
   }
 
   private val process_manager = Isabelle_Thread.fork(name = "process_manager") {
@@ -132,7 +152,7 @@ class Prover(
       }
       (finished.isEmpty || !finished.get, Library.trim_string(result.toString))
     }
-    if (startup_errors != "") system_output(startup_errors)
+    if (startup_errors.nonEmpty) system_message(startup_errors)
 
     if (startup_failed) {
       terminate_process()
@@ -151,10 +171,10 @@ class Prover(
       val message = message_output(message_stream)
 
       val result = process_result.join
-      system_output("process terminated")
+      if (verbose) system_message("Prover process terminated")
       command_input_close()
       for (thread <- List(stdout, stderr, message)) thread.join()
-      system_output("process_manager terminated")
+      if (verbose) system_message("Prover process_manager terminated")
       exit_message(result)
     }
     channel.shutdown()
@@ -166,7 +186,7 @@ class Prover(
   def join(): Unit = process_manager.join()
 
   def terminate(): Unit = {
-    system_output("Terminating prover process")
+    if (verbose) system_message("Prover process terminating ...")
     command_input_close()
 
     var count = 10
@@ -200,9 +220,16 @@ class Prover(
               stream.flush
               true
             }
-            catch { case e: IOException => system_output(name + ": " + Exn.message(e)); false }
+            catch {
+              case e: IOException =>
+                system_message("Prover " + name + ": " + Exn.message(e))
+                false
+            }
           },
-          finish = { () => stream.close(); system_output(name + " terminated") }
+          finish = { () =>
+            stream.close()
+            if (verbose) system_message("Prover " + name + " terminated")
+          }
         )
       )
   }
@@ -239,8 +266,8 @@ class Prover(
           //}}}
         }
       }
-      catch { case e: IOException => system_output(name + ": " + Exn.message(e)) }
-      system_output(name + " terminated")
+      catch { case e: IOException => system_message("Prover " + name + ": " + Exn.message(e)) }
+      if (verbose) system_message("Prover " + name + " terminated")
     }
   }
 
@@ -267,19 +294,19 @@ class Prover(
               val kind = k.text
               val props = rest.take(props_length).map(decode_prop)
               val chunks = rest.drop(props_length)
-              if (kind == Markup.PROTOCOL) protocol_output(props, chunks)
+              if (kind == Markup.PROTOCOL) protocol_message(props, chunks)
               else output(kind, props, chunks.flatMap(decode_xml))
             case Some(_) => Prover.bad_chunks()
           }
         }
       }
       catch {
-        case e: IOException => system_output("Cannot read message:\n" + Exn.message(e))
-        case e: Prover.Malformed => system_output(Exn.message(e))
+        case e: IOException => system_message("Failed to read prover message:\n" + Exn.message(e))
+        case e: Prover.Malformed => system_message(Exn.message(e))
       }
       stream.close()
 
-      system_output(thread_name + " terminated")
+      if (verbose) system_message("Prover " + thread_name + " terminated")
     }
   }
 
@@ -287,15 +314,12 @@ class Prover(
 
   /** protocol commands **/
 
-  var trace: Boolean = false
-
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =
     command_input match {
       case Some(thread) if thread.is_active() =>
-        if (trace) {
+        if (verbose) {
           val payload = args.foldLeft(0L) { case (n, b) => n + b.size }
-          Output.writeln(
-            "protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
+          log("protocol_command " + name + ", args = " + args.length + ", payload = " + payload)
         }
         thread.send(Bytes(name) :: args)
       case _ => error("Inactive prover input thread for command " + quote(name))

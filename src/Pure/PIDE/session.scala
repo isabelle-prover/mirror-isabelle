@@ -186,14 +186,10 @@ abstract class Session extends Document.Session {
     }
 
 
-  /* global flags */
-
-  @volatile var timing: Boolean = false
-  @volatile var verbose: Boolean = false
-
-
   /* dynamic session options */
 
+  def verbose: Boolean = session_options.bool("pide_editor_verbose")
+  def timing: Boolean = session_options.bool("pide_editor_timing")
   def load_delay: Time = session_options.seconds("editor_load_delay")
   def input_delay: Time = session_options.seconds("editor_input_delay")
   def generated_input_delay: Time = session_options.seconds("editor_generated_input_delay")
@@ -650,7 +646,7 @@ abstract class Session extends Document.Session {
         }
 
       if (init_ok) {
-        prover.get.options(session_options ++ prover_options)
+        prover.get.update_options(session_options ++ prover_options)
         prover.get.init_session(resources)
 
         phase = Session.Ready
@@ -775,13 +771,14 @@ abstract class Session extends Document.Session {
           //{{{
           arg match {
             case output: Prover.Output =>
-              if (output.is_syslog) {
+              if (output.is_init || output.is_exit || output.is_system || output.is_stderr) {
                 syslog += XML.content(output.message)
                 syslog_messages.post(output)
               }
 
-              if (output.is_stdout || output.is_stderr)
+              if (output.is_stdout || output.is_stderr) {
                 raw_output_messages.post(output)
+              }
               else handle_output(output)
 
               all_messages.post(output)
@@ -827,7 +824,7 @@ abstract class Session extends Document.Session {
 
             case Update_Options(options) =>
               if (prover.defined && is_ready) {
-                prover.get.options(options ++ prover_options)
+                prover.get.update_options(options ++ prover_options)
                 handle_raw_edits()
               }
               global_options.post(Session.Global_Options(options))
@@ -948,7 +945,7 @@ abstract class Session extends Document.Session {
     }
   }
 
-  def system_output(text: String): Unit =
+  def system_message(text: String): Unit =
     manager.send(new Prover.System_Output(text))
 
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =

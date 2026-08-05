@@ -10,6 +10,28 @@ begin
 
 ML_file \<open>Check.ML\<close>
 
+text \<open>Main function call\<close>
+ML_val \<open>
+open Check;
+check(extactions,intactions, content o pr_act, [(true,[],true,[],false,[],[])],
+      content o pr_tuple, nexts, hom, transA, [(true,[])]);
+\<close>
+
+text \<open>Little test example\<close>
+ML_val \<open>
+open Check;
+datatype act = A;
+fun transA(s,a,t) = (not(s)=t);
+fun hom(i) = i mod 2 = 0;
+fun nexts s A = [(s+1) mod 4];
+check([A],[],K"A", [0], string_of_int, nexts, hom, transA, [true]);
+
+fun nexts s A = [(s+1) mod 5];
+(*error:
+check([A],[],K"A", [0], string_of_int, nexts, hom, transA, [true]);
+*)
+\<close>
+
 primrec reduce :: "'a list => 'a list"
 where
   reduce_Nil:  "reduce [] = []"

@@ -51,13 +51,13 @@ class Resources(
     pair(list(pair(string, string)),
     pair(list(properties),
     pair(list(pair(string, properties)),
-    pair(list(Scala.encode_fun),
+    pair(list(pair(string, triple(bool, bool, properties))),
     pair(list(pair(string, string)), list(string)))))))(
      (sessions_structure.session_positions,
      (sessions_structure.dest_session_directories,
      (command_timings,
      (Command_Span.load_commands.map(cmd => (cmd.name, cmd.position)),
-     (Scala.functions,
+     (Scala.functions.map((fun: Scala.Fun) => (fun.name, (fun.single, fun.bytes, fun.position))),
      (sessions_structure.global_theories.toList,
       session_base.loaded_theories.keys)))))))
   }

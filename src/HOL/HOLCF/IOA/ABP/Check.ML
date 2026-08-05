@@ -18,21 +18,19 @@ fun check(extacts,intacts,string_of_a,startsI,string_of_s,
               let fun check_sas t unchecked =
                     (if member (op =) extacts a then
                           (if transA(hom s,a,hom t) then ( )
-                           else (writeln("Error: Mapping of Externals!");
-                                 string_of_s s; writeln"";
-                                 string_of_a a; writeln"";
-                                 string_of_s t;writeln"";writeln"" ))
-                     else (if hom(s)=hom(t) then ( )
-                           else (writeln("Error: Mapping of Internals!");
-                                 string_of_s s; writeln"";
-                                 string_of_a a; writeln"";
-                                 string_of_s t;writeln"";writeln"" ));
+                           else
+                            error (cat_lines
+                              ["Mapping of Externals!", string_of_s s, string_of_a a, string_of_s t]))
+                     else (if hom(s)=hom(t) then ()
+                           else
+                            error (cat_lines
+                              ["Error: Mapping of Internals!", string_of_s s, string_of_a a, string_of_s t]));
                      if member (op =) checked t then unchecked else insert (op =) t unchecked)
               in fold check_sas (nexts s a) unchecked end;
               val unchecked' = fold check_sa (extacts @ intacts) unchecked
         in    (if member (op =) startsI s then 
                     (if member (op =) startsS (hom s) then ()
-                     else writeln("Error: At start states!"))
+                     else error "At start states!")
                else ();  
                checks(unchecked',s::checked)) end
       and checks([],_) = ()
@@ -111,22 +109,22 @@ val intactions = [S_pkt(true,m),R_pkt(true,m),S_ack(true),R_ack(true),
            Input / Output utilities 
    ------------------------------------*)
 
-fun print_list (lpar, rpar, pre: 'a -> unit) (lll : 'a list) =
-  let fun prec x = (Output.physical_stdout ","; pre x)
+fun print_list (lpar, rpar, pre: 'a -> Buffer.T -> Buffer.T) (lll : 'a list) =
+  let fun prec x = Buffer.add "," #> pre x
   in
     (case lll of
-      [] => (Output.physical_stdout lpar; Output.physical_stdout rpar)
-    | x::lll => (Output.physical_stdout lpar; pre x; List.app prec lll; Output.physical_stdout rpar))
+      [] => Buffer.add lpar #> Buffer.add rpar
+    | x::lll => Buffer.add lpar #> pre x #> fold prec lll #> Buffer.add rpar)
    end;
 
-fun pr_bool true = Output.physical_stdout "true"
-|   pr_bool false = Output.physical_stdout "false";
+fun pr_bool true = Buffer.add "true"
+|   pr_bool false = Buffer.add "false";
 
-fun pr_msg m = Output.physical_stdout "m"
-|   pr_msg n = Output.physical_stdout "n"
-|   pr_msg l = Output.physical_stdout "l";
+fun pr_msg m = Buffer.add "m"
+|   pr_msg n = Buffer.add "n"
+|   pr_msg l = Buffer.add "l";
 
-fun pr_act a = Output.physical_stdout (case a of
+fun pr_act a = Buffer.add (case a of
       Next => "Next"|                         
       S_msg(ma) => "S_msg(ma)"  |
       R_msg(ma) => "R_msg(ma)"  |
@@ -135,44 +133,18 @@ fun pr_act a = Output.physical_stdout (case a of
       S_ack(b)   => "S_ack(b)" |                      
       R_ack(b)   => "R_ack(b)");
 
-fun pr_pkt (b,ma) = (Output.physical_stdout "<"; pr_bool b;Output.physical_stdout ", "; pr_msg ma; Output.physical_stdout ">");
+fun pr_pkt (b,ma) = Buffer.add "<" #> pr_bool b #> Buffer.add ", " #> pr_msg ma #> Buffer.add ">";
 
 val pr_bool_list  = print_list("[","]",pr_bool);
 val pr_msg_list   = print_list("[","]",pr_msg);
 val pr_pkt_list   = print_list("[","]",pr_pkt);
 
 fun pr_tuple (env,p,a,q,b,ch1,ch2) = 
-        (Output.physical_stdout "{"; pr_bool env; Output.physical_stdout ", "; pr_msg_list p;  Output.physical_stdout ", ";
-         pr_bool a;  Output.physical_stdout ", "; pr_msg_list q; Output.physical_stdout ", ";
-         pr_bool b;  Output.physical_stdout ", "; pr_pkt_list ch1;  Output.physical_stdout ", ";
-         pr_bool_list ch2; Output.physical_stdout "}");
+  Buffer.add "{" #> pr_bool env #> Buffer.add ", " #> pr_msg_list p #> Buffer.add ", " #>
+  pr_bool a #> Buffer.add ", " #> pr_msg_list q #> Buffer.add ", " #>
+  pr_bool b #> Buffer.add ", " #> pr_pkt_list ch1 #> Buffer.add ", " #>
+  pr_bool_list ch2 #> Buffer.add "}";
 
-
-
-(* ---------------------------------
-         Main function call
-   ---------------------------------*)
-
-(*
-check(extactions,intactions,pr_act, [(true,[],true,[],false,[],[])], 
-      pr_tuple, nexts, hom, transA, [(true,[])]);
-*)
-
-
-
-
-
-(*
-           Little test example
-
-datatype act = A;
-fun transA(s,a,t) = (not(s)=t);
-fun hom(i) = i mod 2 = 0;
-fun nexts s A = [(s+1) mod 4];
-check([A],[],K"A", [0], string_of_int, nexts, hom, transA, [true]);
-
-fun nexts s A = [(s+1) mod 5];
-
-*)
+val content = Buffer.content o Buffer.build;
 
 end;

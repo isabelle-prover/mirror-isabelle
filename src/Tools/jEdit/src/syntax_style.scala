@@ -132,7 +132,7 @@ object Syntax_Style {
       val end_offset = offset + sym.length
 
       if (control_style(sym).isDefined) control_sym = sym
-      else if (control_sym != "") {
+      else if (control_sym.nonEmpty) {
         if (Symbol.is_controllable(sym) && !Symbol.symbols.fonts.isDefinedAt(sym)) {
           mark(offset - control_sym.length, offset, _ => hidden)
           mark(offset, end_offset, control_style(control_sym).get)

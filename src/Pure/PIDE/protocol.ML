@@ -18,10 +18,14 @@ val _ =
        raise Protocol_Command.STOP (Value.parse_int rc)));
 
 val _ =
-  Protocol_Command.define_bytes "Prover.options"
-    (fn [options_yxml] =>
-      (Options.set_process_default (SOME (Options.decode (YXML.parse_body_bytes options_yxml)));
-       Isabelle_Process.init_options ()));
+  Protocol_Command.define_bytes "Prover.update_options"
+    (fn [upd_yxml] =>
+      let
+        val upd = upd_yxml
+          |> YXML.parse_body_bytes
+          |> let open XML.Decode in list (pair string string) end
+          |> map (uncurry Options.spec);
+      in Isabelle_Process.update_options upd end);
 
 val _ =
   Protocol_Command.define_bytes "Prover.init_session"

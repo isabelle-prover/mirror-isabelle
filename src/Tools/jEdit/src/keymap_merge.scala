@@ -90,7 +90,7 @@ object Keymap_Merge {
       val conflicts =
         keymap_shortcuts.filter(s1 =>
           s.property == s1.property && s.binding != s1.binding ||
-          s.property != s1.property && s.binding == s1.binding && s1.binding != "")
+          s.property != s1.property && s.binding == s1.binding && s1.binding.nonEmpty)
       (s, conflicts)
     }
   }

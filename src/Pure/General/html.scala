@@ -202,7 +202,7 @@ object HTML {
       if (hidden) { s ++= "<span class=\"hidden\">"; body; s ++= "</span>" }
 
     def output_symbol(sym: Symbol.Symbol): Unit =
-      if (sym != "") {
+      if (sym.nonEmpty) {
         control_block_begin.get(sym) match {
           case Some(op) if control_blocks =>
             output_hidden(output_string(sym))

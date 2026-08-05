@@ -98,7 +98,7 @@ object Bibtex {
 
     for (chunk <- chunks) {
       val name = chunk.name
-      if (name != "" && !chunk_pos.isDefinedAt(name)) {
+      if (name.nonEmpty && !chunk_pos.isDefinedAt(name)) {
         chunk_pos += (name -> make_pos(chunk.heading_length))
       }
       for (tok <- chunk.tokens) {
@@ -177,7 +177,7 @@ object Bibtex {
       try {
         for (chunk <- Bibtex.parse(text)) {
           val pos1 = pos.advance(chunk.source)
-          if (chunk.name != "" && !chunk.is_command) {
+          if (chunk.name.nonEmpty && !chunk.is_command) {
             entries += Entry(chunk.name, pos.position(pos1.offset))
           }
           if (chunk.is_malformed && err_line == 0) { err_line = pos.line }
@@ -394,8 +394,8 @@ object Bibtex {
 
     def is_ignored: Boolean = kind == "" && tokens.forall(_.is_ignored)
     def is_malformed: Boolean = tokens.exists(_.is_malformed)
-    def is_command: Boolean = Bibtex.is_command(kind) && name != "" && content.isDefined
-    def is_entry: Boolean = Bibtex.known_entry(kind).isDefined && name != "" && content.isDefined
+    def is_command: Boolean = Bibtex.is_command(kind) && name.nonEmpty && content.isDefined
+    def is_entry: Boolean = Bibtex.known_entry(kind).isDefined && name.nonEmpty && content.isDefined
   }
 
 
