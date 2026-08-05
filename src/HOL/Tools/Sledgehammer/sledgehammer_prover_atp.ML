@@ -323,8 +323,7 @@ fun run_atp mode name
        too. *)
     fun clean_up () = if problem_dest_dir = "" then (try File.rm prob_path; ()) else ()
     fun export (_, (output, _, _, _, _, _, _, _), _) =
-      if proof_dest_dir = "" then
-        Output.system_message "don't export proof"
+      if proof_dest_dir = "" then ()
       else
         let val proof_dest_dir_path = Path.explode proof_dest_dir in
           if File.is_dir proof_dest_dir_path then
