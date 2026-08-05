@@ -771,7 +771,7 @@ abstract class Session extends Document.Session {
           //{{{
           arg match {
             case output: Prover.Output =>
-              if (output.is_syslog) {
+              if (output.is_init || output.is_exit || output.is_system || output.is_stderr) {
                 syslog += XML.content(output.message)
                 syslog_messages.post(output)
               }

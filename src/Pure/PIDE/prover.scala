@@ -35,7 +35,6 @@ object Prover {
     def is_system: Boolean = kind == Markup.SYSTEM
     def is_status: Boolean = kind == Markup.STATUS
     def is_report: Boolean = kind == Markup.REPORT
-    def is_syslog: Boolean = is_init || is_exit || is_system || is_stderr
 
     override def toString: String = {
       val res =
