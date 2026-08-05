@@ -192,7 +192,7 @@ object Scalajs {
 
       def unapply(json: js.Object): Option[isabelle.JSON.Object.T] = {
         val entries = js.Object.entries(json).map(t => t._1 -> JSON.unapply(t._2))
-        if (entries.forall(_._2.isDefined)) Some(entries.toMap) else None
+        if (entries.forall(_._2.isDefined)) Some(entries.map((k, v) => k -> v.get).toMap) else None
       }
     }
   }
