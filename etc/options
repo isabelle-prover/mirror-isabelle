@@ -176,6 +176,12 @@ option system_heaps : bool = false for build
 option pide_protocol_trace : bool = false for build
   -- "output trace of PIDI protocol commands"
 
+option pide_editor_verbose : bool = false for build
+  -- "output verbose messages for PIDE editor operations"
+
+option pide_editor_timing : bool = false for build
+  -- "output timing messages for PIDE editor operations"
+
 
 section "ML System"
 

@@ -186,14 +186,10 @@ abstract class Session extends Document.Session {
     }
 
 
-  /* global flags */
-
-  @volatile var timing: Boolean = false
-  @volatile var verbose: Boolean = false
-
-
   /* dynamic session options */
 
+  def verbose: Boolean = session_options.bool("pide_editor_verbose")
+  def timing: Boolean = session_options.bool("pide_editor_timing")
   def load_delay: Time = session_options.seconds("editor_load_delay")
   def input_delay: Time = session_options.seconds("editor_input_delay")
   def generated_input_delay: Time = session_options.seconds("editor_generated_input_delay")
