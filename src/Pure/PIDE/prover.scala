@@ -131,7 +131,7 @@ class Prover(
       }
       (finished.isEmpty || !finished.get, Library.trim_string(result.toString))
     }
-    if (startup_errors != "") system_output(startup_errors)
+    if (startup_errors.nonEmpty) system_output(startup_errors)
 
     if (startup_failed) {
       terminate_process()

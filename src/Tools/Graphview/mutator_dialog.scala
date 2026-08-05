@@ -164,7 +164,7 @@ class Mutator_Dialog(
     contents += new Label(initials.mutator.name) {
       preferredSize = new Dimension(175, 20)
       horizontalAlignment = Alignment.Left
-      if (initials.mutator.description != "") tooltip = initials.mutator.description
+      if (initials.mutator.description.nonEmpty) tooltip = initials.mutator.description
     }
     contents += Swing.RigidBox(new Dimension(10, 0))
     contents += enabledBox
@@ -173,7 +173,7 @@ class Mutator_Dialog(
     inputs.map({
       case (n, c) =>
         contents += Swing.RigidBox(new Dimension(10, 0))
-        if (n != "") {
+        if (n.nonEmpty) {
           contents += new Label(n)
           contents += Swing.RigidBox(new Dimension(5, 0))
         }

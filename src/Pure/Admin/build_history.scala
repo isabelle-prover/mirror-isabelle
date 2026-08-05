@@ -48,7 +48,7 @@ object Build_History {
         error("Platform " + platform + " unavailable on this machine")
 
       def check_dir(platform: String): Boolean =
-        platform != "" && ml_home(platform).is_dir
+        platform.nonEmpty && ml_home(platform).is_dir
 
       val ml_platform =
         if (Platform.is_windows && arch_64) {

@@ -280,7 +280,7 @@ class Isabelle_Sidekick_Bibtex extends SideKickParser("bibtex") {
         val kind = chunk.kind
         val name = chunk.name
         val source = chunk.source
-        if (kind != "") {
+        if (kind.nonEmpty) {
           val label = kind + if_proper(name, " " + name)
           val label_html = style.enclose(GUI.Name(name, kind = kind, style = style).toString)
           val range = Text.Range(offset, offset + source.length)
