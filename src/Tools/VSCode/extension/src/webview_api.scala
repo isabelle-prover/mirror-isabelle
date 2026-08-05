@@ -2,7 +2,8 @@
     Author:     Fabian Huch
 
 VSCode Webview API: exposed within Webview environment.
- */
+*/
+
 package isabelle.vscode.extension
 
 import scala.scalajs.js

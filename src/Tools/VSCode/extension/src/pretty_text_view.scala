@@ -2,7 +2,8 @@
     Author:     Fabian Huch
 
 Webview for pretty-printed text with markup.
- */
+*/
+
 package isabelle.vscode.extension
 
 import org.scalajs.dom

@@ -2,7 +2,8 @@
     Author:     Fabian Huch
 
 Output view within Isabelle/VSCode extension.
- */
+*/
+
 package isabelle.vscode.extension
 
 import org.scalajs.dom

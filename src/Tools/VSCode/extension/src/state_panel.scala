@@ -2,7 +2,8 @@
     Author:     Fabian Huch
 
 State panel within Isabelle/VSCode extension.
- */
+*/
+
 package isabelle.vscode.extension
 
 import scala.language.unsafeNulls
