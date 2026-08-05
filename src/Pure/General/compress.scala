@@ -30,7 +30,12 @@ object Compress {
 
   /* cache */
 
-  class Cache private(val for_xz: Option[xz.ArrayCache], val for_zstd: Option[zstd.BufferPool])
+  class Cache private(for_xz: Option[xz.ArrayCache], for_zstd: Option[zstd.BufferPool]) {
+    def xz: org.tukaani.xz.ArrayCache =
+      for_xz.getOrElse(org.tukaani.xz.ArrayCache.getDummyCache().nn)
+    def zstd: com.github.luben.zstd.BufferPool =
+      com.github.luben.zstd.NoPool.INSTANCE.nn
+  }
 
   object Cache {
     def none: Cache = new Cache(None, None)
