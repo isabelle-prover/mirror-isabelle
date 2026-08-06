@@ -488,12 +488,28 @@ object Sessions {
     def get(name: String): Option[Base] = session_bases.get(name)
 
     def sources_shasum(name: String): Shasum = {
-      val meta_info = sessions_structure(name).meta_info
+      val session_info = sessions_structure(name)
+      val session_base = apply(name)
+
+      val meta_info = Shasum.make_meta_info(session_info.info_digest)
+
+      val build_prefs =
+        Shasum.make_sorted(session_info.options.changed(filter = _.session_content)
+          .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
+
+      val theories_options =
+        session_base.used_theories.map(
+          { case (_, opts) => session_info.options ++ opts.filter(p => p._1 == CONDITION) })
+      val conditions =
+        Conditions.eval(theories_options).dest
+          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+
       val sources =
         Shasum.make_sorted(
-          for ((path, digest) <- apply(name).all_sources)
+          for ((path, digest) <- session_base.all_sources)
             yield digest -> File.symbolic_path(path))
-      meta_info ::: sources
+
+      meta_info ::: build_prefs ::: Shasum.flat(conditions) ::: sources
     }
 
     def errors: List[String] =
@@ -782,19 +798,6 @@ object Sessions {
 
     def is_afp: Boolean = chapter == AFP.chapter
     def is_afp_bulky: Boolean = is_afp && groups.exists(bulky_groups)
-
-    def meta_info: Shasum = {
-      val build_prefs =
-        Shasum.make_sorted(options.changed(filter = _.session_content)
-          .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
-
-      val theories_options = theories.map({ case (opts, _) => options ++ opts })
-      val conditions =
-        Conditions.eval(theories_options).dest
-          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
-
-      Shasum.make_meta_info(info_digest) ::: build_prefs ::: Shasum.flat(conditions)
-    }
   }
 
   object Selection {
