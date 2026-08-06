@@ -547,9 +547,11 @@ object Sessions {
 
   /* conditions to load theories */
 
+  val CONDITION = "condition"
+
   object Conditions {
     def get(options: Options): List[String] =
-      space_explode(',', options.string("condition"))
+      space_explode(',', options.string(CONDITION))
 
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
@@ -597,7 +599,7 @@ object Sessions {
     }
   }
 
-  object Condition extends Special_Info("condition")
+  object Condition extends Special_Info(CONDITION)
   object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
