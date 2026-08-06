@@ -76,6 +76,10 @@ object Message_Digest {
       make(_.update(bytes, offset, length))
     def digest(string: String): T = digest(UTF8.bytes(string))
 
+    val digest_true: T = digest("true")
+    val digest_false: T = digest("false")
+    def digest(b: Boolean): T = if (b) digest_true else digest_false
+
     def digest(shasum: Shasum): T = {
       shasum.rep match {
         case List(s) if can_parse(s) => parse(s)
