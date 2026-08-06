@@ -130,7 +130,7 @@ class Prover(
 
   private def terminate_process(): Unit = {
     try { process.terminate() }
-    catch { case ERROR(msg) => system_message("Failed to terminate prover process: " + msg) }
+    catch { case ERROR(msg) => log.error_message("Failed to terminate prover process: " + msg) }
   }
 
   private val process_manager = Isabelle_Thread.fork(name = "process_manager") {
@@ -152,7 +152,7 @@ class Prover(
       }
       (finished.isEmpty || !finished.get, Library.trim_string(result.toString))
     }
-    if (startup_errors.nonEmpty) system_message(startup_errors)
+    if (startup_errors.nonEmpty) log.error_message(startup_errors)
 
     if (startup_failed) {
       terminate_process()
@@ -171,10 +171,10 @@ class Prover(
       val message = message_output(message_stream)
 
       val result = process_result.join
-      if (verbose) system_message("Prover process terminated")
+      if (verbose) log("Prover process terminated")
       command_input_close()
       for (thread <- List(stdout, stderr, message)) thread.join()
-      if (verbose) system_message("Prover process_manager terminated")
+      if (verbose) log("Prover process_manager terminated")
       exit_message(result)
     }
     channel.shutdown()
@@ -186,7 +186,7 @@ class Prover(
   def join(): Unit = process_manager.join()
 
   def terminate(): Unit = {
-    if (verbose) system_message("Prover process terminating ...")
+    if (verbose) log("Prover process terminating ...")
     command_input_close()
 
     var count = 10
@@ -222,13 +222,13 @@ class Prover(
             }
             catch {
               case e: IOException =>
-                system_message("Prover " + name + ": " + Exn.message(e))
+                log.error_message("Prover " + name + ": " + Exn.message(e))
                 false
             }
           },
           finish = { () =>
             stream.close()
-            if (verbose) system_message("Prover " + name + " terminated")
+            if (verbose) log("Prover " + name + " terminated")
           }
         )
       )
@@ -266,8 +266,8 @@ class Prover(
           //}}}
         }
       }
-      catch { case e: IOException => system_message("Prover " + name + ": " + Exn.message(e)) }
-      if (verbose) system_message("Prover " + name + " terminated")
+      catch { case e: IOException => log.error_message("Prover " + name + ": " + Exn.message(e)) }
+      if (verbose) log("Prover " + name + " terminated")
     }
   }
 
@@ -301,12 +301,12 @@ class Prover(
         }
       }
       catch {
-        case e: IOException => system_message("Failed to read prover message:\n" + Exn.message(e))
-        case e: Prover.Malformed => system_message(Exn.message(e))
+        case e: IOException => log.error_message("Failed to read prover message: " + Exn.message(e))
+        case e: Prover.Malformed => log.error_message(Exn.message(e))
       }
       stream.close()
 
-      if (verbose) system_message("Prover " + thread_name + " terminated")
+      if (verbose) log("Prover " + thread_name + " terminated")
     }
   }
 
