@@ -58,8 +58,8 @@ fun build_theories qualifier (options, thys) =
           (Thy_Info.use_theories qualifier
             |> Unsynchronized.setmp Print_Mode.print_mode print_mode) thys)
       else
-       (Output.physical_stderr ("Skipping theories " ^ commas_quote (map (#1 o #1) thys) ^
-          " (undefined " ^ commas conds ^ ")\n"); [])
+       (Output.system_message ("Skipping theories " ^ commas_quote (map (#1 o #1) thys) ^
+          " (undefined " ^ commas conds ^ ")"); [])
   in loaded_theories end;
 
 
