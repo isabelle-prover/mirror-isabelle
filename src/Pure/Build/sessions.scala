@@ -579,19 +579,24 @@ object Sessions {
 
   /* cumulative session info */
 
-  private val BUILD_PREFS_BG = "<build_prefs:"
-  private val BUILD_PREFS_EN = ">"
+  class Special_Info(val kind: String) {
+    override def toString: String = "<" + kind + ">"
 
-  def make_build_prefs(name: String): String =
-    BUILD_PREFS_BG + name + BUILD_PREFS_EN
+    private val BG = "<" + kind + ":"
+    private val EN = ">"
 
-  def detect_build_prefs(s: String): Boolean = {
-    val i = s.indexOf('<')
-    i >= 0 && {
-      val s1 = s.drop(i)
-      s1.startsWith(BUILD_PREFS_BG) && s1.endsWith(BUILD_PREFS_EN)
+    def make(name: String): String = BG + name + EN
+
+    def detect(s: String): Boolean = {
+      val i = s.indexOf('<')
+      i >= 0 && {
+        val s1 = s.drop(i)
+        s1.startsWith(BG) && s1.endsWith(EN)
+      }
     }
   }
+
+  object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
     name: String,
@@ -631,7 +636,7 @@ object Sessions {
 
         val build_prefs_digests =
           session_options.changed(filter = _.session_content)
-            .map(ch => SHA1.digest(ch.print_prefs) -> make_build_prefs(ch.name))
+            .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name))
 
         val theories_options = entry.theories.map({ case (opts, _) => session_options ++ opts })
         val theories =
