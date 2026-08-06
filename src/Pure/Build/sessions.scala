@@ -550,8 +550,7 @@ object Sessions {
   object Conditions {
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
-    def apply(options: Options): Conditions = make(Set(options))
-    def make(opts: IterableOnce[Options]): Conditions =
+    def eval(opts: List[Options]): Conditions =
       new Conditions(
         opts.iterator.flatMap(options => space_explode(',', options.string("condition")).iterator)
           .foldLeft(empty_rep) {
@@ -563,7 +562,7 @@ object Sessions {
   }
 
   final class Conditions private(private val rep: SortedMap[String, Boolean]) {
-    def toList: List[(String, Boolean)] = rep.toList
+    def dest: List[(String, Boolean)] = rep.toList
     def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
     def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
 
@@ -787,7 +786,7 @@ object Sessions {
 
       val theories_options = theories.map({ case (opts, _) => options ++ opts })
       val conditions =
-        Conditions.make(theories_options).toList
+        Conditions.eval(theories_options).dest
           .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
 
       Shasum.make_meta_info(info_digest) ::: build_prefs ::: Shasum.flat(conditions)

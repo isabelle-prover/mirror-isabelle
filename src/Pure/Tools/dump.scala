@@ -235,7 +235,7 @@ object Dump {
 
           val theory_options = options ++ theory_opts
 
-          val bad_conditions = Sessions.Conditions(theory_options).bad
+          val bad_conditions = Sessions.Conditions.eval(List(theory_options)).bad
           if (bad_conditions.nonEmpty) {
             warn("undefined " + bad_conditions.mkString(", "))
             false
