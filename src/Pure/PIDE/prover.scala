@@ -100,9 +100,6 @@ class Prover(
 
   /** receiver output **/
 
-  private def system_message(text: String): Unit =
-    receiver(new Prover.System_Output(text))
-
   private def protocol_message(props: Properties.T, chunks: List[Bytes]): Unit =
     receiver(new Prover.Protocol_Output(props, chunks))
 
