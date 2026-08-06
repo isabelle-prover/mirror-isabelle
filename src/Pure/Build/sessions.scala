@@ -548,16 +548,18 @@ object Sessions {
   /* conditions to load theories */
 
   object Conditions {
+    def get(options: Options): List[String] =
+      space_explode(',', options.string("condition"))
+
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
     def eval(opts: List[Options]): Conditions =
       new Conditions(
-        opts.iterator.flatMap(options => space_explode(',', options.string("condition")).iterator)
-          .foldLeft(empty_rep) {
-            case (map, a) =>
-              if (map.isDefinedAt(a)) map
-              else map + (a -> Isabelle_System.getenv(a).nonEmpty)
-          }
+        opts.iterator.flatMap(get).foldLeft(empty_rep) {
+          case (map, a) =>
+            if (map.isDefinedAt(a)) map
+            else map + (a -> Isabelle_System.getenv(a).nonEmpty)
+        }
       )
   }
 
