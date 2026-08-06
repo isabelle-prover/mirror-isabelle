@@ -9,6 +9,7 @@ package isabelle
 
 
 import java.io.{InputStream, OutputStream, BufferedOutputStream, IOException}
+import java.nio.channels.ClosedChannelException
 
 
 object Prover {
@@ -298,6 +299,7 @@ class Prover(
         }
       }
       catch {
+        case _: ClosedChannelException =>
         case e: IOException => log.error_message("Failed to read prover message: " + Exn.message(e))
         case e: Prover.Malformed => log.error_message(Exn.message(e))
       }
