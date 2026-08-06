@@ -596,6 +596,7 @@ object Sessions {
     }
   }
 
+  object Condition extends Special_Info("condition")
   object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
@@ -634,11 +635,6 @@ object Sessions {
         val session_prefs =
           session_options.make_prefs(defaults = session_options0, filter = _.session_content)
 
-        val build_prefs_digests =
-          session_options.changed(filter = _.session_content)
-            .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name))
-
-        val theories_options = entry.theories.map({ case (opts, _) => session_options ++ opts })
         val theories =
           entry.theories.map({ case (opts, thys) =>
             (opts, thys.map({ case ((thy, pos), _) =>
@@ -659,21 +655,16 @@ object Sessions {
             else thy_name
           }
 
-        val conditions = Conditions.make(theories_options).toList
-
         val document_files =
           entry.document_files.map({ case (s1, s2) => (Path.explode(s1), Path.explode(s2)) })
 
         val export_files =
           entry.export_files.map({ case (dir, prune, pats) => (Path.explode(dir), prune, pats) })
 
-        val meta_digest =
+        val info_digest =
           SHA1.digest(
             (name, chapter, entry.parent, entry.directories, entry.options, entry.imports,
-              entry.theories_no_position, conditions, entry.document_theories_no_position).toString)
-
-        val meta_info =
-          Shasum.make_meta_info(meta_digest) ::: Shasum.make_sorted(build_prefs_digests)
+              entry.theories_no_position, entry.document_theories_no_position).toString)
 
         val chapter_groups = chapter_defs(chapter).groups
         val groups = chapter_groups ::: entry.groups.filterNot(chapter_groups.contains)
@@ -681,7 +672,7 @@ object Sessions {
         Info(name, chapter, dir_selected, entry.pos, groups, session_path,
           entry.parent, entry.description, directories, session_options, session_prefs,
           entry.imports, theories, global_theories, entry.document_theories, document_files,
-          export_files, entry.export_classpath, meta_info)
+          export_files, entry.export_classpath, info_digest)
       }
       catch {
         case ERROR(msg) =>
@@ -710,7 +701,7 @@ object Sessions {
     document_files: List[(Path, Path)],
     export_files: List[(Path, Int, List[String])],
     export_classpath: List[String],
-    meta_info: Shasum
+    info_digest: Message_Digest.T
   ) {
     def deps: List[String] = parent.toList ::: imports
 
@@ -788,6 +779,19 @@ object Sessions {
 
     def is_afp: Boolean = chapter == AFP.chapter
     def is_afp_bulky: Boolean = is_afp && groups.exists(bulky_groups)
+
+    def meta_info: Shasum = {
+      val build_prefs =
+        Shasum.make_sorted(options.changed(filter = _.session_content)
+          .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
+
+      val theories_options = theories.map({ case (opts, _) => options ++ opts })
+      val conditions =
+        Conditions.make(theories_options).toList
+          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+
+      Shasum.make_meta_info(info_digest) ::: build_prefs ::: Shasum.flat(conditions)
+    }
   }
 
   object Selection {
