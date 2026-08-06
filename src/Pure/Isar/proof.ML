@@ -1184,17 +1184,17 @@ fun terminal_proof qeds initial terminal state =
   let
     val ctxt = context_of state;
     val check_closure = Method.check_text ctxt #> Method.map_source (Method.method_closure ctxt);
-    val initial' = apfst check_closure initial;
-    val terminal' = (apfst o Option.map o apfst) check_closure terminal;
+    val (initial_text, initial_range) = apfst check_closure initial;
+    val (terminal_method, terminal_immed) = (apfst o Option.map o apfst) check_closure terminal;
   in
     if Goal.skip_proofs_enabled () andalso not (is_relevant state) then
       state
-      |> Interactive.setmp true (proof (SOME (Method.sorry_text, #2 initial')))
-      |> Seq.maps_results (qeds (#2 (#2 initial), (NONE, #2 terminal)))
+      |> Interactive.setmp true (proof (SOME (Method.sorry_text, initial_range)))
+      |> Seq.maps_results (qeds (#1 initial_range, (NONE, terminal_immed)))
     else
       state
-      |> proof (SOME initial')
-      |> Seq.maps_results (qeds (#2 (#2 initial), terminal'))
+      |> proof (SOME (initial_text, initial_range))
+      |> Seq.maps_results (qeds (#1 initial_range, (terminal_method, terminal_immed)))
   end |> Seq.the_result "";
 
 in
