@@ -340,11 +340,11 @@ class Resources(
     def require_thys(
         thys: List[(Document.Node.Name, Position.T)],
         options: Options.Update = Nil,
-        progress: Progress = new Progress,
-        initiators: List[Document.Node.Name] = Nil
+        initiators: List[Document.Node.Name] = Nil,
+        progress: Progress = new Progress
     ): Dependencies = {
       thys.foldLeft(this)(
-        _.require_thy(_, options = options, progress = progress, initiators = initiators))
+        _.require_thy(_, options = options, initiators = initiators, progress = progress))
     }
 
     def entries: List[Document.Node.Entry] = rev_entries.reverse
