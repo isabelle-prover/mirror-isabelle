@@ -102,7 +102,7 @@ object Sessions {
     proper_session_theories: List[Document.Node.Name] = Nil,
     document_theories: List[Document.Node.Name] = Nil,
     loaded_theories: Graph[String, Outer_Syntax] = Graph.string,  // cumulative imports
-    used_theories: List[(Document.Node.Name, Options.Update)] = Nil,  // new imports
+    used_theories: List[Document.Node.Entry] = Nil,  // new imports
     theory_load_commands: Map[String, List[(Command_Span.Span, Symbol.Offset)]] = Map.empty,
     known_theories: Map[String, Document.Node.Entry] = Map.empty,
     known_loaded_files: Map[String, List[Path]] = Map.empty,
@@ -404,9 +404,6 @@ object Sessions {
               val document_theories =
                 info.document_theories.map({ case (thy, _) => known_theories(thy).name })
 
-              val used_theories =
-                dependencies.theories.map(name => name -> dependencies.theory_options(name))
-
               val dir_errors = {
                 val ok = info.dirs.map(_.canonical_file).toSet
                 val bad =
@@ -454,7 +451,7 @@ object Sessions {
                   proper_session_theories = proper_session_theories,
                   document_theories = document_theories,
                   loaded_theories = dependencies.loaded_theories,
-                  used_theories = used_theories,
+                  used_theories = dependencies.entries,
                   theory_load_commands = theory_load_commands,
                   known_theories = known_theories,
                   known_loaded_files = known_loaded_files,
@@ -501,8 +498,8 @@ object Sessions {
           .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
 
       val theories_options =
-        session_base.used_theories.map(
-          { case (_, opts) => Conditions.make_options(session_info.options, opts) })
+        session_base.used_theories.map(entry =>
+          Conditions.make_options(session_info.options, entry.options))
       val conditions =
         Conditions.eval(theories_options).dest
           .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })

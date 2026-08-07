@@ -280,7 +280,7 @@ class Resources(
   }
 
   object Dependencies {
-    def empty: Dependencies = new Dependencies(Nil, Map.empty)
+    def empty: Dependencies = new Dependencies(Nil, Set.empty)
 
     private def show_path(names: List[Document.Node.Name]): String =
       names.map(name => quote(name.theory)).mkString(" via ")
@@ -294,7 +294,7 @@ class Resources(
 
   final class Dependencies private(
     rev_entries: List[Document.Node.Entry],
-    seen: Map[Document.Node.Name, Options.Update]
+    seen: Set[Document.Node.Name]
   ) {
     private def cons(entry: Document.Node.Entry): Dependencies =
       new Dependencies(entry :: rev_entries, seen)
@@ -311,9 +311,9 @@ class Resources(
         "The error(s) above occurred for theory " + quote(name.theory) +
           Dependencies.required_by(initiators) + Position.here(pos)
 
-      if (seen.isDefinedAt(name)) this
+      if (seen(name)) this
       else {
-        val dependencies1 = new Dependencies(rev_entries, seen + (name -> options))
+        val dependencies1 = new Dependencies(rev_entries, seen + name)
         if (loaded_theory(name)) dependencies1
         else {
           try {
@@ -325,14 +325,14 @@ class Resources(
                 with_thy_reader(name, check_thy(name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = Document.Node.Entry(name, pos, header)
+            val entry = Document.Node.Entry(name, pos, header, options)
             dependencies1.require_thys(header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
             case e: Throwable =>
-              val entry = Document.Node.Entry(name, pos, Document.Node.bad_header(Exn.message(e)))
-              dependencies1.cons(entry)
+              val header = Document.Node.bad_header(Exn.message(e))
+              dependencies1.cons(Document.Node.Entry(name, pos, header, options))
           }
         }
       }
@@ -350,7 +350,6 @@ class Resources(
 
     def entries: List[Document.Node.Entry] = rev_entries.reverse
     def theories: List[Document.Node.Name] = entries.map(_.name)
-    def theory_options(name: Document.Node.Name) = seen(name)
 
     def errors: List[String] = entries.flatMap(_.header.errors)
 
