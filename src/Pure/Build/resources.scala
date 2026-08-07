@@ -349,10 +349,8 @@ class Resources(
     }
 
     def entries: List[Document.Node.Entry] = rev_entries.reverse
-
     def theories: List[Document.Node.Name] = entries.map(_.name)
-    def theories_options: List[(Document.Node.Name, Options.Update)] =
-      theories.map(name => (name, seen(name)))
+    def theory_options(name: Document.Node.Name) = seen(name)
 
     def errors: List[String] = entries.flatMap(_.header.errors)
 

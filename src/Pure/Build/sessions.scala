@@ -404,6 +404,9 @@ object Sessions {
               val document_theories =
                 info.document_theories.map({ case (thy, _) => known_theories(thy).name })
 
+              val used_theories =
+                dependencies.theories.map(name => name -> dependencies.theory_options(name))
+
               val dir_errors = {
                 val ok = info.dirs.map(_.canonical_file).toSet
                 val bad =
@@ -451,7 +454,7 @@ object Sessions {
                   proper_session_theories = proper_session_theories,
                   document_theories = document_theories,
                   loaded_theories = dependencies.loaded_theories,
-                  used_theories = dependencies.theories_options,
+                  used_theories = used_theories,
                   theory_load_commands = theory_load_commands,
                   known_theories = known_theories,
                   known_loaded_files = known_loaded_files,
