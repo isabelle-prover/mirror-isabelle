@@ -97,6 +97,13 @@ object Document {
     ) {
       def imports_no_pos: List[Name] = imports.map(_._1)
 
+      def eq_no_pos(other: Header): Boolean =
+        imports_no_pos == other.imports_no_pos &&
+        options == other.options &&
+        keywords == other.keywords &&
+        abbrevs == other.abbrevs &&
+        errors == other.errors
+
       def append_errors(msgs: List[String]): Header =
         copy(errors = errors ::: msgs)
 
