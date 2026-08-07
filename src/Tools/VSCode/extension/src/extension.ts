@@ -8,7 +8,7 @@ Isabelle/VSCode extension.
 "use strict";
 
 import { Uri, TextEditor, ViewColumn, Selection, Position, ExtensionContext, workspace, window,
-  commands, ProgressLocation } from "vscode"
+  commands, ProgressLocation, Range, TextEditorRevealType } from "vscode"
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node"
 
 import * as Platform from "./platform"
@@ -158,9 +158,10 @@ export async function activate(context: ExtensionContext) {
     }
 
     function goto_file(caret_update: LSP.Caret_Update) {
-      function move_cursor(editor: TextEditor) {
-        const pos = new Position(caret_update.line || 0, caret_update.character || 0)
-        editor.selections = [new Selection(pos, pos)]
+      const pos = new Position(caret_update.line || 0, caret_update.character || 0)
+
+      function show_position(editor: TextEditor) {
+        editor.revealRange(new Range(pos, pos), TextEditorRevealType.InCenterIfOutsideViewport)
       }
 
       if (caret_update.uri) {
@@ -168,7 +169,11 @@ export async function activate(context: ExtensionContext) {
           {
             const editor = VSCode_Lib.find_file_editor(document.uri)
             const column = editor ? editor.viewColumn : ViewColumn.One
-            window.showTextDocument(document, column, !caret_update.focus).then(move_cursor)
+            const options =
+              { viewColumn: column,
+                preserveFocus: !caret_update.focus,
+                selection: new Selection(pos, pos) }
+            window.showTextDocument(document, options).then(show_position)
           })
       }
     }
