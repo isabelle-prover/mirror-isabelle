@@ -60,7 +60,7 @@ export class Provider implements WebviewViewProvider {
 
   private _get_html(content: string): string {
     return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Output",
-      "output_view.js", "vscode.css", content)
+      "output_view.js", "output_view.css", content)
   }
 }
 
