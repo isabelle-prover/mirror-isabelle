@@ -150,7 +150,7 @@ object Document {
         JSON.Object("node_name" -> node, "theory_name" -> theory)
     }
 
-    sealed case class Entry(name: Node.Name, header: Node.Header) {
+    sealed case class Entry(name: Node.Name, pos: Position.T, header: Node.Header) {
       override def toString: String = name.toString
     }
 
