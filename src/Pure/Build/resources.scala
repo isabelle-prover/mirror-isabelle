@@ -280,7 +280,7 @@ class Resources(
   }
 
   object Dependencies {
-    def empty: Dependencies = new Dependencies(Nil, Set.empty)
+    val empty: Dependencies = new Dependencies(Nil, Set.empty)
 
     private def show_path(names: List[Document.Node.Name]): String =
       names.map(name => quote(name.theory)).mkString(" via ")
