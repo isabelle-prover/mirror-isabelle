@@ -95,7 +95,7 @@ object Document {
       abbrevs: Thy_Header.Abbrevs = Nil,
       errors: List[String] = Nil
     ) {
-      def imports_no_pos: List[Name] = imports.map(_._1)
+      val imports_no_pos: List[Name] = imports.map(_._1)
 
       def eq_no_pos(other: Header): Boolean =
         imports_no_pos == other.imports_no_pos &&
