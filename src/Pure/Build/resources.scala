@@ -263,23 +263,24 @@ class Resources(
 
   def dependencies(
       thys: List[(Document.Node.Name, Position.T)],
-      progress: Progress = new Progress): Dependencies[Unit] =
-    Dependencies.empty[Unit].require_thys((), thys, progress = progress)
+      options: Options.Update = Nil,
+      progress: Progress = new Progress): Dependencies =
+    Dependencies.empty.require_thys(thys, options = options, progress = progress)
 
   def session_dependencies(
     info: Sessions.Info,
     progress: Progress = new Progress
-  ) : Dependencies[Options.Update] = {
-    info.theories.foldLeft(Dependencies.empty[Options.Update]) {
+  ) : Dependencies = {
+    info.theories.foldLeft(Dependencies.empty) {
       case (dependencies, (options, thys)) =>
-        dependencies.require_thys(options,
+        dependencies.require_thys(
           for { (thy, pos) <- thys } yield (import_name(info, thy), pos),
-          progress = progress)
+          options = options, progress = progress)
     }
   }
 
   object Dependencies {
-    def empty[A]: Dependencies[A] = new Dependencies[A](Nil, Map.empty)
+    def empty: Dependencies = new Dependencies(Nil, Map.empty)
 
     private def show_path(names: List[Document.Node.Name]): String =
       names.map(name => quote(name.theory)).mkString(" via ")
@@ -291,18 +292,19 @@ class Resources(
       if_proper(initiators, "\n(required by " + show_path(initiators.reverse) + ")")
   }
 
-  final class Dependencies[A] private(
+  final class Dependencies private(
     rev_entries: List[Document.Node.Entry],
-    seen: Map[Document.Node.Name, A]
+    seen: Map[Document.Node.Name, Options.Update]
   ) {
-    private def cons(entry: Document.Node.Entry): Dependencies[A] =
-      new Dependencies[A](entry :: rev_entries, seen)
+    private def cons(entry: Document.Node.Entry): Dependencies =
+      new Dependencies(entry :: rev_entries, seen)
 
-    def require_thy(adjunct: A,
+    def require_thy(
       thy: (Document.Node.Name, Position.T),
+      options: Options.Update = Nil,
       initiators: List[Document.Node.Name] = Nil,
       progress: Progress = new Progress
-    ): Dependencies[A] = {
+    ): Dependencies = {
       val (name, pos) = thy
 
       def message: String =
@@ -311,7 +313,7 @@ class Resources(
 
       if (seen.isDefinedAt(name)) this
       else {
-        val dependencies1 = new Dependencies[A](rev_entries, seen + (name -> adjunct))
+        val dependencies1 = new Dependencies(rev_entries, seen + (name -> options))
         if (loaded_theory(name)) dependencies1
         else {
           try {
@@ -324,7 +326,7 @@ class Resources(
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
             val entry = Document.Node.Entry(name, header)
-            dependencies1.require_thys(adjunct, header.imports,
+            dependencies1.require_thys(header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
@@ -335,22 +337,25 @@ class Resources(
       }
     }
 
-    def require_thys(adjunct: A,
+    def require_thys(
         thys: List[(Document.Node.Name, Position.T)],
+        options: Options.Update = Nil,
         progress: Progress = new Progress,
         initiators: List[Document.Node.Name] = Nil
-    ): Dependencies[A] = {
-      thys.foldLeft(this)(_.require_thy(adjunct, _, progress = progress, initiators = initiators))
+    ): Dependencies = {
+      thys.foldLeft(this)(
+        _.require_thy(_, options = options, progress = progress, initiators = initiators))
     }
 
     def entries: List[Document.Node.Entry] = rev_entries.reverse
 
     def theories: List[Document.Node.Name] = entries.map(_.name)
-    def theories_adjunct: List[(Document.Node.Name, A)] = theories.map(name => (name, seen(name)))
+    def theories_options: List[(Document.Node.Name, Options.Update)] =
+      theories.map(name => (name, seen(name)))
 
     def errors: List[String] = entries.flatMap(_.header.errors)
 
-    def check_errors: Dependencies[A] =
+    def check_errors: Dependencies =
       errors match {
         case Nil => this
         case errs => error(cat_lines(errs))
@@ -430,7 +435,7 @@ class Resources(
 
   /* resolve implicit theory dependencies */
 
-  def resolve_dependencies[A](
+  def resolve_dependencies(
     models: Iterable[Document.Model],
     theories: List[Document.Node.Name]
   ): List[Document.Node.Name] = {

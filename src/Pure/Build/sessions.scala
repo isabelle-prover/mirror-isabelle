@@ -451,7 +451,7 @@ object Sessions {
                   proper_session_theories = proper_session_theories,
                   document_theories = document_theories,
                   loaded_theories = dependencies.loaded_theories,
-                  used_theories = dependencies.theories_adjunct,
+                  used_theories = dependencies.theories_options,
                   theory_load_commands = theory_load_commands,
                   known_theories = known_theories,
                   known_loaded_files = known_loaded_files,
