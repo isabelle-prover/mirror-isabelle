@@ -161,9 +161,10 @@ object Document {
       name: Node.Name,
       pos: Position.T,
       header: Node.Header,
-      options: Options.Update
+      more_options: Options.Update
     ) {
       override def toString: String = name.toString
+      def options: Options.Update = header.options ::: more_options
     }
 
 
