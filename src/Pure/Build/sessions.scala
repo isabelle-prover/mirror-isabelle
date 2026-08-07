@@ -499,7 +499,7 @@ object Sessions {
 
       val theories_options =
         session_base.used_theories.map(
-          { case (_, opts) => session_info.options ++ opts.filter(p => p._1 == CONDITION) })
+          { case (_, opts) => Conditions.make_options(session_info.options, opts) })
       val conditions =
         Conditions.eval(theories_options).dest
           .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
@@ -563,17 +563,20 @@ object Sessions {
 
   /* conditions to load theories */
 
-  val CONDITION = "condition"
-
   object Conditions {
-    def get(options: Options): List[String] =
+    val CONDITION = "condition"
+
+    def get_options(options: Options): List[String] =
       space_explode(',', options.string(CONDITION))
+
+    def make_options(options: Options, opts: Options.Update): Options =
+      options ++ opts.filter(p => p._1 == CONDITION)
 
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
     def eval(opts: List[Options]): Conditions =
       new Conditions(
-        opts.iterator.flatMap(get).foldLeft(empty_rep) {
+        opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
           case (map, a) =>
             if (map.isDefinedAt(a)) map
             else map + (a -> Isabelle_System.getenv(a).nonEmpty)
@@ -615,7 +618,7 @@ object Sessions {
     }
   }
 
-  object Condition extends Special_Info(CONDITION)
+  object Condition extends Special_Info(Conditions.CONDITION)
   object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
