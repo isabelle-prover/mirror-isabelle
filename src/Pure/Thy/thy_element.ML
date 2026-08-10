@@ -47,8 +47,8 @@ fun parse_elements_generic keywords get_span stopper =
     fun category kinds other =
       Scan.one (fn x =>
         (case get_span x of
-          Command_Span.Span (Command_Span.Command_Span (name, _), _) =>
-            Symset.member kinds (Keyword.command_kind keywords name)
+          Command_Span.Span (Command_Span.Command_Span {kind, ...}, _) =>
+            Symset.member kinds kind
         | _ => other));
 
     fun theory_element x =

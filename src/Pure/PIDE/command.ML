@@ -69,8 +69,8 @@ fun blob_file src_path lines file_node =
       | SOME exec_id => Position.put_id exec_id);
   in {src_path = src_path, lines = lines, pos = file_pos} end
 
-fun resolve_files master_dir (blobs, blobs_index) toks =
-  (case Outer_Syntax.parse_spans toks of
+fun resolve_files keywords master_dir (blobs, blobs_index) toks =
+  (case Outer_Syntax.parse_spans (Keyword.command_kind keywords) toks of
     [Command_Span.Span (Command_Span.Command_Span _, _)] =>
       (case try (nth toks) blobs_index of
         SOME tok =>
@@ -122,7 +122,7 @@ fun read keywords thy master_dir init blobs_info span =
     val tr =
       if exists #malformed token_reports
       then Toplevel.malformed (#1 core_range) "Malformed command syntax"
-      else Outer_Syntax.parse_span thy init (resolve_files master_dir blobs_info span);
+      else Outer_Syntax.parse_span thy init (resolve_files keywords master_dir blobs_info span);
     val _ =
       if Toplevel.is_ignored tr orelse Toplevel.is_malformed tr then ()
       else

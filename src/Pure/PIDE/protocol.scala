@@ -346,7 +346,7 @@ trait Protocol {
   private def encode_command(
     resources: Resources,
     command: Command
-  ) : (XML.Body, XML.Body, XML.Body, XML.Body, XML.Body, List[XML.Body]) = {
+  ) : (XML.Body, XML.Body, XML.Body, XML.Body, XML.Body, XML.Body, List[XML.Body]) = {
     import XML.Encode._
 
     val parents = command.theory_parents(resources).map(name => File.standard_url(name.node))
@@ -369,22 +369,24 @@ trait Protocol {
     }
     val toks_sources_xml: List[XML.Body] = command.span.content.map(tok => XML.string(tok.source))
 
-    (Document_ID.encode(command.id), XML.string(command.span.name),
+    val command_kind = command.span.kind.keyword_kind getOrElse ""
+
+    (Document_ID.encode(command.id), XML.string(command.span.name), XML.string(command_kind),
       parents_xml, blobs_xml, toks_xml, toks_sources_xml)
   }
 
   def define_command(resources: Resources, command: Command): Unit = {
-    val (a, b, c, d, e, rest) = encode_command(resources, command)
-    protocol_command_args("Document.define_command", a :: b :: c :: d :: e :: rest)
+    val (a, b, c, d, e, f, rest) = encode_command(resources, command)
+    protocol_command_args("Document.define_command", a :: b :: c :: d :: e :: f :: rest)
   }
 
   def define_commands(resources: Resources, commands: List[Command]): Unit =
     protocol_command_args("Document.define_commands",
       commands.map { command =>
         import XML.Encode._
-        val (a, b, c, d, e, rest) = encode_command(resources, command)
-        pair(self, pair(self, pair(self, pair(self, pair(self, list(self))))))(
-          a, (b, (c, (d, (e, rest)))))
+        val (a, b, c, d, e, f, rest) = encode_command(resources, command)
+        pair(self, pair(self, pair(self, pair(self, pair(self, pair(self, list(self)))))))(
+          a, (b, (c, (d, (e, (f, rest))))))
       })
 
   def define_commands_bulk(resources: Resources, commands: List[Command]): Unit = {

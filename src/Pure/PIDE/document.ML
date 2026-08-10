@@ -22,6 +22,7 @@ sig
   type command =
    {command_id: Document_ID.command,
     name: string,
+    kind: string,
     parents: string list,
     blobs_digests: blob_digest list,
     blobs_index: int,
@@ -351,8 +352,8 @@ fun new_execution version_id delay_request parallel_prints : execution =
 abstype state = State of
  {versions: version Inttab.table,  (*version id -> document content*)
   blobs: (Message_Digest.T * string list) Symtab.table,  (*raw digest -> digest, lines*)
-  commands: (string * blob_digest list * int * Token.T list lazy) Inttab.table,
-    (*command id -> name, inlined files, token index of files, command span*)
+  commands: (string * string * blob_digest list * int * Token.T list lazy) Inttab.table,
+    (*command id -> name, kind, inlined files, token index of files, command span*)
   execution: execution}  (*current execution process*)
 with
 
@@ -420,12 +421,13 @@ fun resolve_blob state (blob_digest: blob_digest) =
 type command =
   {command_id: Document_ID.command,
    name: string,
+   kind: string,
    parents: string list,
    blobs_digests: blob_digest list,
    blobs_index: int,
    tokens: ((int * int) * string) list};
 
-fun define_command {command_id, name, parents, blobs_digests, blobs_index, tokens} =
+fun define_command {command_id, name, kind, parents, blobs_digests, blobs_index, tokens} =
   map_state (fn (versions, blobs, commands, execution) =>
     let
       val id = Document_ID.print command_id;
@@ -465,7 +467,7 @@ fun define_command {command_id, name, parents, blobs_digests, blobs_index, token
                     in Position.reports (maps reports blobs_digests) end;
               in tokens end) ());
       val commands' =
-        Inttab.update_new (command_id, (name, blobs_digests, blobs_index, span)) commands
+        Inttab.update_new (command_id, (name, kind, blobs_digests, blobs_index, span)) commands
           handle Inttab.DUP dup => err_dup "command" dup;
     in (versions, blobs, commands', execution) end);
 
@@ -506,7 +508,7 @@ fun remove_versions version_ids state = state |> map_state (fn (versions, _, _, 
               SOME o Inttab.insert (K true) (command_id, the_command state command_id)))));
     val blobs' =
       Symtab.build (commands' |>
-        Inttab.fold (fn (_, (_, blobs, _, _)) => blobs |>
+        Inttab.fold (fn (_, (_, _, blobs, _, _)) => blobs |>
           fold (fn Exn.Res {digest = SOME b, ...} => Symtab.update (b, the_blob state b) | _ => I)));
 
   in (versions', blobs', commands', execution) end);
@@ -715,7 +717,8 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
     let
       val visible = command_visible node command_id';
       val overlays = command_overlays node command_id';
-      val (command_name, blob_digests, blobs_index, span0) = the_command state command_id';
+      val (command_name, command_kind, blob_digests, blobs_index, span0) =
+        the_command state command_id';
       val blobs = map (resolve_blob state) blob_digests;
       val span = Lazy.force span0;
 
@@ -822,7 +825,9 @@ fun update old_version_id new_version_id edits consolidate state =
   let
     val options = Options.default [];
     val the_command_name = #1 o the_command state;
-    val the_command_span = Outer_Syntax.make_span o Lazy.force o #4 o the_command state;
+    fun the_command_span id =
+      let val cmd = the_command state id
+      in Outer_Syntax.make_span (#2 cmd) (Lazy.force (#5 cmd)) end;
 
     val old_version = the_version state old_version_id;
     val new_version =
