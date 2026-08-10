@@ -30,11 +30,13 @@ sig
   val pretty_abstract: state -> Pretty.T
   type presentation = state -> Latex.text
   type transition
-  val make: string -> Position.T -> transition
+  val make: {name: string, kind: string, is_begin: bool, pos: Position.T} -> transition
   val empty: transition
   val name_of: transition -> string
+  val kind_of: transition -> string
   val pos_of: transition -> Position.T
   val timing_of: transition -> Time.time
+  val is_begin: transition -> bool
   val type_error: transition -> string
   val position: Position.T -> transition -> transition
   val markers: Input.source list -> transition -> transition
@@ -333,26 +335,36 @@ end;
 
 datatype transition = Transition of
  {name: string,               (*command name*)
+  kind: string,               (*command kind*)
+  is_begin: bool,             (*command with 'begin' keyword *)
   pos: Position.T,            (*source position*)
   markers: Input.source list, (*semantic document markers*)
   timing: Time.time,          (*prescient timing information*)
   trans: trans list};         (*primitive transitions (union)*)
 
-fun make_transition (name, pos, markers, timing, trans) =
-  Transition {name = name, pos = pos, markers = markers, timing = timing, trans = trans};
+fun make_transition (name, kind, is_begin, pos, markers, timing, trans) =
+  Transition {name = name, kind = kind, is_begin = is_begin, pos = pos,
+    markers = markers, timing = timing, trans = trans};
 
-fun map_transition f (Transition {name, pos, markers, timing, trans}) =
-  make_transition (f (name, pos, markers, timing, trans));
+fun map_transition f (Transition {name, kind, is_begin, pos, markers, timing, trans}) =
+  make_transition (f (name, kind, is_begin, pos, markers, timing, trans));
 
-fun make name pos = make_transition (name, pos, [], Time.zeroTime, []);
-val empty = make "" Position.none;
+fun make {name, kind, is_begin, pos} =
+  make_transition (name, kind, is_begin, pos, [], Time.zeroTime, []);
+
+val empty = make {name = "", kind = "", is_begin = false, pos = Position.none};
 
 
 (* diagnostics *)
 
-fun name_of (Transition {name, ...}) = name;
-fun pos_of (Transition {pos, ...}) = pos;
-fun timing_of (Transition {timing, ...}) = timing;
+fun rep_transition (Transition args) = args;
+
+val name_of = #name o rep_transition;
+val kind_of = #kind o rep_transition;
+val pos_of = #pos o rep_transition;
+val timing_of = #timing o rep_transition;
+
+val is_begin = #is_begin o rep_transition;
 
 fun command_msg msg tr =
   msg ^ "command " ^ quote (Markup.markup Markup.keyword1 (name_of tr)) ^
@@ -364,20 +376,20 @@ fun type_error tr = command_msg "Bad context for " tr;
 
 (* modify transitions *)
 
-fun position pos = map_transition (fn (name, _, markers, timing, trans) =>
-  (name, pos, markers, timing, trans));
+fun position pos = map_transition (fn (name, kind, is_begin, _, markers, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun markers markers = map_transition (fn (name, pos, _, timing, trans) =>
-  (name, pos, markers, timing, trans));
+fun markers markers = map_transition (fn (name, kind, is_begin, pos, _, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun timing timing = map_transition (fn (name, pos, markers, _, trans) =>
-  (name, pos, markers, timing, trans));
+fun timing timing = map_transition (fn (name, kind, is_begin, pos, markers, _, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun add_trans tr = map_transition (fn (name, pos, markers, timing, trans) =>
-  (name, pos, markers, timing, tr :: trans));
+fun add_trans tr = map_transition (fn (name, kind, is_begin, pos, markers, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, tr :: trans));
 
-val reset_trans = map_transition (fn (name, pos, markers, timing, _) =>
-  (name, pos, markers, timing, []));
+val reset_trans = map_transition (fn (name, kind, is_begin, pos, markers, timing, _) =>
+  (name, kind, is_begin, pos, markers, timing, []));
 
 
 (* basic transitions *)
@@ -410,8 +422,11 @@ val malformedN = "<malformed>";
 fun is_ignored tr = name_of tr = ignoredN;
 fun is_malformed tr = name_of tr = malformedN;
 
-fun ignored pos = make ignoredN pos |> keep (fn _ => ());
-fun malformed pos msg = make malformedN pos |> keep (fn _ => error msg);
+fun ignored pos =
+  make {name = ignoredN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => ());
+
+fun malformed pos msg =
+  make {name = malformedN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => error msg);
 
 
 (* theory transitions *)

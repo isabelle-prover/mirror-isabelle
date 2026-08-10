@@ -217,12 +217,13 @@ local
 val before_command =
   Scan.option (Parse.position (Parse.private >> K true || Parse.qualified >> K false));
 
-fun parse_command thy markers =
+fun parse_command thy markers is_begin =
   Scan.ahead (before_command |-- Parse.position Parse.command) :|-- (fn (name, pos) =>
     let
       val keywords = Thy_Header.get_keywords thy;
+      val kind = Keyword.command_kind keywords name |> the_default "";
       val tr0 =
-        Toplevel.make name pos
+        Toplevel.make {name = name, kind = kind, is_begin = is_begin, pos = pos}
         |> Keyword.is_proof_open keywords name ? Toplevel.skip_proof_open
         |> Keyword.is_proof_close keywords name ? Toplevel.skip_proof_close;
       val command_markers =
@@ -251,12 +252,14 @@ fun parse_span thy init span =
   let
     val full_range = Token.range_of span;
     val core_range = Token.core_range_of span;
+    val is_begin = exists Token.is_begin span;
 
     val markers = map Token.input_of (filter Token.is_document_marker span);
     fun parse () =
       filter Token.is_proper span
       |> Source.of_list
-      |> Source.source Token.stopper (Scan.bulk (fn xs => Parse.!!! (parse_command thy markers) xs))
+      |> Source.source Token.stopper
+          (Scan.bulk (fn xs => Parse.!!! (parse_command thy markers is_begin) xs))
       |> Source.exhaust;
   in
     (case parse () of
