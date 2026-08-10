@@ -103,9 +103,9 @@ fun reports_of_token keywords tok =
       |> map_filter (fn (sym, pos) =>
           if Symbol.is_malformed sym
           then SOME ((pos, Markup.bad ()), "Malformed symbolic character") else NONE);
-    val is_malformed = Token.is_error tok orelse not (null malformed_symbols);
+    val malformed = Token.is_error tok orelse not (null malformed_symbols);
     val reports = Token.reports keywords tok @ Token.completion_report tok @ malformed_symbols;
-  in (is_malformed, reports) end;
+  in {malformed = malformed, reports = reports} end;
 
 in
 
@@ -116,11 +116,11 @@ fun read keywords thy master_dir init blobs_info span =
   let
     val command_reports = Outer_Syntax.command_reports thy;
     val token_reports = map (reports_of_token keywords) span;
-    val _ = Position.reports_text (maps #2 token_reports @ maps command_reports span);
+    val _ = Position.reports_text (maps #reports token_reports @ maps command_reports span);
 
     val core_range = Token.core_range_of span;
     val tr =
-      if exists #1 token_reports
+      if exists #malformed token_reports
       then Toplevel.malformed (#1 core_range) "Malformed command syntax"
       else Outer_Syntax.parse_span thy init (resolve_files master_dir blobs_info span);
     val _ =
