@@ -127,10 +127,10 @@ val before_command = "before_command";
 val quasi_command = "quasi_command";
 
 val command_kinds =
-  [diag, document_heading, document_body, document_raw, thy_begin, thy_end, thy_load, thy_decl,
-    thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt, qed, qed_script,
-    qed_block, qed_global, prf_goal, prf_block, next_block, prf_open, prf_close, prf_chain,
-    prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal, prf_script_asm_goal];
+  Symset.make [diag, document_heading, document_body, document_raw, thy_begin, thy_end, thy_load,
+    thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt, qed,
+    qed_script, qed_block, qed_global, prf_goal, prf_block, next_block, prf_open, prf_close,
+    prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal, prf_script_asm_goal];
 
 
 (* specifications *)
@@ -153,9 +153,10 @@ type entry =
   tags: string list};
 
 fun check_spec pos ({kind, tags, ...}: spec) : entry =
-  if not (member (op =) command_kinds kind) then
-    error ("Unknown outer syntax keyword kind " ^ quote kind)
-  else {pos = pos, id = serial (), kind = kind, tags = tags};
+  if Symset.member command_kinds kind
+  then {pos = pos, id = serial (), kind = kind, tags = tags}
+  else error ("Unknown outer syntax keyword kind " ^ quote kind);
+
 
 
 (** keyword tables **)
