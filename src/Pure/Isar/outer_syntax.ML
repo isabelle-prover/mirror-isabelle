@@ -221,7 +221,7 @@ fun parse_command thy markers is_begin =
   Scan.ahead (before_command |-- Parse.position Parse.command) :|-- (fn (name, pos) =>
     let
       val keywords = Thy_Header.get_keywords thy;
-      val kind = Keyword.command_kind keywords name |> the_default "";
+      val kind = Keyword.command_kind keywords name;
       val tr0 =
         Toplevel.make {name = name, kind = kind, is_begin = is_begin, pos = pos}
         |> Keyword.is_proof_open keywords name ? Toplevel.skip_proof_open

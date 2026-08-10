@@ -59,7 +59,7 @@ sig
   val is_literal: keywords -> string -> bool
   val dest_commands: keywords -> string list
   val command_markup: keywords -> string -> Markup.T option
-  val command_kind: keywords -> string -> string option
+  val command_kind: keywords -> string -> string
   val command_tags: keywords -> string -> string list
   val is_vacuous: keywords -> string -> bool
   val is_diag: keywords -> string -> bool
@@ -231,7 +231,10 @@ fun command_markup keywords name =
   |> Option.map (fn {pos, id, ...} =>
       Position.make_entity_markup {def = false} id Markup.command_keywordN (name, pos));
 
-fun command_kind keywords = Option.map #kind o lookup_command keywords;
+fun command_kind keywords name =
+  (case lookup_command keywords name of
+    SOME {kind, ...} => kind
+  | NONE => "");
 
 fun command_tags keywords name =
   (case lookup_command keywords name of
