@@ -476,6 +476,9 @@ fun the_command (State {commands, ...}) command_id =
     NONE => err_undef "command" command_id
   | SOME command => command);
 
+fun the_command_name_kind state =
+  the_command state #> (fn (name, kind, _, _, _) => {name = name, kind = kind});
+
 
 (* execution *)
 
@@ -663,7 +666,7 @@ fun check_theory full name node =
   Thy_Info.defined_theory name orelse
   null (#errors (get_header node)) andalso (not full orelse is_some (get_result node));
 
-fun last_common keywords the_command_name node_required node0 node =
+fun last_common keywords the_command_name_kind node_required node0 node =
   let
     fun update_flags prev (visible, initial) =
       let
@@ -671,7 +674,7 @@ fun last_common keywords the_command_name node_required node0 node =
         val initial' = initial andalso
           (case prev of
             NONE => true
-          | SOME command_id => the_command_name command_id <> Thy_Header.theoryN);
+          | SOME command_id => #name (the_command_name_kind command_id) <> Thy_Header.theoryN);
       in (visible', initial') end;
 
     fun get_common ((prev, command_id), opt_exec) (_, ok, flags, assign_update) =
@@ -690,10 +693,10 @@ fun last_common keywords the_command_name node_required node0 node =
                 let
                   val visible = command_visible node command_id;
                   val overlays = command_overlays node command_id;
-                  val command_name = the_command_name command_id;
+                  val {name = command_name, kind = command_kind} = the_command_name_kind command_id;
                   val opts = header_options node;
                 in
-                  (case Command.print opts keywords visible overlays command_name eval prints of
+                  (case Command.print opts visible overlays command_name command_kind eval prints of
                     SOME prints' => assign_update_new (command_id, SOME (eval, prints'))
                   | NONE => I)
                 end
@@ -731,7 +734,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
           (master_directory node)
           (fn () => the_default illegal_init init span)
           (blobs, blobs_index) command_id' span (#1 (#2 command_exec));
-      val prints' = perhaps (Command.print opts keywords visible overlays command_name eval') [];
+      val prints' = perhaps (Command.print opts visible overlays command_name command_kind eval') [];
       val exec' = (eval', prints');
 
       val assign_update' = assign_update_new (command_id', SOME exec') assign_update;
@@ -824,7 +827,7 @@ fun update old_version_id new_version_id edits consolidate state =
   Runtime.exn_trace_system_message (fn () =>
   let
     val options = Options.default [];
-    val the_command_name = #1 o the_command state;
+    val the_command_name_kind = the_command_name_kind state;
     fun the_command_span id =
       let val cmd = the_command state id
       in Outer_Syntax.make_span (#2 cmd) (Lazy.force (#5 cmd)) end;
@@ -873,7 +876,7 @@ fun update old_version_id new_version_id edits consolidate state =
                         val (print_execs, common, (still_visible, initial)) =
                           if imports_result_changed
                           then (assign_update_empty, NONE, (true, true))
-                          else last_common keywords the_command_name node_required node0 node;
+                          else last_common keywords the_command_name_kind node_required node0 node;
 
                         val common_command_exec =
                           (case common of

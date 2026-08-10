@@ -26,12 +26,11 @@ sig
   type print
   type print_fn = Toplevel.transition -> Toplevel.state -> unit
   val print0: {pri: int, print_fn: print_fn} -> eval -> print
-  val print: Options.update -> Keyword.keywords -> bool -> (string * string list) list -> string ->
+  val print: Options.update -> bool -> (string * string list) list -> string -> string ->
     eval -> print list -> print list option
   val parallel_print: print -> bool
   type print_function =
-    {keywords: Keyword.keywords, command_name: string, command_kind: string, args: string list,
-      exec_id: Document_ID.exec} ->
+    {command_name: string, command_kind: string, args: string list, exec_id: Document_ID.exec} ->
       {delay: Time.time option, pri: int, persistent: bool, strict: bool, print_fn: print_fn} option
   val print_function: string -> print_function -> unit
   val no_print_function: string -> unit
@@ -294,8 +293,7 @@ fun print_equiv (name', args') (Print {name, args, ...}) = name' = name andalso 
 type print_fn = Toplevel.transition -> Toplevel.state -> unit;
 
 type print_function =
-  {keywords: Keyword.keywords, command_name: string, command_kind: string, args: string list,
-    exec_id: Document_ID.exec} ->
+  {command_name: string, command_kind: string, args: string list, exec_id: Document_ID.exec} ->
     {delay: Time.time option, pri: int, persistent: bool, strict: bool, print_fn: print_fn} option;
 
 local
@@ -347,16 +345,15 @@ fun print0 {pri, print_fn} =
   make_print [] ("", [serial_string ()])
     {delay = NONE, pri = pri, persistent = true, strict = true, print_fn = print_fn};
 
-fun print options keywords visible overlays command_name eval old_prints =
+fun print options visible overlays command_name command_kind eval old_prints =
   let
     val print_functions = Synchronized.value print_functions;
 
     fun new_print (name, args) get_pr =
       let
         val params =
-         {keywords = keywords,
-          command_name = command_name,
-          command_kind = Keyword.command_kind keywords command_name,
+         {command_name = command_name,
+          command_kind = command_kind,
           args = args,
           exec_id = eval_exec_id eval};
       in
@@ -482,7 +479,7 @@ val _ =
 
 val _ =
   Command.print_function "print_state"
-    (fn {keywords, command_kind, ...} =>
+    (fn {command_kind, ...} =>
       if Options.default_bool \<^system_option>\<open>editor_output_state\<close>
         andalso Symset.member Keyword.printed_kinds command_kind
       then
