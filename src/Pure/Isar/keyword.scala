@@ -95,6 +95,7 @@ object Keyword {
   val proof_enclose_kinds: Set[String] = Set(PRF_BLOCK, NEXT_BLOCK, QED_BLOCK, PRF_CLOSE)
 
   val proof_asm_kinds: Set[String] = Set(PRF_ASM, PRF_ASM_GOAL)
+  val proof_asm_goal_kinds: Set[String] = Set(PRF_ASM, PRF_ASM_GOAL)
   val improper_kinds: Set[String] = Set(QED_SCRIPT, PRF_SCRIPT, PRF_SCRIPT_GOAL, PRF_SCRIPT_ASM_GOAL)
 
   val close_structure_kinds: Set[String] = Set(NEXT_BLOCK, QED_BLOCK, PRF_CLOSE, THY_END)
