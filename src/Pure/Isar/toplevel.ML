@@ -96,7 +96,7 @@ sig
   val fork_presentation: transition -> transition * transition
   type result
   val join_results: result -> (state * transition * state) list
-  val element_result: Keyword.keywords -> transition Thy_Element.element -> state -> result * state
+  val element_result: transition Thy_Element.element -> state -> result * state
 end;
 
 structure Toplevel: TOPLEVEL =
@@ -754,10 +754,10 @@ in
 
 fun fork_presentation tr = (markers [] tr, ignored (pos_of tr));
 
-fun atom_result keywords tr st =
+fun atom_result tr st =
   let
     val st' =
-      if Future.proofs_enabled 1 andalso Keyword.is_diag keywords (name_of tr) then
+      if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (kind_of tr) then
         let
           val (tr1, tr2) = fork_presentation tr;
           val _ =
@@ -767,10 +767,10 @@ fun atom_result keywords tr st =
       else command_exception tr st;
   in (Result (tr, st'), st') end;
 
-fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result keywords tr st
-  | element_result keywords (elem as Thy_Element.Element (head_tr, SOME element_rest)) st =
+fun element_result (Thy_Element.Element (tr, NONE)) st = atom_result tr st
+  | element_result (elem as Thy_Element.Element (head_tr, SOME element_rest)) st =
       let
-        val (head_result, st') = atom_result keywords head_tr st;
+        val (head_result, st') = atom_result head_tr st;
         val (body_elems, end_tr) = element_rest;
         val estimate = timing_estimate elem;
       in
@@ -778,7 +778,7 @@ fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result ke
         then
           let
             val proof_trs = maps Thy_Element.flat_element body_elems @ [end_tr];
-            val (proof_results, st'') = fold_map (atom_result keywords) proof_trs st';
+            val (proof_results, st'') = fold_map atom_result proof_trs st';
           in (Result_List (head_result :: proof_results), st'') end
         else
           let
@@ -795,7 +795,7 @@ fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result ke
                       val node' = Proof (Proof_Node.apply (K state) prf, (finish, orig_gthy));
                       val (results, result_state) =
                         State (node_presentation node', prev_thy)
-                        |> fold_map (element_result keywords) body_elems ||> command_exception end_tr1;
+                        |> fold_map element_result body_elems ||> command_exception end_tr1;
                     in (Result_List results, presentation_context0 result_state) end))
               #> (fn (res, state') => state' |> put_result (Result_Future res));
 

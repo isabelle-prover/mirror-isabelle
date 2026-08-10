@@ -290,7 +290,7 @@ fun eval_thy loading_theory master_dir header text_pos text parents =
                     (fn () => Command.read_span keywords st master_dir init span) ();
               in Toplevel.timing (Resources.last_timing tr) tr end;
             val elem = Thy_Element.map_element prepare span_elem;
-            val (results, st') = Toplevel.element_result keywords elem st;
+            val (results, st') = Toplevel.element_result elem st;
             val pos' = Toplevel.pos_of (Thy_Element.last_element elem);
           in (results, (st', pos')) end;
 
