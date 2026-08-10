@@ -404,7 +404,7 @@ val reset_trans = map_transition (fn (name, kind, is_begin, pos, markers, timing
 
 (* basic transitions *)
 
-fun is_theory_begin tr = name_of tr = Thy_Header.theoryN;
+val is_theory_begin = Symset.member Keyword.theory_begin_kinds o kind_of;
 
 fun init tr =
   if is_theory_begin tr

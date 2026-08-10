@@ -44,6 +44,7 @@ sig
   val document_body_kinds: Symset.T
   val document_raw_kinds: Symset.T
   val document_kinds: Symset.T
+  val theory_begin_kinds: Symset.T
   val theory_end_kinds: Symset.T
   val theory_load_kinds: Symset.T
   val theory_kinds: Symset.T
@@ -89,6 +90,7 @@ sig
   val is_document_body: keywords -> string -> bool
   val is_document_raw: keywords -> string -> bool
   val is_document: keywords -> string -> bool
+  val is_theory_begin: keywords -> string -> bool
   val is_theory_end: keywords -> string -> bool
   val is_theory_load: keywords -> string -> bool
   val is_theory: keywords -> string -> bool
@@ -163,6 +165,7 @@ val document_body_kinds = Symset.make [document_body];
 val document_raw_kinds = Symset.make [document_raw];
 val document_kinds = Symset.make [document_heading, document_body, document_raw];
 
+val theory_begin_kinds = Symset.make [thy_begin];
 val theory_end_kinds = Symset.make [thy_end];
 
 val theory_load_kinds = Symset.make [thy_load];
@@ -323,6 +326,7 @@ val is_document_heading = command_category document_heading_kinds;
 val is_document_body = command_category document_body_kinds;
 val is_document_raw = command_category document_raw_kinds;
 val is_document = command_category document_kinds;
+val is_theory_begin = command_category theory_begin_kinds;
 val is_theory_end = command_category theory_end_kinds;
 val is_theory_load = command_category theory_load_kinds;
 val is_theory = command_category theory_kinds;
