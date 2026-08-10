@@ -84,29 +84,6 @@ sig
   val command_markup: keywords -> string -> Markup.T option
   val command_kind: keywords -> string -> string
   val command_tags: keywords -> string -> string list
-  val is_vacuous: keywords -> string -> bool
-  val is_diag: keywords -> string -> bool
-  val is_document_heading: keywords -> string -> bool
-  val is_document_body: keywords -> string -> bool
-  val is_document_raw: keywords -> string -> bool
-  val is_document: keywords -> string -> bool
-  val is_theory_begin: keywords -> string -> bool
-  val is_theory_end: keywords -> string -> bool
-  val is_theory_load: keywords -> string -> bool
-  val is_theory: keywords -> string -> bool
-  val is_theory_body: keywords -> string -> bool
-  val is_proof: keywords -> string -> bool
-  val is_proof_body: keywords -> string -> bool
-  val is_theory_goal: keywords -> string -> bool
-  val is_proof_goal: keywords -> string -> bool
-  val is_qed: keywords -> string -> bool
-  val is_qed_global: keywords -> string -> bool
-  val is_proof_open: keywords -> string -> bool
-  val is_proof_close: keywords -> string -> bool
-  val is_proof_asm: keywords -> string -> bool
-  val is_proof_asm_goal: keywords -> string -> bool
-  val is_improper: keywords -> string -> bool
-  val is_printed: keywords -> string -> bool
 end;
 
 structure Keyword: KEYWORD =
@@ -311,37 +288,5 @@ fun command_tags keywords name =
   (case lookup_command keywords name of
     SOME {tags, ...} => tags
   | NONE => []);
-
-fun command_category kinds =
-  let
-    fun pred keywords name =
-      (case lookup_command keywords name of
-        SOME {kind, ...} => Symset.member kinds kind
-      | NONE => false)
-  in pred end;
-
-val is_vacuous = command_category vacuous_kinds;
-val is_diag = command_category diag_kinds;
-val is_document_heading = command_category document_heading_kinds;
-val is_document_body = command_category document_body_kinds;
-val is_document_raw = command_category document_raw_kinds;
-val is_document = command_category document_kinds;
-val is_theory_begin = command_category theory_begin_kinds;
-val is_theory_end = command_category theory_end_kinds;
-val is_theory_load = command_category theory_load_kinds;
-val is_theory = command_category theory_kinds;
-val is_theory_body = command_category theory_body_kinds;
-val is_proof = command_category proof_kinds;
-val is_proof_body = command_category proof_body_kinds;
-val is_theory_goal = command_category theory_goal_kinds;
-val is_proof_goal = command_category proof_goal_kinds;
-val is_qed = command_category qed_kinds;
-val is_qed_global = command_category qed_global_kinds;
-val is_proof_open = command_category proof_open_kinds;
-val is_proof_close = command_category proof_close_kinds;
-val is_proof_asm = command_category proof_asm_kinds;
-val is_proof_asm_goal = command_category proof_asm_goal_kinds;
-val is_improper = command_category improper_kinds;
-val is_printed = command_category printed_kinds;
 
 end;
