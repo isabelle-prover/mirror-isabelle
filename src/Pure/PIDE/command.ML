@@ -210,16 +210,14 @@ fun check_span_comments ctxt span tr =
 fun report_indent tr st =
   (case try Toplevel.proof_of st of
     SOME prf =>
-      let val keywords = Thy_Header.get_keywords (Proof.theory_of prf) in
-        if Keyword.command_kind keywords (Toplevel.name_of tr) = SOME Keyword.prf_script then
-          (case try (Thm.nprems_of o #goal o Proof.goal) prf of
-            NONE => ()
-          | SOME 0 => ()
-          | SOME n =>
-              let val report = YXML.output_markup_only (Markup.command_indent (n - 1));
-              in Toplevel.setmp_thread_position tr (fn () => Output.report [report]) () end)
-        else ()
-      end
+      if Toplevel.kind_of tr = Keyword.prf_script then
+        (case try (Thm.nprems_of o #goal o Proof.goal) prf of
+          NONE => ()
+        | SOME 0 => ()
+        | SOME n =>
+            let val report = YXML.output_markup_only (Markup.command_indent (n - 1));
+            in Toplevel.setmp_thread_position tr (fn () => Output.report [report]) () end)
+      else ()
   | NONE => ());
 
 fun status tr m =
