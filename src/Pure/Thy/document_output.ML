@@ -402,8 +402,9 @@ fun output_command keywords = Scan.some (fn tok =>
   if Token.is_command tok then
     let
       val name = Token.content_of tok;
-      val is_document = Keyword.is_document keywords name;
-      val is_document_raw = Keyword.is_document_raw keywords name;
+      val kind = Keyword.command_kind keywords name;
+      val is_document = Symset.member Keyword.document_kinds kind;
+      val is_document_raw = Symset.member Keyword.document_raw_kinds kind;
       val flag = if is_document andalso not is_document_raw then markup_true else "";
     in
       if is_document andalso is_some (Token.get_output tok)
