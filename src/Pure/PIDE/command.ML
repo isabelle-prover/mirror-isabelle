@@ -169,13 +169,13 @@ val eval_result_state = #state o eval_result;
 
 local
 
-fun reset_state keywords tr st0 = Toplevel.setmp_thread_position tr (fn () =>
+fun reset_state tr st0 = Toplevel.setmp_thread_position tr (fn () =>
   let
-    val name = Toplevel.name_of tr;
+    val kind = Toplevel.kind_of tr;
     val res =
-      if Keyword.is_theory_body keywords name then Toplevel.reset_theory st0
-      else if Keyword.is_proof keywords name then Toplevel.reset_proof st0
-      else if Keyword.is_theory_end keywords name then
+      if Symset.member Keyword.theory_body_kinds kind then Toplevel.reset_theory st0
+      else if Symset.member Keyword.proof_kinds kind then Toplevel.reset_proof st0
+      else if Symset.member Keyword.theory_end_kinds kind then
         (case Toplevel.reset_notepad st0 of
           NONE => Toplevel.reset_theory st0
         | some => some)
@@ -186,8 +186,8 @@ fun reset_state keywords tr st0 = Toplevel.setmp_thread_position tr (fn () =>
     | SOME st => (Output.error_message (Toplevel.type_error tr ^ " -- using reset state"); st))
   end) ();
 
-fun run keywords tr st =
-  if Future.proofs_enabled 1 andalso Keyword.is_diag keywords (Toplevel.name_of tr) then
+fun run tr st =
+  if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (Toplevel.kind_of tr) then
     let
       val (tr1, tr2) = Toplevel.fork_presentation tr;
       val _ =
@@ -223,15 +223,15 @@ fun report_indent tr st =
 fun status tr m =
   Toplevel.setmp_thread_position tr (fn () => Output.status [YXML.output_markup_only m]) ();
 
-fun eval_state keywords span tr ({state, ...}: eval_state) =
+fun eval_state span tr ({state, ...}: eval_state) =
   let
     val _ = Isabelle_Thread.expose_interrupt ();
 
-    val st = reset_state keywords tr state;
+    val st = reset_state tr state;
 
     val _ = report_indent tr st;
     val _ = status tr Markup.running;
-    val (errs1, result) = run keywords tr st;
+    val (errs1, result) = run tr st;
     val errs2 =
       (case result of
         NONE => []
@@ -251,7 +251,7 @@ fun eval_state keywords span tr ({state, ...}: eval_state) =
     | SOME st' =>
         let
           val _ =
-            if Keyword.is_theory_end keywords (Toplevel.name_of tr) andalso
+            if Symset.member Keyword.theory_end_kinds (Toplevel.kind_of tr) andalso
               can (Toplevel.end_theory Position.none) st'
             then status tr Markup.finalized else ();
           val _ = status tr Markup.finished;
@@ -271,7 +271,7 @@ fun eval options keywords master_dir init blobs_info command_id span eval0 =
           Position.setmp_thread_data (Position.id_only (Document_ID.print exec_id))
             (fn () =>
               read keywords thy master_dir init blobs_info span |> Toplevel.exec_id exec_id) ();
-      in eval_state keywords span tr eval_state0 end);
+      in eval_state span tr eval_state0 end);
   in
     Eval {command_id = command_id, exec_id = exec_id,
       eval_process = Lazy.lazy_name "Command.eval" process}
