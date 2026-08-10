@@ -1,7 +1,17 @@
 (*  Title:      Pure/Isar/toplevel.ML
-    Author:     Markus Wenzel, TU Muenchen
+    Author:     Makarius
 
-Isabelle/Isar toplevel transactions.
+Isabelle/Isar command transactions, within a PIDE document.
+
+Note: The name "toplevel" refers to old times, when Isabelle still had a
+toplevel command loop, or read-eval-print loop (REPL). This no longer exists,
+but the name remains with a quite different meaning.
+
+See also:
+  Makarius Wenzel. READ-EVAL-PRINT in parallel and asynchronous proof-checking.
+  In Cezary Kaliszyk and Christoph Lüth, editors, User Interfaces for Theorem
+  Provers (UITP 2012), volume 118 of EPTCS, 2013.
+  https://arxiv.org/abs/1307.1944v1
 *)
 
 signature TOPLEVEL =
