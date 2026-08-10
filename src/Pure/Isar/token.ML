@@ -344,11 +344,11 @@ val token_kind_markup =
 
 fun keyword_reports tok = map (fn markup => ((pos_of tok, markup), ""));
 
-fun command_markups keywords x =
-  if Keyword.is_theory_end keywords x then [Markup.keyword2 |> Markup.keyword_properties]
+fun command_markups keywords name =
+  if Keyword.is_theory_end keywords name then [Markup.keyword2 |> Markup.keyword_properties]
   else
-    (if Keyword.is_proof_asm keywords x then [Markup.keyword3]
-     else if Keyword.is_improper keywords x then [Markup.keyword1, Markup.improper]
+    (if Keyword.is_proof_asm keywords name then [Markup.keyword3]
+     else if Keyword.is_improper keywords name then [Markup.keyword1, Markup.improper]
      else [Markup.keyword1])
     |> map Markup.command_properties;
 
