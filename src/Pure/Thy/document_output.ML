@@ -171,7 +171,7 @@ fun output_token ctxt tok =
     | Token.Comment (SOME Comment.Marker) => []
     | Token.Command =>
         let
-          val name = (Token.content_of tok);
+          val name = Token.content_of tok;
           val bg =
             if Keyword.is_theory_end keywords name then "\\isakeywordTWO{"
             else if Keyword.is_proof_asm keywords name orelse
