@@ -51,8 +51,8 @@ sig
   val position: Position.T -> transition -> transition
   val markers: Input.source list -> transition -> transition
   val timing: Time.time -> transition -> transition
-  val init_theory: (unit -> theory) -> transition -> transition
-  val is_init: transition -> bool
+  val is_theory_begin: transition -> bool
+  val init: transition -> transition
   val modify_init: (unit -> theory) -> transition -> transition
   val exit: transition -> transition
   val present: presentation -> transition -> transition
@@ -404,12 +404,17 @@ val reset_trans = map_transition (fn (name, kind, is_begin, pos, markers, timing
 
 (* basic transitions *)
 
-fun init_theory f = add_trans (Init f);
+fun is_theory_begin tr = name_of tr = Thy_Header.theoryN;
 
-fun is_init (Transition {trans = [Init _], ...}) = true
-  | is_init _ = false;
+fun init tr =
+  if is_theory_begin tr
+  then add_trans (Init (fn () => error "Missing theory initialization")) tr
+  else
+    raise Fail ("Bad command for theory initialization: " ^
+      quote (name_of tr) ^ Position.here (pos_of tr));
 
-fun modify_init f tr = if is_init tr then init_theory f (reset_trans tr) else tr;
+fun modify_init f tr =
+  if is_theory_begin tr then add_trans (Init f) (reset_trans tr) else tr;
 
 val exit = add_trans Exit;
 

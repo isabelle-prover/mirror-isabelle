@@ -47,8 +47,7 @@ val _ =
 
 val _ =
   Outer_Syntax.command ("theory", \<^here>) "begin theory"
-    (Thy_Header.args >>
-      (fn _ => Toplevel.init_theory (fn () => error "Missing theory initialization")));
+    (Thy_Header.args >> (K Toplevel.init));
 
 
 val bootstrap_thy = Context.the_global_context ();
