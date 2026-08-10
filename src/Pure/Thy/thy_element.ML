@@ -44,18 +44,19 @@ fun parse_elements_generic keywords get_span stopper =
   let
     val not_eof = not o Scan.is_stopper stopper;
 
-    fun category pred other =
+    fun category kinds other =
       Scan.one (fn x =>
         (case get_span x of
-          Command_Span.Span (Command_Span.Command_Span (name, _), _) => pred keywords name
+          Command_Span.Span (Command_Span.Command_Span (name, _), _) =>
+            Symset.member kinds (Keyword.command_kind keywords name)
         | _ => other));
 
     fun theory_element x =
-      (category Keyword.is_theory_goal false -- proof >> element) x
+      (category Keyword.theory_goal_kinds false -- proof >> element) x
     and proof_element x =
-      (category Keyword.is_proof_goal false -- proof >> element ||
-        category Keyword.is_proof_body true >> atom) x
-    and proof x = (Scan.repeat proof_element -- category Keyword.is_qed false) x;
+      (category Keyword.proof_goal_kinds false -- proof >> element ||
+        category Keyword.proof_body_kinds true >> atom) x
+    and proof x = (Scan.repeat proof_element -- category Keyword.qed_kinds false) x;
 
     val default_element = Scan.one not_eof >> atom;
 

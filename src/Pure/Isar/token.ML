@@ -344,11 +344,11 @@ val token_kind_markup =
 
 fun keyword_reports tok = map (fn markup => ((pos_of tok, markup), ""));
 
-fun command_markups keywords name =
-  if Keyword.is_theory_end keywords name then [Markup.keyword2 |> Markup.keyword_properties]
+fun command_markups kind =
+  if Symset.member Keyword.theory_end_kinds kind then [Markup.keyword2 |> Markup.keyword_properties]
   else
-    (if Keyword.is_proof_asm keywords name then [Markup.keyword3]
-     else if Keyword.is_improper keywords name then [Markup.keyword1, Markup.improper]
+    (if Symset.member Keyword.proof_asm_kinds kind then [Markup.keyword3]
+     else if Symset.member Keyword.improper_kinds kind then [Markup.keyword1, Markup.improper]
      else [Markup.keyword1])
     |> map Markup.command_properties;
 
@@ -364,7 +364,7 @@ fun completion_report tok =
 
 fun reports keywords tok =
   if is_command tok then
-    keyword_reports tok (command_markups keywords (content_of tok))
+    keyword_reports tok (command_markups (Keyword.command_kind keywords (content_of tok)))
   else if is_kind Keyword tok then
     keyword_reports tok
       [keyword_markup (false, Markup.keyword2 |> Markup.keyword_properties) (content_of tok)]

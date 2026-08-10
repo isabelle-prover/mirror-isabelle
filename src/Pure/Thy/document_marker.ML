@@ -77,8 +77,9 @@ val parse_tag =
   Scan.state :|-- (fn context =>
     let
       val ctxt = Context.proof_of context;
+      val kind = Keyword.command_kind (Thy_Header.get_keywords' ctxt) (command_name ctxt);
       val scope0 =
-        if Keyword.is_theory_goal (Thy_Header.get_keywords' ctxt) (command_name ctxt)
+        if Symset.member Keyword.theory_goal_kinds kind
         then Document_Source.Command
         else Document_Source.Proof;
       val tag = Scan.optional Document_Source.tag_scope scope0 -- Document_Source.tag_name >> swap;
