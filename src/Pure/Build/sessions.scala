@@ -102,7 +102,7 @@ object Sessions {
     proper_session_theories: List[Document.Node.Name] = Nil,
     document_theories: List[Document.Node.Name] = Nil,
     loaded_theories: Graph[String, Outer_Syntax] = Graph.string,  // cumulative imports
-    used_theories: List[(Document.Node.Name, Options.Update)] = Nil,  // new imports
+    used_theories: List[Document.Node.Entry] = Nil,  // new imports
     theory_load_commands: Map[String, List[(Command_Span.Span, Symbol.Offset)]] = Map.empty,
     known_theories: Map[String, Document.Node.Entry] = Map.empty,
     known_loaded_files: Map[String, List[Path]] = Map.empty,
@@ -451,7 +451,7 @@ object Sessions {
                   proper_session_theories = proper_session_theories,
                   document_theories = document_theories,
                   loaded_theories = dependencies.loaded_theories,
-                  used_theories = dependencies.theories_adjunct,
+                  used_theories = dependencies.entries,
                   theory_load_commands = theory_load_commands,
                   known_theories = known_theories,
                   known_loaded_files = known_loaded_files,
@@ -488,12 +488,28 @@ object Sessions {
     def get(name: String): Option[Base] = session_bases.get(name)
 
     def sources_shasum(name: String): Shasum = {
-      val meta_info = sessions_structure(name).meta_info
+      val session_info = sessions_structure(name)
+      val session_base = apply(name)
+
+      val meta_info = Shasum.make_meta_info(session_info.info_digest)
+
+      val build_prefs =
+        Shasum.make_sorted(session_info.options.changed(filter = _.session_content)
+          .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
+
+      val theories_options =
+        session_base.used_theories.map(entry =>
+          Conditions.make_options(session_info.options, entry.options))
+      val conditions =
+        Conditions.eval(theories_options).dest
+          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+
       val sources =
         Shasum.make_sorted(
-          for ((path, digest) <- apply(name).all_sources)
+          for ((path, digest) <- session_base.all_sources)
             yield digest -> File.symbolic_path(path))
-      meta_info ::: sources
+
+      meta_info ::: build_prefs ::: Shasum.flat(conditions) ::: sources
     }
 
     def errors: List[String] =
@@ -548,22 +564,28 @@ object Sessions {
   /* conditions to load theories */
 
   object Conditions {
+    val CONDITION = "condition"
+
+    def get_options(options: Options): List[String] =
+      space_explode(',', options.string(CONDITION))
+
+    def make_options(options: Options, opts: Options.Update): Options =
+      options ++ opts.filter(p => p._1 == CONDITION)
+
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
-    def apply(options: Options): Conditions = make(Set(options))
-    def make(opts: IterableOnce[Options]): Conditions =
+    def eval(opts: List[Options]): Conditions =
       new Conditions(
-        opts.iterator.flatMap(options => space_explode(',', options.string("condition")).iterator)
-          .foldLeft(empty_rep) {
-            case (map, a) =>
-              if (map.isDefinedAt(a)) map
-              else map + (a -> Isabelle_System.getenv(a).nonEmpty)
-          }
+        opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
+          case (map, a) =>
+            if (map.isDefinedAt(a)) map
+            else map + (a -> Isabelle_System.getenv(a).nonEmpty)
+        }
       )
   }
 
   final class Conditions private(private val rep: SortedMap[String, Boolean]) {
-    def toList: List[(String, Boolean)] = rep.toList
+    def dest: List[(String, Boolean)] = rep.toList
     def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
     def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
 
@@ -579,19 +601,25 @@ object Sessions {
 
   /* cumulative session info */
 
-  private val BUILD_PREFS_BG = "<build_prefs:"
-  private val BUILD_PREFS_EN = ">"
+  class Special_Info(val kind: String) {
+    override def toString: String = "<" + kind + ">"
 
-  def make_build_prefs(name: String): String =
-    BUILD_PREFS_BG + name + BUILD_PREFS_EN
+    private val BG = "<" + kind + ":"
+    private val EN = ">"
 
-  def detect_build_prefs(s: String): Boolean = {
-    val i = s.indexOf('<')
-    i >= 0 && {
-      val s1 = s.drop(i)
-      s1.startsWith(BUILD_PREFS_BG) && s1.endsWith(BUILD_PREFS_EN)
+    def make(name: String): String = BG + name + EN
+
+    def detect(s: String): Boolean = {
+      val i = s.indexOf('<')
+      i >= 0 && {
+        val s1 = s.drop(i)
+        s1.startsWith(BG) && s1.endsWith(EN)
+      }
     }
   }
+
+  object Condition extends Special_Info(Conditions.CONDITION)
+  object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
     name: String,
@@ -629,11 +657,6 @@ object Sessions {
         val session_prefs =
           session_options.make_prefs(defaults = session_options0, filter = _.session_content)
 
-        val build_prefs_digests =
-          session_options.changed(filter = _.session_content)
-            .map(ch => SHA1.digest(ch.print_prefs) -> make_build_prefs(ch.name))
-
-        val theories_options = entry.theories.map({ case (opts, _) => session_options ++ opts })
         val theories =
           entry.theories.map({ case (opts, thys) =>
             (opts, thys.map({ case ((thy, pos), _) =>
@@ -654,21 +677,16 @@ object Sessions {
             else thy_name
           }
 
-        val conditions = Conditions.make(theories_options).toList
-
         val document_files =
           entry.document_files.map({ case (s1, s2) => (Path.explode(s1), Path.explode(s2)) })
 
         val export_files =
           entry.export_files.map({ case (dir, prune, pats) => (Path.explode(dir), prune, pats) })
 
-        val meta_digest =
+        val info_digest =
           SHA1.digest(
             (name, chapter, entry.parent, entry.directories, entry.options, entry.imports,
-              entry.theories_no_position, conditions, entry.document_theories_no_position).toString)
-
-        val meta_info =
-          Shasum.make_meta_info(meta_digest) ::: Shasum.make_sorted(build_prefs_digests)
+              entry.theories_no_position, entry.document_theories_no_position).toString)
 
         val chapter_groups = chapter_defs(chapter).groups
         val groups = chapter_groups ::: entry.groups.filterNot(chapter_groups.contains)
@@ -676,7 +694,7 @@ object Sessions {
         Info(name, chapter, dir_selected, entry.pos, groups, session_path,
           entry.parent, entry.description, directories, session_options, session_prefs,
           entry.imports, theories, global_theories, entry.document_theories, document_files,
-          export_files, entry.export_classpath, meta_info)
+          export_files, entry.export_classpath, info_digest)
       }
       catch {
         case ERROR(msg) =>
@@ -705,7 +723,7 @@ object Sessions {
     document_files: List[(Path, Path)],
     export_files: List[(Path, Int, List[String])],
     export_classpath: List[String],
-    meta_info: Shasum
+    info_digest: Message_Digest.T
   ) {
     def deps: List[String] = parent.toList ::: imports
 

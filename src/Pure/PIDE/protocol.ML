@@ -35,7 +35,7 @@ val _ =
   Protocol_Command.define "Document.define_blob"
     (fn [digest, content] => Document.change_state (Document.define_blob digest content));
 
-fun decode_command id name parents_xml blobs_xml toks_xml sources : Document.command =
+fun decode_command id name kind parents_xml blobs_xml toks_xml sources : Document.command =
   let
     open XML.Decode;
     val parents = list string parents_xml;
@@ -57,6 +57,7 @@ fun decode_command id name parents_xml blobs_xml toks_xml sources : Document.com
   in
    {command_id = Document_ID.parse id,
     name = name,
+    kind = kind,
     parents = parents,
     blobs_digests = blobs_digests,
     blobs_index = blobs_index,
@@ -68,10 +69,10 @@ fun commands_accepted ids =
 
 val _ =
   Protocol_Command.define "Document.define_command"
-    (fn id :: name :: parents :: blobs :: toks :: sources =>
+    (fn id :: name :: kind :: parents :: blobs :: toks :: sources =>
       let
         val command =
-          decode_command id name (YXML.parse_body parents) (YXML.parse_body blobs)
+          decode_command id name kind (YXML.parse_body parents) (YXML.parse_body blobs)
             (YXML.parse_body toks) sources;
         val _ = Document.change_state (Document.define_command command);
       in commands_accepted [id] end);
@@ -83,10 +84,10 @@ val _ =
         fun decode arg =
           let
             open XML.Decode;
-            val (id, (name, (parents_xml, (blobs_xml, (toks_xml, sources))))) =
-              pair string (pair string (pair I (pair I (pair I (list string)))))
+            val (id, (name, (kind, (parents_xml, (blobs_xml, (toks_xml, sources)))))) =
+              pair string (pair string (pair string (pair I (pair I (pair I (list string))))))
                 (YXML.parse_body arg);
-          in decode_command id name parents_xml blobs_xml toks_xml sources end;
+          in decode_command id name kind parents_xml blobs_xml toks_xml sources end;
 
         val commands = map decode args;
         val _ = Document.change_state (fold Document.define_command commands);

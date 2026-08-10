@@ -171,12 +171,12 @@ fun output_token ctxt tok =
     | Token.Comment (SOME Comment.Marker) => []
     | Token.Command =>
         let
-          val name = (Token.content_of tok);
+          val kind = Keyword.command_kind keywords (Token.content_of tok);
           val bg =
-            if Keyword.is_theory_end keywords name then "\\isakeywordTWO{"
-            else if Keyword.is_proof_asm keywords name orelse
-              Keyword.is_proof_asm_goal keywords name then "\\isakeywordTHREE{"
-            else if Keyword.is_proof_asm_goal keywords name then "\\isakeywordTHREE{"
+            if Symset.member Keyword.theory_end_kinds kind then "\\isakeywordTWO{"
+            else if Symset.member Keyword.proof_asm_kinds kind orelse
+              Symset.member Keyword.proof_asm_goal_kinds kind then "\\isakeywordTHREE{"
+            else if Symset.member Keyword.proof_asm_goal_kinds kind then "\\isakeywordTHREE{"
             else "\\isakeywordONE{";
         in output false bg "}" end
     | Token.Keyword =>
@@ -308,8 +308,10 @@ fun make_command_tag options keywords =
   in
     fn name => fn st => fn st' => fn active_tag =>
       let
+        val kind = Keyword.command_kind keywords name;
         val keyword_tags =
-          if Keyword.is_theory_end keywords name andalso Toplevel.is_end_theory st' then ["theory"]
+          if Symset.member Keyword.theory_end_kinds kind andalso Toplevel.is_end_theory st'
+          then ["theory"]
           else Keyword.command_tags keywords name;
         val command_tags =
           the_list (AList.lookup (op =) document_tags_command name) @
@@ -318,7 +320,7 @@ fun make_command_tag options keywords =
           (case command_tags of
             default_tag :: _ => SOME default_tag
           | [] =>
-              if Keyword.is_vacuous keywords name andalso Toplevel.is_proof st
+              if Symset.member Keyword.vacuous_kinds kind andalso Toplevel.is_proof st
               then active_tag else NONE);
       in active_tag' end
   end;
@@ -400,8 +402,9 @@ fun output_command keywords = Scan.some (fn tok =>
   if Token.is_command tok then
     let
       val name = Token.content_of tok;
-      val is_document = Keyword.is_document keywords name;
-      val is_document_raw = Keyword.is_document_raw keywords name;
+      val kind = Keyword.command_kind keywords name;
+      val is_document = Symset.member Keyword.document_kinds kind;
+      val is_document_raw = Symset.member Keyword.document_raw_kinds kind;
       val flag = if is_document andalso not is_document_raw then markup_true else "";
     in
       if is_document andalso is_some (Token.get_output tok)

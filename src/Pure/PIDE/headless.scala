@@ -288,6 +288,7 @@ object Headless {
 
     def use_theories(
       theories: List[String],
+      options: Options.Update = Nil,
       qualifier: String = Sessions.DRAFT,
       master_dir: String = "",
       unicode_symbols: Boolean = false,
@@ -305,7 +306,7 @@ object Headless {
         val import_names =
           theories.map(thy =>
             resources.import_name(qualifier, master_directory(master_dir), thy) -> Position.none)
-        resources.dependencies(import_names, progress = progress).check_errors
+        resources.dependencies(import_names, options = options, progress = progress).check_errors
       }
       val dep_theories = dependencies.theories
       val dep_theories_set = dep_theories.toSet

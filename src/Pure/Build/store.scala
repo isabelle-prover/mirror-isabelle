@@ -120,7 +120,7 @@ object Store {
             else shasum1 == shasum2
 
           def trim(shasum: Shasum): Shasum =
-            if (build_thorough) shasum else shasum.filter(s => !Sessions.detect_build_prefs(s))
+            if (build_thorough) shasum else shasum.filter(s => !Sessions.Build_Prefs.detect(s))
 
           !fresh_build &&
             build.ok &&

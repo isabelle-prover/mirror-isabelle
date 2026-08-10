@@ -38,6 +38,29 @@ sig
   val prf_script_asm_goal: string
   val before_command: string
   val quasi_command: string
+  val vacuous_kinds: Symset.T
+  val diag_kinds: Symset.T
+  val document_heading_kinds: Symset.T
+  val document_body_kinds: Symset.T
+  val document_raw_kinds: Symset.T
+  val document_kinds: Symset.T
+  val theory_begin_kinds: Symset.T
+  val theory_end_kinds: Symset.T
+  val theory_load_kinds: Symset.T
+  val theory_kinds: Symset.T
+  val theory_body_kinds: Symset.T
+  val proof_kinds: Symset.T
+  val proof_body_kinds: Symset.T
+  val theory_goal_kinds: Symset.T
+  val proof_goal_kinds: Symset.T
+  val qed_kinds: Symset.T
+  val qed_global_kinds: Symset.T
+  val proof_open_kinds: Symset.T
+  val proof_close_kinds: Symset.T
+  val proof_asm_kinds: Symset.T
+  val proof_asm_goal_kinds: Symset.T
+  val improper_kinds: Symset.T
+  val printed_kinds: Symset.T
   type spec = {kind: string, load_command: string * Position.T, tags: string list}
   val command_spec: string * string list -> spec
   val no_spec: spec
@@ -59,30 +82,8 @@ sig
   val is_literal: keywords -> string -> bool
   val dest_commands: keywords -> string list
   val command_markup: keywords -> string -> Markup.T option
-  val command_kind: keywords -> string -> string option
+  val command_kind: keywords -> string -> string
   val command_tags: keywords -> string -> string list
-  val is_vacuous: keywords -> string -> bool
-  val is_diag: keywords -> string -> bool
-  val is_document_heading: keywords -> string -> bool
-  val is_document_body: keywords -> string -> bool
-  val is_document_raw: keywords -> string -> bool
-  val is_document: keywords -> string -> bool
-  val is_theory_end: keywords -> string -> bool
-  val is_theory_load: keywords -> string -> bool
-  val is_theory: keywords -> string -> bool
-  val is_theory_body: keywords -> string -> bool
-  val is_proof: keywords -> string -> bool
-  val is_proof_body: keywords -> string -> bool
-  val is_theory_goal: keywords -> string -> bool
-  val is_proof_goal: keywords -> string -> bool
-  val is_qed: keywords -> string -> bool
-  val is_qed_global: keywords -> string -> bool
-  val is_proof_open: keywords -> string -> bool
-  val is_proof_close: keywords -> string -> bool
-  val is_proof_asm: keywords -> string -> bool
-  val is_proof_asm_goal: keywords -> string -> bool
-  val is_improper: keywords -> string -> bool
-  val is_printed: keywords -> string -> bool
 end;
 
 structure Keyword: KEYWORD =
@@ -127,10 +128,56 @@ val before_command = "before_command";
 val quasi_command = "quasi_command";
 
 val command_kinds =
-  [diag, document_heading, document_body, document_raw, thy_begin, thy_end, thy_load, thy_decl,
-    thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt, qed, qed_script,
-    qed_block, qed_global, prf_goal, prf_block, next_block, prf_open, prf_close, prf_chain,
-    prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal, prf_script_asm_goal];
+  Symset.make [diag, document_heading, document_body, document_raw, thy_begin, thy_end, thy_load,
+    thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt, qed,
+    qed_script, qed_block, qed_global, prf_goal, prf_block, next_block, prf_open, prf_close,
+    prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal, prf_script_asm_goal];
+
+val vacuous_kinds = Symset.make [diag, document_heading, document_body, document_raw];
+
+val diag_kinds = Symset.make [diag];
+
+val document_heading_kinds = Symset.make [document_heading];
+val document_body_kinds = Symset.make [document_body];
+val document_raw_kinds = Symset.make [document_raw];
+val document_kinds = Symset.make [document_heading, document_body, document_raw];
+
+val theory_begin_kinds = Symset.make [thy_begin];
+val theory_end_kinds = Symset.make [thy_end];
+
+val theory_load_kinds = Symset.make [thy_load];
+
+val theory_kinds = Symset.make
+  [thy_begin, thy_end, thy_load, thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal,
+    thy_goal_defn, thy_goal_stmt];
+
+val theory_body_kinds = Symset.make
+  [thy_load, thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt];
+
+val proof_kinds = Symset.make
+  [qed, qed_script, qed_block, qed_global, prf_goal, prf_block, next_block, prf_open,
+    prf_close, prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal,
+    prf_script_asm_goal];
+
+val proof_body_kinds = Symset.make
+  [diag, document_heading, document_body, document_raw, prf_block, next_block, prf_open,
+    prf_close, prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal,
+    prf_script_asm_goal];
+
+val theory_goal_kinds = Symset.make [thy_goal, thy_goal_defn, thy_goal_stmt];
+val proof_goal_kinds = Symset.make [prf_goal, prf_asm_goal, prf_script_goal, prf_script_asm_goal];
+val qed_kinds = Symset.make [qed, qed_script, qed_block];
+val qed_global_kinds = Symset.make [qed_global];
+
+val proof_open_kinds =
+  Symset.make [prf_goal, prf_asm_goal, prf_script_goal, prf_script_asm_goal, prf_open];
+val proof_close_kinds = Symset.make [qed, qed_script, qed_block, prf_close];
+
+val proof_asm_kinds = Symset.make [prf_asm, prf_asm_goal];
+val proof_asm_goal_kinds = Symset.make [prf_asm_goal];
+val improper_kinds = Symset.make [qed_script, prf_script, prf_script_goal, prf_script_asm_goal];
+
+val printed_kinds = Symset.union theory_goal_kinds proof_kinds;
 
 
 (* specifications *)
@@ -153,9 +200,10 @@ type entry =
   tags: string list};
 
 fun check_spec pos ({kind, tags, ...}: spec) : entry =
-  if not (member (op =) command_kinds kind) then
-    error ("Unknown outer syntax keyword kind " ^ quote kind)
-  else {pos = pos, id = serial (), kind = kind, tags = tags};
+  if Symset.member command_kinds kind
+  then {pos = pos, id = serial (), kind = kind, tags = tags}
+  else error ("Unknown outer syntax keyword kind " ^ quote kind);
+
 
 
 (** keyword tables **)
@@ -231,68 +279,14 @@ fun command_markup keywords name =
   |> Option.map (fn {pos, id, ...} =>
       Position.make_entity_markup {def = false} id Markup.command_keywordN (name, pos));
 
-fun command_kind keywords = Option.map #kind o lookup_command keywords;
+fun command_kind keywords name =
+  (case lookup_command keywords name of
+    SOME {kind, ...} => kind
+  | NONE => "");
 
 fun command_tags keywords name =
   (case lookup_command keywords name of
     SOME {tags, ...} => tags
   | NONE => []);
-
-
-(* command categories *)
-
-fun command_category ks =
-  let
-    val set = Symset.make ks;
-    fun pred keywords name =
-      (case lookup_command keywords name of
-        NONE => false
-      | SOME {kind, ...} => Symset.member set kind);
-  in pred end;
-
-val is_vacuous = command_category [diag, document_heading, document_body, document_raw];
-
-val is_diag = command_category [diag];
-
-val is_document_heading = command_category [document_heading];
-val is_document_body = command_category [document_body];
-val is_document_raw = command_category [document_raw];
-val is_document = command_category [document_heading, document_body, document_raw];
-
-val is_theory_end = command_category [thy_end];
-
-val is_theory_load = command_category [thy_load];
-
-val is_theory = command_category
-  [thy_begin, thy_end, thy_load, thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal,
-    thy_goal_defn, thy_goal_stmt];
-
-val is_theory_body = command_category
-  [thy_load, thy_decl, thy_decl_block, thy_defn, thy_stmt, thy_goal, thy_goal_defn, thy_goal_stmt];
-
-val is_proof = command_category
-  [qed, qed_script, qed_block, qed_global, prf_goal, prf_block, next_block, prf_open,
-    prf_close, prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal,
-    prf_script_asm_goal];
-
-val is_proof_body = command_category
-  [diag, document_heading, document_body, document_raw, prf_block, next_block, prf_open,
-    prf_close, prf_chain, prf_decl, prf_asm, prf_asm_goal, prf_script, prf_script_goal,
-    prf_script_asm_goal];
-
-val is_theory_goal = command_category [thy_goal, thy_goal_defn, thy_goal_stmt];
-val is_proof_goal = command_category [prf_goal, prf_asm_goal, prf_script_goal, prf_script_asm_goal];
-val is_qed = command_category [qed, qed_script, qed_block];
-val is_qed_global = command_category [qed_global];
-
-val is_proof_open =
-  command_category [prf_goal, prf_asm_goal, prf_script_goal, prf_script_asm_goal, prf_open];
-val is_proof_close = command_category [qed, qed_script, qed_block, prf_close];
-
-val is_proof_asm = command_category [prf_asm, prf_asm_goal];
-val is_proof_asm_goal = command_category [prf_asm_goal];
-val is_improper = command_category [qed_script, prf_script, prf_script_goal, prf_script_asm_goal];
-
-fun is_printed keywords = is_theory_goal keywords orf is_proof keywords;
 
 end;

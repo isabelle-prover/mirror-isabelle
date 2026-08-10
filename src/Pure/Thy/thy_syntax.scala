@@ -82,11 +82,7 @@ object Thy_Syntax {
           node.header.errors.nonEmpty || header.errors.nonEmpty || node.header != header
         if (update_header) {
           val node1 = node.update_header(header)
-          if (node.header.imports_no_pos != node1.header.imports_no_pos ||
-              node.header.options != node1.header.options ||
-              node.header.keywords != node1.header.keywords ||
-              node.header.abbrevs != node1.header.abbrevs ||
-              node.header.errors != node1.header.errors) syntax_changed0 += name
+          if (!(node.header eq_no_pos node1.header)) syntax_changed0 += name
           nodes += (name -> node1)
           doc_edits += (name -> Document.Node.Deps(header))
         }
@@ -200,7 +196,7 @@ object Thy_Syntax {
         node.update_commands(node_commands)
 
       case Exn.Exn(exn) =>
-        session.system_message(Output.error_message_text(Exn.print(exn)))
+        session.resources.log.error_message(Exn.print(exn))
         node
     }
   }

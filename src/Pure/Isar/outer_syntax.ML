@@ -18,8 +18,8 @@ sig
   val local_theory_to_proof: command_keyword -> string ->
     (local_theory -> Proof.state) parser -> unit
   val bootstrap: bool Config.T
-  val parse_spans: Token.T list -> Command_Span.span list
-  val make_span: Token.T list -> Command_Span.span
+  val parse_spans: (string -> string) -> Token.T list -> Command_Span.span list
+  val make_span: string -> Token.T list -> Command_Span.span
   val parse_span: theory -> (unit -> theory) -> Token.T list -> Toplevel.transition
   val parse_text: theory -> (unit -> theory) -> Position.T -> string -> Toplevel.transition list
   val command_reports: theory -> Token.T -> Position.report_text list
@@ -169,41 +169,40 @@ val local_theory_to_proof = local_theory_command Toplevel.local_theory_to_proof;
 
 (* parse spans *)
 
-local
-
-fun ship span =
+fun parse_spans command_kind =
   let
-    val kind =
-      if forall Token.is_ignored span then Command_Span.Ignored_Span
-      else if exists Token.is_error span then Command_Span.Malformed_Span
-      else
-        (case find_first Token.is_command span of
-          NONE => Command_Span.Malformed_Span
-        | SOME cmd => Command_Span.Command_Span (Token.content_of cmd, Token.pos_of cmd));
-  in cons (Command_Span.Span (kind, span)) end;
+    fun ship span =
+      let
+        val kind =
+          if forall Token.is_ignored span then Command_Span.Ignored_Span
+          else if exists Token.is_error span then Command_Span.Malformed_Span
+          else
+            (case find_first Token.is_command span of
+              NONE => Command_Span.Malformed_Span
+            | SOME cmd =>
+                let
+                  val name = Token.content_of cmd;
+                  val kind = command_kind name;
+                  val pos = Token.pos_of cmd;
+                in Command_Span.Command_Span {name = name, kind = kind, pos = pos} end);
+      in cons (Command_Span.Span (kind, span)) end;
 
-fun flush (result, content, ignored) =
-  result
-  |> not (null content) ? ship (rev content)
-  |> not (null ignored) ? ship (rev ignored);
+    fun flush (result, content, ignored) =
+      result
+      |> not (null content) ? ship (rev content)
+      |> not (null ignored) ? ship (rev ignored);
 
-fun parse tok (result, content, ignored) =
-  if Token.is_ignored tok then (result, content, tok :: ignored)
-  else if Token.is_command_modifier tok orelse
-    Token.is_command tok andalso
-      (not (exists Token.is_command_modifier content) orelse exists Token.is_command content)
-  then (flush (result, content, ignored), [tok], [])
-  else (result, tok :: (ignored @ content), []);
+    fun parse tok (result, content, ignored) =
+      if Token.is_ignored tok then (result, content, tok :: ignored)
+      else if Token.is_command_modifier tok orelse
+        Token.is_command tok andalso
+          (not (exists Token.is_command_modifier content) orelse exists Token.is_command content)
+      then (flush (result, content, ignored), [tok], [])
+      else (result, tok :: (ignored @ content), []);
+  in fn toks => fold parse toks ([], [], []) |> flush |> rev end;
 
-in
-
-fun parse_spans toks =
-  fold parse toks ([], [], []) |> flush |> rev;
-
-end;
-
-fun make_span toks =
-  (case parse_spans toks of
+fun make_span kind toks =
+  (case parse_spans (K kind) toks of
     [span] => span
   | _ => Command_Span.Span (Command_Span.Malformed_Span, toks));
 
@@ -217,14 +216,15 @@ local
 val before_command =
   Scan.option (Parse.position (Parse.private >> K true || Parse.qualified >> K false));
 
-fun parse_command thy markers =
+fun parse_command thy markers is_begin =
   Scan.ahead (before_command |-- Parse.position Parse.command) :|-- (fn (name, pos) =>
     let
       val keywords = Thy_Header.get_keywords thy;
+      val kind = Keyword.command_kind keywords name;
       val tr0 =
-        Toplevel.make name pos
-        |> Keyword.is_proof_open keywords name ? Toplevel.skip_proof_open
-        |> Keyword.is_proof_close keywords name ? Toplevel.skip_proof_close;
+        Toplevel.make {name = name, kind = kind, is_begin = is_begin, pos = pos}
+        |> Symset.member Keyword.proof_open_kinds kind ? Toplevel.skip_proof_open
+        |> Symset.member Keyword.proof_close_kinds kind ? Toplevel.skip_proof_close;
       val command_markers =
         Parse.command |-- Document_Source.old_tags >>
           (fn tags => Toplevel.markers (map Document_Marker.legacy_tag tags @ markers) tr0);
@@ -251,12 +251,14 @@ fun parse_span thy init span =
   let
     val full_range = Token.range_of span;
     val core_range = Token.core_range_of span;
+    val is_begin = exists Token.is_begin span;
 
     val markers = map Token.input_of (filter Token.is_document_marker span);
     fun parse () =
       filter Token.is_proper span
       |> Source.of_list
-      |> Source.source Token.stopper (Scan.bulk (fn xs => Parse.!!! (parse_command thy markers) xs))
+      |> Source.source Token.stopper
+          (Scan.bulk (fn xs => Parse.!!! (parse_command thy markers is_begin) xs))
       |> Source.exhaust;
   in
     (case parse () of
@@ -267,10 +269,12 @@ fun parse_span thy init span =
   end;
 
 fun parse_text thy init pos text =
-  Symbol_Pos.explode (text, pos)
-  |> Token.tokenize (Thy_Header.get_keywords thy) {strict = false}
-  |> parse_spans
-  |> map (Command_Span.content #> parse_span thy init);
+  let val keywords = Thy_Header.get_keywords thy in
+    Symbol_Pos.explode (text, pos)
+    |> Token.tokenize keywords {strict = false}
+    |> parse_spans (Keyword.command_kind keywords)
+    |> map (Command_Span.content #> parse_span thy init)
+  end;
 
 end;
 

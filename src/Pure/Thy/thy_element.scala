@@ -77,12 +77,12 @@ object Thy_Element {
         command(_.span.is_keyword_kind(pred, other = other))
 
       def theory_element: Parser[Element_Command] =
-        category(Keyword.theory_goal) ~ proof ^^ { case a ~ b => element(a, b) }
+        category(Keyword.theory_goal_kinds) ~ proof ^^ { case a ~ b => element(a, b) }
       def proof_element: Parser[Element_Command] =
-        category(Keyword.proof_goal) ~ proof ^^ { case a ~ b => element(a, b) } |
-        category(Keyword.proof_body, other = true) ^^ { case a => atom(a) }
+        category(Keyword.proof_goal_kinds) ~ proof ^^ { case a ~ b => element(a, b) } |
+        category(Keyword.proof_body_kinds, other = true) ^^ { case a => atom(a) }
       def proof: Parser[Proof[Command]] =
-        rep(proof_element) ~ category(Keyword.qed) ^^ { case a ~ b => (a, b) }
+        rep(proof_element) ~ category(Keyword.qed_kinds) ^^ { case a ~ b => (a, b) }
 
       val default_element: Parser[Element_Command] = command(_ => true) ^^ { case a => atom(a) }
 

@@ -21,13 +21,13 @@ object Document_Structure {
   case class Atom(length: Int) extends Document
 
   def is_theory_command(command: Command): Boolean =
-    command.span.is_keyword_kind(kind => Keyword.theory(kind) && !Keyword.theory_end(kind))
+    command.span.is_keyword_kind(kind => Keyword.theory_kinds(kind) && !Keyword.theory_end_kinds(kind))
 
   def is_document_command(command: Command): Boolean =
-    command.span.is_keyword_kind(Keyword.document)
+    command.span.is_keyword_kind(Keyword.document_kinds)
 
   def is_diag_command(command: Command): Boolean =
-    command.span.is_keyword_kind(Keyword.diag)
+    command.span.is_keyword_kind(Keyword.diag_kinds)
 
   def is_heading_command(command: Command): Boolean =
     proper_heading_level(command).isDefined

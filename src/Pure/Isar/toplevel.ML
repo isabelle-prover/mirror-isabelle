@@ -1,7 +1,17 @@
 (*  Title:      Pure/Isar/toplevel.ML
-    Author:     Markus Wenzel, TU Muenchen
+    Author:     Makarius
 
-Isabelle/Isar toplevel transactions.
+Isabelle/Isar command transactions, within a PIDE document.
+
+Note: The name "toplevel" refers to old times, when Isabelle still had a
+toplevel command loop, or read-eval-print loop (REPL). This no longer exists,
+but the name remains with a quite different meaning.
+
+See also:
+  Makarius Wenzel. READ-EVAL-PRINT in parallel and asynchronous proof-checking.
+  In Cezary Kaliszyk and Christoph Lüth, editors, User Interfaces for Theorem
+  Provers (UITP 2012), volume 118 of EPTCS, 2013.
+  https://arxiv.org/abs/1307.1944v1
 *)
 
 signature TOPLEVEL =
@@ -30,17 +40,19 @@ sig
   val pretty_abstract: state -> Pretty.T
   type presentation = state -> Latex.text
   type transition
-  val make: string -> Position.T -> transition
+  val make: {name: string, kind: string, is_begin: bool, pos: Position.T} -> transition
   val empty: transition
   val name_of: transition -> string
+  val kind_of: transition -> string
   val pos_of: transition -> Position.T
   val timing_of: transition -> Time.time
+  val is_begin: transition -> bool
   val type_error: transition -> string
   val position: Position.T -> transition -> transition
   val markers: Input.source list -> transition -> transition
   val timing: Time.time -> transition -> transition
-  val init_theory: (unit -> theory) -> transition -> transition
-  val is_init: transition -> bool
+  val is_theory_begin: transition -> bool
+  val init: transition -> transition
   val modify_init: (unit -> theory) -> transition -> transition
   val exit: transition -> transition
   val present: presentation -> transition -> transition
@@ -84,7 +96,7 @@ sig
   val fork_presentation: transition -> transition * transition
   type result
   val join_results: result -> (state * transition * state) list
-  val element_result: Keyword.keywords -> transition Thy_Element.element -> state -> result * state
+  val element_result: transition Thy_Element.element -> state -> result * state
 end;
 
 structure Toplevel: TOPLEVEL =
@@ -333,26 +345,36 @@ end;
 
 datatype transition = Transition of
  {name: string,               (*command name*)
+  kind: string,               (*command kind*)
+  is_begin: bool,             (*command with 'begin' keyword *)
   pos: Position.T,            (*source position*)
   markers: Input.source list, (*semantic document markers*)
   timing: Time.time,          (*prescient timing information*)
   trans: trans list};         (*primitive transitions (union)*)
 
-fun make_transition (name, pos, markers, timing, trans) =
-  Transition {name = name, pos = pos, markers = markers, timing = timing, trans = trans};
+fun make_transition (name, kind, is_begin, pos, markers, timing, trans) =
+  Transition {name = name, kind = kind, is_begin = is_begin, pos = pos,
+    markers = markers, timing = timing, trans = trans};
 
-fun map_transition f (Transition {name, pos, markers, timing, trans}) =
-  make_transition (f (name, pos, markers, timing, trans));
+fun map_transition f (Transition {name, kind, is_begin, pos, markers, timing, trans}) =
+  make_transition (f (name, kind, is_begin, pos, markers, timing, trans));
 
-fun make name pos = make_transition (name, pos, [], Time.zeroTime, []);
-val empty = make "" Position.none;
+fun make {name, kind, is_begin, pos} =
+  make_transition (name, kind, is_begin, pos, [], Time.zeroTime, []);
+
+val empty = make {name = "", kind = "", is_begin = false, pos = Position.none};
 
 
 (* diagnostics *)
 
-fun name_of (Transition {name, ...}) = name;
-fun pos_of (Transition {pos, ...}) = pos;
-fun timing_of (Transition {timing, ...}) = timing;
+fun rep_transition (Transition args) = args;
+
+val name_of = #name o rep_transition;
+val kind_of = #kind o rep_transition;
+val pos_of = #pos o rep_transition;
+val timing_of = #timing o rep_transition;
+
+val is_begin = #is_begin o rep_transition;
 
 fun command_msg msg tr =
   msg ^ "command " ^ quote (Markup.markup Markup.keyword1 (name_of tr)) ^
@@ -364,30 +386,35 @@ fun type_error tr = command_msg "Bad context for " tr;
 
 (* modify transitions *)
 
-fun position pos = map_transition (fn (name, _, markers, timing, trans) =>
-  (name, pos, markers, timing, trans));
+fun position pos = map_transition (fn (name, kind, is_begin, _, markers, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun markers markers = map_transition (fn (name, pos, _, timing, trans) =>
-  (name, pos, markers, timing, trans));
+fun markers markers = map_transition (fn (name, kind, is_begin, pos, _, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun timing timing = map_transition (fn (name, pos, markers, _, trans) =>
-  (name, pos, markers, timing, trans));
+fun timing timing = map_transition (fn (name, kind, is_begin, pos, markers, _, trans) =>
+  (name, kind, is_begin, pos, markers, timing, trans));
 
-fun add_trans tr = map_transition (fn (name, pos, markers, timing, trans) =>
-  (name, pos, markers, timing, tr :: trans));
+fun add_trans tr = map_transition (fn (name, kind, is_begin, pos, markers, timing, trans) =>
+  (name, kind, is_begin, pos, markers, timing, tr :: trans));
 
-val reset_trans = map_transition (fn (name, pos, markers, timing, _) =>
-  (name, pos, markers, timing, []));
+val reset_trans = map_transition (fn (name, kind, is_begin, pos, markers, timing, _) =>
+  (name, kind, is_begin, pos, markers, timing, []));
 
 
 (* basic transitions *)
 
-fun init_theory f = add_trans (Init f);
+val is_theory_begin = Symset.member Keyword.theory_begin_kinds o kind_of;
 
-fun is_init (Transition {trans = [Init _], ...}) = true
-  | is_init _ = false;
+fun init tr =
+  if is_theory_begin tr
+  then add_trans (Init (fn () => error "Missing theory initialization")) tr
+  else
+    raise Fail ("Bad command for theory initialization: " ^
+      quote (name_of tr) ^ Position.here (pos_of tr));
 
-fun modify_init f tr = if is_init tr then init_theory f (reset_trans tr) else tr;
+fun modify_init f tr =
+  if is_theory_begin tr then add_trans (Init f) (reset_trans tr) else tr;
 
 val exit = add_trans Exit;
 
@@ -410,8 +437,11 @@ val malformedN = "<malformed>";
 fun is_ignored tr = name_of tr = ignoredN;
 fun is_malformed tr = name_of tr = malformedN;
 
-fun ignored pos = make ignoredN pos |> keep (fn _ => ());
-fun malformed pos msg = make malformedN pos |> keep (fn _ => error msg);
+fun ignored pos =
+  make {name = ignoredN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => ());
+
+fun malformed pos msg =
+  make {name = malformedN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => error msg);
 
 
 (* theory transitions *)
@@ -724,10 +754,10 @@ in
 
 fun fork_presentation tr = (markers [] tr, ignored (pos_of tr));
 
-fun atom_result keywords tr st =
+fun atom_result tr st =
   let
     val st' =
-      if Future.proofs_enabled 1 andalso Keyword.is_diag keywords (name_of tr) then
+      if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (kind_of tr) then
         let
           val (tr1, tr2) = fork_presentation tr;
           val _ =
@@ -737,10 +767,10 @@ fun atom_result keywords tr st =
       else command_exception tr st;
   in (Result (tr, st'), st') end;
 
-fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result keywords tr st
-  | element_result keywords (elem as Thy_Element.Element (head_tr, SOME element_rest)) st =
+fun element_result (Thy_Element.Element (tr, NONE)) st = atom_result tr st
+  | element_result (elem as Thy_Element.Element (head_tr, SOME element_rest)) st =
       let
-        val (head_result, st') = atom_result keywords head_tr st;
+        val (head_result, st') = atom_result head_tr st;
         val (body_elems, end_tr) = element_rest;
         val estimate = timing_estimate elem;
       in
@@ -748,7 +778,7 @@ fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result ke
         then
           let
             val proof_trs = maps Thy_Element.flat_element body_elems @ [end_tr];
-            val (proof_results, st'') = fold_map (atom_result keywords) proof_trs st';
+            val (proof_results, st'') = fold_map atom_result proof_trs st';
           in (Result_List (head_result :: proof_results), st'') end
         else
           let
@@ -765,7 +795,7 @@ fun element_result keywords (Thy_Element.Element (tr, NONE)) st = atom_result ke
                       val node' = Proof (Proof_Node.apply (K state) prf, (finish, orig_gthy));
                       val (results, result_state) =
                         State (node_presentation node', prev_thy)
-                        |> fold_map (element_result keywords) body_elems ||> command_exception end_tr1;
+                        |> fold_map element_result body_elems ||> command_exception end_tr1;
                     in (Result_List results, presentation_context0 result_state) end))
               #> (fn (res, state') => state' |> put_result (Result_Future res));
 

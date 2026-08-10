@@ -71,8 +71,10 @@ val _ =
 
 fun print_function ({name, weight, auto_option, body}: tool) =
   Command.print_function ("auto_" ^ name)
-    (fn {keywords, command_name, ...} =>
-      if Keyword.is_theory_goal keywords command_name andalso Options.default_bool auto_option then
+    (fn {command_kind, ...} =>
+      if Symset.member Keyword.theory_goal_kinds command_kind andalso
+        Options.default_bool auto_option
+      then
         SOME
          {delay = SOME (seconds (Options.default_real \<^system_option>\<open>auto_time_start\<close>)),
           pri = ~ weight,

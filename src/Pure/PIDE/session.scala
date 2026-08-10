@@ -945,9 +945,6 @@ abstract class Session extends Document.Session {
     }
   }
 
-  def system_message(text: String): Unit =
-    manager.send(new Prover.System_Output(text))
-
   def protocol_command_raw(name: String, args: List[Bytes]): Unit =
     manager.send(Protocol_Command_Raw(name, args))
 

@@ -263,8 +263,9 @@ fun eval_thy loading_theory master_dir header text_pos text parents =
     val keywords =
       fold (curry Keyword.merge_keywords o Thy_Header.get_keywords) parents
         (Keyword.add_keywords (#keywords header) Keyword.empty_keywords);
+    val command_kind = Keyword.command_kind keywords;
 
-    val spans = Outer_Syntax.parse_spans (Token.explode keywords text_pos text);
+    val spans = Outer_Syntax.parse_spans command_kind (Token.explode keywords text_pos text);
     val commands =
       fold (fn span => fn i => if Command_Span.is_ignored span then i else i + 1) spans 0;
     val () = loading_theory commands;
@@ -290,7 +291,7 @@ fun eval_thy loading_theory master_dir header text_pos text parents =
                     (fn () => Command.read_span keywords st master_dir init span) ();
               in Toplevel.timing (Resources.last_timing tr) tr end;
             val elem = Thy_Element.map_element prepare span_elem;
-            val (results, st') = Toplevel.element_result keywords elem st;
+            val (results, st') = Toplevel.element_result elem st;
             val pos' = Toplevel.pos_of (Thy_Element.last_element elem);
           in (results, (st', pos')) end;
 

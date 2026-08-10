@@ -26,11 +26,11 @@ sig
   type print
   type print_fn = Toplevel.transition -> Toplevel.state -> unit
   val print0: {pri: int, print_fn: print_fn} -> eval -> print
-  val print: Options.update -> Keyword.keywords -> bool -> (string * string list) list -> string ->
+  val print: Options.update -> bool -> (string * string list) list -> string -> string ->
     eval -> print list -> print list option
   val parallel_print: print -> bool
   type print_function =
-    {keywords: Keyword.keywords, command_name: string, args: string list, exec_id: Document_ID.exec} ->
+    {command_name: string, command_kind: string, args: string list, exec_id: Document_ID.exec} ->
       {delay: Time.time option, pri: int, persistent: bool, strict: bool, print_fn: print_fn} option
   val print_function: string -> print_function -> unit
   val no_print_function: string -> unit
@@ -69,8 +69,8 @@ fun blob_file src_path lines file_node =
       | SOME exec_id => Position.put_id exec_id);
   in {src_path = src_path, lines = lines, pos = file_pos} end
 
-fun resolve_files master_dir (blobs, blobs_index) toks =
-  (case Outer_Syntax.parse_spans toks of
+fun resolve_files keywords master_dir (blobs, blobs_index) toks =
+  (case Outer_Syntax.parse_spans (Keyword.command_kind keywords) toks of
     [Command_Span.Span (Command_Span.Command_Span _, _)] =>
       (case try (nth toks) blobs_index of
         SOME tok =>
@@ -103,9 +103,9 @@ fun reports_of_token keywords tok =
       |> map_filter (fn (sym, pos) =>
           if Symbol.is_malformed sym
           then SOME ((pos, Markup.bad ()), "Malformed symbolic character") else NONE);
-    val is_malformed = Token.is_error tok orelse not (null malformed_symbols);
+    val malformed = Token.is_error tok orelse not (null malformed_symbols);
     val reports = Token.reports keywords tok @ Token.completion_report tok @ malformed_symbols;
-  in (is_malformed, reports) end;
+  in {malformed = malformed, reports = reports} end;
 
 in
 
@@ -116,20 +116,20 @@ fun read keywords thy master_dir init blobs_info span =
   let
     val command_reports = Outer_Syntax.command_reports thy;
     val token_reports = map (reports_of_token keywords) span;
-    val _ = Position.reports_text (maps #2 token_reports @ maps command_reports span);
+    val _ = Position.reports_text (maps #reports token_reports @ maps command_reports span);
 
     val core_range = Token.core_range_of span;
     val tr =
-      if exists #1 token_reports
+      if exists #malformed token_reports
       then Toplevel.malformed (#1 core_range) "Malformed command syntax"
-      else Outer_Syntax.parse_span thy init (resolve_files master_dir blobs_info span);
+      else Outer_Syntax.parse_span thy init (resolve_files keywords master_dir blobs_info span);
     val _ =
       if Toplevel.is_ignored tr orelse Toplevel.is_malformed tr then ()
       else
         let
           val name = Toplevel.name_of tr;
-          val kind = the_default "" (Keyword.command_kind (Thy_Header.get_keywords thy) name);
-          val is_begin = exists Token.is_begin span;
+          val kind = Toplevel.kind_of tr;
+          val is_begin = Toplevel.is_begin tr;
           val markup = Markup.command_span {name = name, kind = kind, is_begin = is_begin};
         in Position.report (#1 core_range) markup end;
   in tr end;
@@ -169,13 +169,13 @@ val eval_result_state = #state o eval_result;
 
 local
 
-fun reset_state keywords tr st0 = Toplevel.setmp_thread_position tr (fn () =>
+fun reset_state tr st0 = Toplevel.setmp_thread_position tr (fn () =>
   let
-    val name = Toplevel.name_of tr;
+    val kind = Toplevel.kind_of tr;
     val res =
-      if Keyword.is_theory_body keywords name then Toplevel.reset_theory st0
-      else if Keyword.is_proof keywords name then Toplevel.reset_proof st0
-      else if Keyword.is_theory_end keywords name then
+      if Symset.member Keyword.theory_body_kinds kind then Toplevel.reset_theory st0
+      else if Symset.member Keyword.proof_kinds kind then Toplevel.reset_proof st0
+      else if Symset.member Keyword.theory_end_kinds kind then
         (case Toplevel.reset_notepad st0 of
           NONE => Toplevel.reset_theory st0
         | some => some)
@@ -186,8 +186,8 @@ fun reset_state keywords tr st0 = Toplevel.setmp_thread_position tr (fn () =>
     | SOME st => (Output.error_message (Toplevel.type_error tr ^ " -- using reset state"); st))
   end) ();
 
-fun run keywords tr st =
-  if Future.proofs_enabled 1 andalso Keyword.is_diag keywords (Toplevel.name_of tr) then
+fun run tr st =
+  if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (Toplevel.kind_of tr) then
     let
       val (tr1, tr2) = Toplevel.fork_presentation tr;
       val _ =
@@ -210,30 +210,28 @@ fun check_span_comments ctxt span tr =
 fun report_indent tr st =
   (case try Toplevel.proof_of st of
     SOME prf =>
-      let val keywords = Thy_Header.get_keywords (Proof.theory_of prf) in
-        if Keyword.command_kind keywords (Toplevel.name_of tr) = SOME Keyword.prf_script then
-          (case try (Thm.nprems_of o #goal o Proof.goal) prf of
-            NONE => ()
-          | SOME 0 => ()
-          | SOME n =>
-              let val report = YXML.output_markup_only (Markup.command_indent (n - 1));
-              in Toplevel.setmp_thread_position tr (fn () => Output.report [report]) () end)
-        else ()
-      end
+      if Toplevel.kind_of tr = Keyword.prf_script then
+        (case try (Thm.nprems_of o #goal o Proof.goal) prf of
+          NONE => ()
+        | SOME 0 => ()
+        | SOME n =>
+            let val report = YXML.output_markup_only (Markup.command_indent (n - 1));
+            in Toplevel.setmp_thread_position tr (fn () => Output.report [report]) () end)
+      else ()
   | NONE => ());
 
 fun status tr m =
   Toplevel.setmp_thread_position tr (fn () => Output.status [YXML.output_markup_only m]) ();
 
-fun eval_state keywords span tr ({state, ...}: eval_state) =
+fun eval_state span tr ({state, ...}: eval_state) =
   let
     val _ = Isabelle_Thread.expose_interrupt ();
 
-    val st = reset_state keywords tr state;
+    val st = reset_state tr state;
 
     val _ = report_indent tr st;
     val _ = status tr Markup.running;
-    val (errs1, result) = run keywords tr st;
+    val (errs1, result) = run tr st;
     val errs2 =
       (case result of
         NONE => []
@@ -253,7 +251,7 @@ fun eval_state keywords span tr ({state, ...}: eval_state) =
     | SOME st' =>
         let
           val _ =
-            if Keyword.is_theory_end keywords (Toplevel.name_of tr) andalso
+            if Symset.member Keyword.theory_end_kinds (Toplevel.kind_of tr) andalso
               can (Toplevel.end_theory Position.none) st'
             then status tr Markup.finalized else ();
           val _ = status tr Markup.finished;
@@ -273,7 +271,7 @@ fun eval options keywords master_dir init blobs_info command_id span eval0 =
           Position.setmp_thread_data (Position.id_only (Document_ID.print exec_id))
             (fn () =>
               read keywords thy master_dir init blobs_info span |> Toplevel.exec_id exec_id) ();
-      in eval_state keywords span tr eval_state0 end);
+      in eval_state span tr eval_state0 end);
   in
     Eval {command_id = command_id, exec_id = exec_id,
       eval_process = Lazy.lazy_name "Command.eval" process}
@@ -295,7 +293,7 @@ fun print_equiv (name', args') (Print {name, args, ...}) = name' = name andalso 
 type print_fn = Toplevel.transition -> Toplevel.state -> unit;
 
 type print_function =
-  {keywords: Keyword.keywords, command_name: string, args: string list, exec_id: Document_ID.exec} ->
+  {command_name: string, command_kind: string, args: string list, exec_id: Document_ID.exec} ->
     {delay: Time.time option, pri: int, persistent: bool, strict: bool, print_fn: print_fn} option;
 
 local
@@ -347,15 +345,15 @@ fun print0 {pri, print_fn} =
   make_print [] ("", [serial_string ()])
     {delay = NONE, pri = pri, persistent = true, strict = true, print_fn = print_fn};
 
-fun print options keywords visible overlays command_name eval old_prints =
+fun print options visible overlays command_name command_kind eval old_prints =
   let
     val print_functions = Synchronized.value print_functions;
 
     fun new_print (name, args) get_pr =
       let
         val params =
-         {keywords = keywords,
-          command_name = command_name,
+         {command_name = command_name,
+          command_kind = command_kind,
           args = args,
           exec_id = eval_exec_id eval};
       in
@@ -481,9 +479,9 @@ val _ =
 
 val _ =
   Command.print_function "print_state"
-    (fn {keywords, command_name, ...} =>
+    (fn {command_kind, ...} =>
       if Options.default_bool \<^system_option>\<open>editor_output_state\<close>
-        andalso Keyword.is_printed keywords command_name
+        andalso Symset.member Keyword.printed_kinds command_kind
       then
         SOME {delay = NONE, pri = Task_Queue.urgent_pri + 1, persistent = false, strict = false,
           print_fn = fn _ => fn st =>

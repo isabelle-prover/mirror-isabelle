@@ -7,7 +7,8 @@ Syntactic representation of command spans.
 signature COMMAND_SPAN =
 sig
   val extensions: string list -> Path.T -> Path.T list
-  datatype kind = Command_Span of string * Position.T | Ignored_Span | Malformed_Span
+  datatype kind =
+    Command_Span of {name: string, kind: string, pos: Position.T} | Ignored_Span | Malformed_Span
   datatype span = Span of kind * Token.T list
   val kind: span -> kind
   val is_ignored: span -> bool
@@ -32,7 +33,8 @@ fun extensions exts path = map (fn ext => Path.ext ext path) exts;
 
 (* span *)
 
-datatype kind = Command_Span of string * Position.T | Ignored_Span | Malformed_Span;
+datatype kind =
+  Command_Span of {name: string, kind: string, pos: Position.T} | Ignored_Span | Malformed_Span;
 datatype span = Span of kind * Token.T list;
 
 fun kind (Span (k, _)) = k;
@@ -44,9 +46,9 @@ val symbol_length = Position.distance_of o range;
 
 (* stopper *)
 
-val eof = Span (Command_Span ("", Position.none), []);
+val eof = Span (Command_Span {name = "", kind = "", pos = Position.none}, []);
 
-fun is_eof (Span (Command_Span ("", _), _)) = true
+fun is_eof (Span (Command_Span {name = "", ...}, _)) = true
   | is_eof _ = false;
 
 val stopper = Scan.stopper (K eof) is_eof;
@@ -56,7 +58,8 @@ val stopper = Scan.stopper (K eof) is_eof;
 
 fun adjust_offsets_kind adjust k =
   (case k of
-    Command_Span (name, pos) => Command_Span (name, Position.adjust_offsets adjust pos)
+    Command_Span {name, kind, pos} =>
+      Command_Span {name = name, kind = kind, pos = Position.adjust_offsets adjust pos}
   | _ => k);
 
 fun adjust_offsets adjust (Span (k, toks)) =

@@ -36,9 +36,9 @@ object Component_VSCode {
       } yield k).toList
 
     val keywords1 =
-      major_keywords(k => k != Keyword.THY_END && k != Keyword.PRF_ASM && k != Keyword.PRF_ASM_GOAL)
-    val keywords2 = minor_keywords ::: major_keywords(Set(Keyword.THY_END))
-    val keywords3 = major_keywords(Set(Keyword.PRF_ASM, Keyword.PRF_ASM_GOAL))
+      major_keywords(k => !Keyword.theory_end_kinds(k) && !Keyword.proof_asm_goal_kinds(k))
+    val keywords2 = minor_keywords ::: major_keywords(Keyword.theory_end_kinds)
+    val keywords3 = major_keywords(Keyword.proof_asm_goal_kinds)
 
     def grouped_names(as: List[String]): String =
       JSON.Format("\\b(" + as.sorted.map(Library.escape_regex).mkString("|") + ")\\b")

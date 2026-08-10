@@ -95,7 +95,14 @@ object Document {
       abbrevs: Thy_Header.Abbrevs = Nil,
       errors: List[String] = Nil
     ) {
-      def imports_no_pos: List[Name] = imports.map(_._1)
+      val imports_no_pos: List[Name] = imports.map(_._1)
+
+      def eq_no_pos(other: Header): Boolean =
+        imports_no_pos == other.imports_no_pos &&
+        options == other.options &&
+        keywords == other.keywords &&
+        abbrevs == other.abbrevs &&
+        errors == other.errors
 
       def append_errors(msgs: List[String]): Header =
         copy(errors = errors ::: msgs)
@@ -150,8 +157,14 @@ object Document {
         JSON.Object("node_name" -> node, "theory_name" -> theory)
     }
 
-    sealed case class Entry(name: Node.Name, header: Node.Header) {
+    sealed case class Entry(
+      name: Node.Name,
+      pos: Position.T,
+      header: Node.Header,
+      more_options: Options.Update
+    ) {
       override def toString: String = name.toString
+      def options: Options.Update = header.options ::: more_options
     }
 
 

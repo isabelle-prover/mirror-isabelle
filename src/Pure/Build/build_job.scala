@@ -273,7 +273,7 @@ object Build_Job {
                 Document.Blobs.make(session_blobs(node_name))
 
               override val nodes_status_domain: List[Document.Node.Name] =
-                session_background.base.used_theories.map(_._1.symbolic_path)
+                session_background.base.used_theories.map(_.name.symbolic_path)
             }
 
           val export_consumer =

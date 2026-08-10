@@ -899,6 +899,7 @@ text \<open>
   \<^bold>\<open>type\<close> \<open>use_theories_arguments =\<close> \\
   \quad\<open>{session_id: uuid,\<close> \\
   \quad~~\<open>theories: [string],\<close> \\
+  \quad~~\<open>options?: [string],\<close> \\
   \quad~~\<open>master_dir?: string,\<close> & \<^bold>\<open>default:\<close> session \<open>tmp_dir\<close> \\
   \quad~~\<open>pretty_margin?: double,\<close> & \<^bold>\<open>default:\<close> \<^verbatim>\<open>76\<close> \\
   \quad~~\<open>unicode_symbols?: bool,\<close> \\
@@ -967,7 +968,7 @@ text \<open>
 
   \<^medskip>
   The \<open>theories\<close> field specifies theory names as in theory \<^theory_text>\<open>imports\<close> or in
-  ROOT \<^bold>\<open>theories\<close>.
+  ROOT \<^bold>\<open>theories\<close>, possibly with \<open>options\<close>.
 
   \<^medskip>
   The \<open>master_dir\<close> field specifies the master directory of imported theories:
