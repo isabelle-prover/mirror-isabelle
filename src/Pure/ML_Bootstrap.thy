@@ -13,6 +13,7 @@ ML \<open>
   structure Thread_Data = Thread_Data_Virtual;
   structure PolyML = PolyML;
   structure RunCall = RunCall;
+  structure Foreign = Foreign;
   fun ML_system_pp (_: FixedInt.int -> 'a -> 'b -> PolyML.pretty) = ();
 
   Proofterm.proofs := 0;
@@ -28,6 +29,7 @@ ML \<open>
         datatype pretty = datatype PolyML.pretty;
       end;
       structure RunCall = struct end;
+      structure Foreign = Foreign;
     \<close>
 \<close>
 
