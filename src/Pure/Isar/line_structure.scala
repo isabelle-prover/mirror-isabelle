@@ -28,7 +28,7 @@ sealed case class Line_Structure(
     val command_depth =
       tokens.iterator.filter(_.is_proper).nextOption() match {
         case Some(tok) =>
-          if (keywords.is_command(tok, Keyword.close_structure))
+          if (keywords.is_command(tok, Keyword.close_structure_kinds))
             Some(after_span_depth - 1)
           else None
         case None => None
@@ -37,7 +37,7 @@ sealed case class Line_Structure(
     val depth1 =
       if (tokens.exists(tok =>
             keywords.is_before_command(tok) ||
-            !tok.is_end && keywords.is_command(tok, Keyword.theory))) element_depth
+            !tok.is_end && keywords.is_command(tok, Keyword.theory_kinds))) element_depth
       else if (command_depth.isDefined) command_depth.get
       else if (command1) after_span_depth
       else span_depth
@@ -49,14 +49,14 @@ sealed case class Line_Structure(
           else if (tok.is_end) (z + 1, z - 1, z - 1)
           else if (tok.is_command) {
             val depth0 = element_depth
-            if (keywords.is_command(tok, Keyword.theory_goal)) (depth0 + 2, depth0 + 1, z)
-            else if (keywords.is_command(tok, Keyword.theory)) (depth0 + 1, depth0, z)
-            else if (keywords.is_command(tok, Keyword.proof_open)) (y + 2, y + 1, z)
+            if (keywords.is_command(tok, Keyword.theory_goal_kinds)) (depth0 + 2, depth0 + 1, z)
+            else if (keywords.is_command(tok, Keyword.theory_kinds)) (depth0 + 1, depth0, z)
+            else if (keywords.is_command(tok, Keyword.proof_open_kinds)) (y + 2, y + 1, z)
             else if (keywords.is_command(tok, Set(Keyword.PRF_BLOCK))) (y + 2, y + 1, z)
             else if (keywords.is_command(tok, Set(Keyword.QED_BLOCK))) (y - 1, y - 2, z)
             else if (keywords.is_command(tok, Set(Keyword.PRF_CLOSE))) (y, y - 1, z)
-            else if (keywords.is_command(tok, Keyword.proof_close)) (y + 1, y - 1, z)
-            else if (keywords.is_command(tok, Keyword.qed_global)) (depth0 + 1, depth0, z)
+            else if (keywords.is_command(tok, Keyword.proof_close_kinds)) (y + 1, y - 1, z)
+            else if (keywords.is_command(tok, Keyword.qed_global_kinds)) (depth0 + 1, depth0, z)
             else depths
           }
           else depths
