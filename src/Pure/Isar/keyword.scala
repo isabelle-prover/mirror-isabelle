@@ -49,57 +49,57 @@ object Keyword {
 
   /* command categories */
 
-  val vacuous = Set(DIAG, DOCUMENT_HEADING, DOCUMENT_BODY, DOCUMENT_RAW)
+  val vacuous: Set[String] = Set(DIAG, DOCUMENT_HEADING, DOCUMENT_BODY, DOCUMENT_RAW)
 
-  val diag = Set(DIAG)
+  val diag: Set[String] = Set(DIAG)
 
-  val document_heading = Set(DOCUMENT_HEADING)
-  val document_body = Set(DOCUMENT_BODY)
-  val document_raw = Set(DOCUMENT_RAW)
-  val document = Set(DOCUMENT_HEADING, DOCUMENT_BODY, DOCUMENT_RAW)
+  val document_heading: Set[String] = Set(DOCUMENT_HEADING)
+  val document_body: Set[String] = Set(DOCUMENT_BODY)
+  val document_raw: Set[String] = Set(DOCUMENT_RAW)
+  val document: Set[String] = Set(DOCUMENT_HEADING, DOCUMENT_BODY, DOCUMENT_RAW)
 
-  val theory_begin = Set(THY_BEGIN)
-  val theory_end = Set(THY_END)
+  val theory_begin: Set[String] = Set(THY_BEGIN)
+  val theory_end: Set[String] = Set(THY_END)
 
-  val theory_load = Set(THY_LOAD)
+  val theory_load: Set[String] = Set(THY_LOAD)
 
-  val theory =
+  val theory: Set[String] =
     Set(THY_BEGIN, THY_END, THY_LOAD, THY_DECL, THY_DECL_BLOCK, THY_DEFN, THY_STMT,
       THY_GOAL, THY_GOAL_DEFN, THY_GOAL_STMT)
 
-  val theory_block = Set(THY_BEGIN, THY_DECL_BLOCK)
+  val theory_block: Set[String] = Set(THY_BEGIN, THY_DECL_BLOCK)
 
-  val theory_body =
+  val theory_body: Set[String] =
     Set(THY_LOAD, THY_DECL, THY_DECL_BLOCK, THY_DEFN, THY_STMT,
       THY_GOAL, THY_GOAL_DEFN, THY_GOAL_STMT)
 
-  val theory_defn = Set(THY_DEFN, THY_GOAL_DEFN)
+  val theory_defn: Set[String] = Set(THY_DEFN, THY_GOAL_DEFN)
 
-  val prf_script = Set(PRF_SCRIPT)
+  val prf_script: Set[String] = Set(PRF_SCRIPT)
 
-  val proof =
+  val proof: Set[String] =
     Set(QED, QED_SCRIPT, QED_BLOCK, QED_GLOBAL, PRF_GOAL, PRF_BLOCK, NEXT_BLOCK, PRF_OPEN,
       PRF_CLOSE, PRF_CHAIN, PRF_DECL, PRF_ASM, PRF_ASM_GOAL, PRF_SCRIPT, PRF_SCRIPT_GOAL,
       PRF_SCRIPT_ASM_GOAL)
 
-  val proof_body =
+  val proof_body: Set[String] =
     Set(DIAG, DOCUMENT_HEADING, DOCUMENT_BODY, DOCUMENT_RAW, PRF_BLOCK, NEXT_BLOCK, PRF_OPEN,
       PRF_CLOSE, PRF_CHAIN, PRF_DECL, PRF_ASM, PRF_ASM_GOAL, PRF_SCRIPT, PRF_SCRIPT_GOAL,
       PRF_SCRIPT_ASM_GOAL)
 
-  val proof_asm = Set(PRF_ASM, PRF_ASM_GOAL)
-  val improper = Set(QED_SCRIPT, PRF_SCRIPT, PRF_SCRIPT_GOAL, PRF_SCRIPT_ASM_GOAL)
+  val proof_asm: Set[String] = Set(PRF_ASM, PRF_ASM_GOAL)
+  val improper: Set[String] = Set(QED_SCRIPT, PRF_SCRIPT, PRF_SCRIPT_GOAL, PRF_SCRIPT_ASM_GOAL)
 
-  val theory_goal = Set(THY_GOAL, THY_GOAL_DEFN, THY_GOAL_STMT)
-  val proof_goal = Set(PRF_GOAL, PRF_ASM_GOAL, PRF_SCRIPT_GOAL, PRF_SCRIPT_ASM_GOAL)
-  val qed = Set(QED, QED_SCRIPT, QED_BLOCK)
-  val qed_global = Set(QED_GLOBAL)
+  val theory_goal: Set[String] = Set(THY_GOAL, THY_GOAL_DEFN, THY_GOAL_STMT)
+  val proof_goal: Set[String] = Set(PRF_GOAL, PRF_ASM_GOAL, PRF_SCRIPT_GOAL, PRF_SCRIPT_ASM_GOAL)
+  val qed: Set[String] = Set(QED, QED_SCRIPT, QED_BLOCK)
+  val qed_global: Set[String] = Set(QED_GLOBAL)
 
-  val proof_open = proof_goal + PRF_OPEN
-  val proof_close = qed + PRF_CLOSE
-  val proof_enclose = Set(PRF_BLOCK, NEXT_BLOCK, QED_BLOCK, PRF_CLOSE)
+  val proof_open: Set[String] = proof_goal + PRF_OPEN
+  val proof_close: Set[String] = qed + PRF_CLOSE
+  val proof_enclose: Set[String] = Set(PRF_BLOCK, NEXT_BLOCK, QED_BLOCK, PRF_CLOSE)
 
-  val close_structure = Set(NEXT_BLOCK, QED_BLOCK, PRF_CLOSE, THY_END)
+  val close_structure: Set[String] = Set(NEXT_BLOCK, QED_BLOCK, PRF_CLOSE, THY_END)
 
 
 
