@@ -424,9 +424,9 @@ final class Bytes private(
 
   /* hash and equality */
 
-  def update_digest(dig: MessageDigest): Unit =
+  def update_digest(builder: Message_Digest.Builder): Unit =
     for (a <- subarray_iterator if a.length > 0) {
-      dig.update(a.array, a.offset, a.length)
+      builder.update(a.array, a.offset, a.length)
     }
 
   lazy val sha1_digest: Message_Digest.T =

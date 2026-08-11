@@ -128,6 +128,7 @@ sources = \
   src/Pure/General/mailman.scala \
   src/Pure/General/mercurial.scala \
   src/Pure/General/message_digest.scala \
+  src/Pure/General/message_digest_jvm.scala \
   src/Pure/General/multi_map.scala \
   src/Pure/General/name_space.scala \
   src/Pure/General/output.scala \
