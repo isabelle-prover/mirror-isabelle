@@ -21,16 +21,22 @@ function panel_column(): ViewColumn {
 }
 
 class Panel {
-  private state_id: number
+  private state: LSP.State_Output
   private webview_panel: WebviewPanel
   private readonly _extension_path: string
 
-  public get_id(): number { return this.state_id }
-  public check_id(id: number): boolean { return this.state_id === id }
+  public get_id(): number { return this.state.id }
+  public check_id(id: number): boolean { return this.state.id === id }
+
+  private update_webview() {
+    if (this.webview_panel.webview) {
+      this.webview_panel.webview.postMessage(JSON.stringify(this.state))
+    }
+  }
 
   public set_content(state: LSP.State_Output) {
-    this.state_id = state.id
-    this.webview_panel.webview.html = this._get_html(state.content, state.auto_update)
+    this.state = state
+    this.update_webview()
   }
 
   public reveal() {
@@ -45,41 +51,32 @@ class Panel {
     this.webview_panel.webview.onDidReceiveMessage(message =>
       {
         switch (message.command) {
+          case "ready":
+            this.update_webview()
+            break
           case "auto_update":
             language_client.sendNotification(
-              LSP.state_auto_update_type, { id: this.state_id, enabled: message.enabled })
+              LSP.state_auto_update_type, { id: this.get_id(), enabled: message.enabled })
             break
           case "update":
-            language_client.sendNotification(LSP.state_update_type, { id: this.state_id })
+            language_client.sendNotification(LSP.state_update_type, { id: this.get_id() })
             break
           case "locate":
-            language_client.sendNotification(LSP.state_locate_type, { id: this.state_id })
+            language_client.sendNotification(LSP.state_locate_type, { id: this.get_id() })
             break
           case "open":
             Output_View.open_webview_link(message.link)
             break
           case "resize":
             language_client.sendNotification(
-              LSP.state_set_margin_type, { id: this.state_id, margin: message.margin })
+              LSP.state_set_margin_type, { id: this.get_id(), margin: message.margin })
             break
           default:
             break
         }
       })
-  }
-
-  private _get_html(content: string, auto_update: boolean): string {
-    const checked = auto_update ? "checked" : ""
-    const content_with_buttons = `<div id="controls">
-      <input type="checkbox" id="auto_update" ${checked}/>
-      <label for="auto_update">Auto update</label>
-      <button id="update_button">Update</button>
-      <button id="locate_button">Locate</button>
-    </div>
-    ${content}`
-
-    return Webview.get_html(this.webview_panel.webview, this._extension_path, "Output",
-      "state_panel.js", "output_view.css", content_with_buttons)
+    this.webview_panel.webview.html =
+      Webview.get_html(this.webview_panel.webview, this._extension_path, "Output", "state_panel.js")
   }
 }
 

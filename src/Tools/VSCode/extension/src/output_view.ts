@@ -34,10 +34,14 @@ export class Provider implements WebviewViewProvider {
     // Allow scripts in the webview
     view.webview.options = { enableScripts: true, localResourceRoots: [this._extension_uri]}
 
-    view.webview.html = this._get_html(this.content)
+    view.webview.html =
+      Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Output", "output_view.js")
     view.webview.onDidReceiveMessage(async message =>
       {
         switch (message.command) {
+          case "ready":
+            view.webview.postMessage(this.content)
+            break
           case "open":
             open_webview_link(message.link)
             break
@@ -50,17 +54,8 @@ export class Provider implements WebviewViewProvider {
   }
 
   public update_content(content: string) {
-    if (!this._view) {
-      this.content = content
-      return
-    }
-
-    this._view.webview.html = this._get_html(content)
-  }
-
-  private _get_html(content: string): string {
-    return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Output",
-      "output_view.js", "output_view.css", content)
+    this.content = content
+    if (this._view) this._view.webview.postMessage(this.content)
   }
 }
 

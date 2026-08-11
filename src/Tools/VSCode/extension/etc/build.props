@@ -4,9 +4,20 @@ sources = \
   $ISABELLE_HOME/src/Pure/General/bytes.scala \
   $ISABELLE_HOME/src/Pure/General/cache.scala \
   $ISABELLE_HOME/src/Pure/General/exn.scala \
+  $ISABELLE_HOME/src/Pure/General/html.scala \
+  $ISABELLE_HOME/src/Pure/General/js.scala \
   $ISABELLE_HOME/src/Pure/General/json.scala \
+  $ISABELLE_HOME/src/Pure/General/mercurial.scala \
+  $ISABELLE_HOME/src/Pure/General/message_digest.scala \
   $ISABELLE_HOME/src/Pure/General/output.scala \
+  $ISABELLE_HOME/src/Pure/General/path.scala \
   $ISABELLE_HOME/src/Pure/General/properties.scala \
+  $ISABELLE_HOME/src/Pure/General/scan.scala \
+  $ISABELLE_HOME/src/Pure/General/space.scala \
+  $ISABELLE_HOME/src/Pure/General/symbol.scala \
+  $ISABELLE_HOME/src/Pure/General/utf8.scala \
+  $ISABELLE_HOME/src/Pure/General/value.scala \
+  $ISABELLE_HOME/src/Pure/General/word.scala \
   $ISABELLE_HOME/src/Pure/PIDE/markup.scala \
   $ISABELLE_HOME/src/Pure/PIDE/protocol_message.scala \
   $ISABELLE_HOME/src/Pure/PIDE/xml.scala \

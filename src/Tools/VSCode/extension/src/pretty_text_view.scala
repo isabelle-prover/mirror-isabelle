@@ -14,9 +14,13 @@ import isabelle._
 object Pretty_Text_View {
   private val vscode = Webview_Api.acquire
 
+  private var on_update: XML.Body => Unit = { _ => }
+  def on_update(f: XML.Body => Unit): Unit = { on_update = f }
+
 
   /* gui state */
 
+  private var current_output: XML.Body = Nil
   private var current_margin: Int = get_window_margin()
   private var resize_timeout: Option[Int] = None
   private var window_loaded = false
@@ -51,12 +55,23 @@ object Pretty_Text_View {
     Math.max(width.toInt - 16, 1)
   }
 
+  def handle_update(output: XML.Body): Unit = {
+    if (current_output != output) {
+      current_output = output
+      on_update(List(HTML.source(current_output)))
+      handle_links()
+    }
+  }
+
   def handle_resize(): Unit = {
     val margin = get_window_margin()
 
     if (margin != current_margin) {
       current_margin = margin
-      vscode.post(JSON.Object("command" -> "resize", "margin" -> margin))
+
+      if (current_output.nonEmpty) {
+        vscode.post(JSON.Object("command" -> "resize", "margin" -> margin))
+      }
     }
   }
 
