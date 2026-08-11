@@ -392,7 +392,7 @@ object Symbol {
       code.map(c => new String(Character.toChars(c)))
   }
 
-  lazy val symbols: Symbols = Symbol_Provider.symbols
+  lazy val symbols: Symbols = platform.symbol_provider.symbols
 
   object Symbols {
     def files(): List[Path] =

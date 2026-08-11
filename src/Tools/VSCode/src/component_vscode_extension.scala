@@ -180,16 +180,21 @@ object Component_VSCode {
 
   /* Isabelle symbols provider (static subset only) */
 
-  val symbol_provider = Path.basic("symbol_provider.scala")
+  val symbol_static = Path.basic("symbol_static.scala")
 
   def make_symbol_provider(): File.Content =
-    File.content(symbol_provider, """
-package isabelle
+    File.content(symbol_static, """
+package isabelle.platform
 
-object Symbol_Provider {
+import isabelle._
+
+
+object Symbol_Static {
   def symbols: Symbol.Symbols =
     Symbol.Symbols.make(""" + Scala.print_string(File.read(Path.explode("~~/etc/symbols"))) + """)
 }
+
+val symbol_provider = Symbol_Static
 """)
 
 
@@ -224,7 +229,7 @@ object Symbol_Provider {
           yield extension_dir + Path.explode(name)
 
         make_symbol_provider().write(build_dir)
-        val scala_sources = (build_dir + symbol_provider) :: extension_sources
+        val scala_sources = (build_dir + symbol_static) :: extension_sources
 
         val modules =
           List(
