@@ -76,7 +76,15 @@ fun run_tactic_prover mode name ({slices, timeout, ...} : params)
               if is_cartouche name then
                 Facts.Fact (Pretty.pure_string_of (Thm.pretty_thm ctxt thm))
               else
-                Facts.named name
+                (case try (unsuffix ")") name of
+                  SOME s' =>
+                  (case first_field "(" s' of
+                    SOME (name', num) =>
+                    (case Int.fromString num of
+                      SOME n => Facts.Named ((name', Position.none), SOME [Facts.Single n])
+                    | NONE => Facts.named name)
+                  | NONE => Facts.named name)
+                | NONE => Facts.named name)
           in
             (xref, [])
           end

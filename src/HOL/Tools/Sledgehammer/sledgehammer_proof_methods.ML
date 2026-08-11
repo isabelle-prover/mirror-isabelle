@@ -115,7 +115,6 @@ Combines only adjacent same names.
 Input should not have same name with and without index. *)
 fun merge_indexed_facts (facts: Pretty.T list) : Pretty.T list =
   let
-
     fun split (p: Pretty.T) : (string * string) option =
       try (unsuffix ")" o content_of_pretty) p
       |> Option.mapPartial (first_field "(")
@@ -128,7 +127,6 @@ fun merge_indexed_facts (facts: Pretty.T list) : Pretty.T list =
         else p1 :: merge (y :: zs)
       | merge ((_,p) :: ys) = p :: merge ys
       | merge [] = []
-
   in
     merge (map (`split) facts)
   end

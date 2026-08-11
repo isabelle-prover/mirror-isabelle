@@ -188,7 +188,8 @@ fun apply_raw_named_method (name : string) all_goals (facts_config: facts_config
   in
     if num_before > num_after then
       SOME {name = name, command = command, time = time, state = st'}
-    else NONE
+    else
+      NONE
   end
 
 end
