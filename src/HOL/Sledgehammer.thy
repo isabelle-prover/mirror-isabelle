@@ -49,4 +49,11 @@ ML_file \<open>Tools/Sledgehammer/sledgehammer.ML\<close>
 ML_file \<open>Tools/Sledgehammer/sledgehammer_commands.ML\<close>
 ML_file \<open>Tools/Sledgehammer/sledgehammer_tactics.ML\<close>
 
+
+
+lemma
+  assumes a: "P (2 + 2 :: nat) \<and> Q"
+  shows "P 4"
+  sledgehammer
+
 end

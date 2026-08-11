@@ -173,6 +173,7 @@ fun tac_of_proof_method ctxt (local_facts, global_facts) meth =
     fun tac_of_metis (type_enc_opt, lam_trans_opt, additional_fact_names) =
       let
         val additional_facts = maps (thms_of_name ctxt) additional_fact_names
+        val local_facts = []
         val ctxt = ctxt
           |> Config.put Metis_Tactic.verbose false
           |> Config.put Metis_Tactic.trace false
@@ -185,13 +186,14 @@ fun tac_of_proof_method ctxt (local_facts, global_facts) meth =
       | tac_of_smt (SMT_Verit strategy) = Verit_Strategies.verit_tac_stgy strategy
   in
     (case meth of
-      Metis_Method options => tac_of_metis options
-    | SMT_Method backend => tac_of_smt backend ctxt (local_facts @ global_facts)
+      Simp_Method => Simplifier.asm_full_simp_tac (ctxt |>
+        Simplifier.add_simps (local_facts @ global_facts))
     | _ =>
       Method.insert_tac ctxt local_facts THEN'
       (case meth of
-        Meson_Method => Meson_Tactic.meson_general_tac ctxt global_facts
-      | Simp_Method => Simplifier.asm_full_simp_tac (ctxt |> Simplifier.add_simps global_facts)
+        Metis_Method options => tac_of_metis options
+      | SMT_Method backend => tac_of_smt backend ctxt global_facts
+      | Meson_Method => Meson_Tactic.meson_general_tac ctxt global_facts
       | _ =>
         Method.insert_tac ctxt global_facts THEN'
         (case meth of
