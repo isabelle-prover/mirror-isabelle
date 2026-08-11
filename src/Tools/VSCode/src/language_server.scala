@@ -125,6 +125,44 @@ object Language_Server {
 
     /* hyperlinks */
 
+    def hyperlink_file(
+      name: String,
+      line: Int = 0,
+      offset: Text.Offset = 0,
+      focus: Boolean = false
+    ): Hyperlink = {
+      val pos = Line.Position(line, offset)
+      new Hyperlink {
+        def follow(editor_context: Context): Unit =
+          server.channel.write(LSP.Caret_Update(Line.Node_Position(name, pos), focus))
+      }
+    }
+
+    def hyperlink_source_file(
+      source_name: String,
+      line1: Int,
+      offset: Symbol.Offset,
+      focus: Boolean = false
+    ): Option[Hyperlink] = {
+      for (platform_path <- session.store.source_file(source_name)) yield {
+        def hyperlink(pos: Line.Position) =
+          hyperlink_file(platform_path, line = pos.line, offset = pos.column, focus = focus)
+
+        if (offset > 0) {
+          val node_name = session.resources.node_name(Path.explode(platform_path).file)
+          session.resources.get_file_content(node_name) match {
+            case Some(text) =>
+              hyperlink(
+                Symbol.iterator(text).zipWithIndex.takeWhile(p => p._2 < offset - 1).map(_._1).
+                  foldLeft(Line.Position.zero)(_.advance(_)))
+            case None =>
+              hyperlink(Line.Position((line1 - 1) max 0))
+          }
+        }
+        else hyperlink(Line.Position((line1 - 1) max 0))
+      }
+    }
+
     override def hyperlink_command(
       snapshot: Document.Snapshot,
       id: Document_ID.Generic,
