@@ -1,6 +1,7 @@
 title = Isabelle/VSCode extension
 no_build = true
 sources = \
+  $ISABELLE_HOME/src/Pure/General/bytes.scala \
   $ISABELLE_HOME/src/Pure/General/cache.scala \
   $ISABELLE_HOME/src/Pure/General/exn.scala \
   $ISABELLE_HOME/src/Pure/General/json.scala \
@@ -15,6 +16,7 @@ sources = \
   $ISABELLE_HOME/src/Pure/System/platform.scala \
   $ISABELLE_HOME/src/Pure/System/scalajs.scala \
   $ISABELLE_HOME/src/Pure/library.scala \
+  src/no_message_digest.scala \
   src/output_view.scala \
   src/pretty_text_view.scala \
   src/state_panel.scala \
