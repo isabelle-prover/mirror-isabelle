@@ -6,10 +6,9 @@ Isabelle output panel as web view.
 "use strict";
 
 import { WebviewViewProvider, WebviewView, Uri, WebviewViewResolveContext,
-   CancellationToken, window, Position, Selection } from "vscode"
+   CancellationToken } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
 
-import * as LSP from "./lsp"
 import * as Webview from "./webview"
 
 
@@ -42,12 +41,8 @@ export class Provider implements WebviewViewProvider {
           case "ready":
             view.webview.postMessage(this.content)
             break
-          case "open":
-            open_webview_link(message.link)
-            break
-          case "resize":
-            this._language_client.sendNotification(
-              LSP.output_set_margin_type, { margin: message.margin })
+          default:
+            this._language_client.sendNotification(message.method, message.params)
             break
         }
       })
@@ -57,13 +52,4 @@ export class Provider implements WebviewViewProvider {
     this.content = content
     if (this._view) this._view.webview.postMessage(this.content)
   }
-}
-
-export function open_webview_link(link: string) {
-  const uri = Uri.parse(link)
-  const line = Number(uri.fragment) || 0
-  const pos = new Position(line, 0)
-  window.showTextDocument(
-    uri.with({ fragment: "" }),
-    { preserveFocus: false, selection: new Selection(pos, pos) })
 }

@@ -9,10 +9,30 @@ package isabelle.vscode.extension
 import org.scalajs.dom
 
 import isabelle._
+import isabelle.vscode._
 
 
 object Pretty_Text_View {
   private val vscode = Webview_Api.acquire
+  private val elements = Browser_Info.extra_elements.copy(entity = Markup.Elements.full)
+
+  private val node_context =
+    new Browser_Info.Node_Context {
+      override def make_ref(props: Properties.T, body: XML.Body): Option[XML.Elem] =
+        for {
+          json <-
+            props match {
+              case Position.Item_Def_File(file, line, offset) =>
+                Some(LSP.Goto_Source_File(file, line, offset.start))
+              case Position.Item_Def_Id(id, offset) =>
+                Some(LSP.Goto_Command(id, offset.start))
+              case _ => None
+            }
+        } yield {
+          val script = Webview_Api.Post.function(JSON.Format(json))
+          HTML.entity_ref(HTML.GUI.onclick(script)(HTML.link("#", body)))
+        }
+    }
 
   private var on_update: XML.Body => Unit = { _ => }
   def on_update(f: XML.Body => Unit): Unit = { on_update = f }
@@ -36,8 +56,8 @@ object Pretty_Text_View {
 
   def on_load(): Unit = {
     handle_resize()
-    handle_links()
     window_loaded = true
+    update()
   }
 
   def get_symbol_width(): Double = {
@@ -55,11 +75,19 @@ object Pretty_Text_View {
     Math.max(width.toInt - 16, 1)
   }
 
+  private def update(): Unit = {
+    if (window_loaded) {
+      val formatted =
+        Pretty.formatted(Pretty.separate(current_output), margin = current_margin,
+          metric = Symbol.Metric)
+      on_update(List(HTML.source(node_context.make_html(elements, formatted))))
+    }
+  }
+
   def handle_update(output: XML.Body): Unit = {
     if (current_output != output) {
       current_output = output
-      on_update(List(HTML.source(current_output)))
-      handle_links()
+      update()
     }
   }
 
@@ -68,17 +96,7 @@ object Pretty_Text_View {
 
     if (margin != current_margin) {
       current_margin = margin
-
-      if (current_output.nonEmpty) {
-        vscode.post(JSON.Object("command" -> "resize", "margin" -> margin))
-      }
+      update()
     }
   }
-
-  def handle_links(): Unit =
-    for (link <- dom.document.querySelectorAll("""a[href^="file:"]""")) {
-      link.addEventListener("click", { _ =>
-        vscode.post(JSON.Object("command" -> "open", "link" -> link.getAttribute("href")))
-      })
-    }
 }

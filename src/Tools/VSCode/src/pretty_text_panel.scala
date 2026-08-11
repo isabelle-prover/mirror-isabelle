@@ -39,51 +39,38 @@ class Pretty_Text_Panel private(
   }
 
   def refresh(output: List[XML.Elem]): Unit = {
-    val formatted =
-      Pretty.formatted(Pretty.separate(output), margin = margin, metric = Symbol.Metric)
-
-    if (formatted != current_formatted) {
-      val message = {
-        if (resources.html_output) {
-          val node_context =
-            new Browser_Info.Node_Context {
-              override def make_ref(props: Properties.T, body: XML.Body): Option[XML.Elem] =
-                for {
-                  thy_file <- Position.Def_File.unapply(props)
-                  def_line <- Position.Def_Line.unapply(props)
-                  platform_path <- session.store.source_file(thy_file)
-                  uri = File.uri(Path.explode(File.standard_path(platform_path)).absolute_file)
-                } yield HTML.link(uri.toString + "#" + def_line, body)
-            }
-          val elements = Browser_Info.extra_elements.copy(entity = Markup.Elements.full)
-          val html = node_context.make_html(elements, formatted)
-          output_json(YXML.string_of_body(html), None)
-        }
-        else {
-          val converted = resources.output_text_xml(formatted)
-          val converted_tree = Markup_Tree.from_XML(converted)
-          val converted_text = XML.content(converted)
-
-          val document = Line.Document(converted_text)
-          val markups =
-            converted_tree.cumulate[Option[Markup]](
-              Text.Range.full, None, Rendering.text_color_elements,
-              { case (_, m) => Some(Some(m.info.markup)) })
-          val entries =
-            (for {
-              case Text.Info(range, Some(markup)) <- markups
-              color <- Rendering.get_text_color(markup)
-            } yield color -> document.range(range))
-              .groupMap(_._1)(p => LSP.Decoration_Range(p._2))
-              .iterator.map({ case (c, rs) => LSP.Decoration_Entry.text_color(c, rs) })
-              .toList
-
-          output_json(converted_text, Some(LSP.Decoration(entries)))
-        }
+    if (resources.html_output) {
+      if (output != current_output) {
+        channel.write(output_json(YXML.string_of_body(output), None))
+        current_output = output
       }
-      channel.write(message)
-      current_output = output
-      current_formatted = formatted
+    }
+    else {
+      val formatted =
+        Pretty.formatted(Pretty.separate(output), margin = margin, metric = Symbol.Metric)
+
+      if (formatted != current_formatted) {
+        val converted = resources.output_text_xml(formatted)
+        val converted_tree = Markup_Tree.from_XML(converted)
+        val converted_text = XML.content(converted)
+
+        val document = Line.Document(converted_text)
+        val markups =
+          converted_tree.cumulate[Option[Markup]](
+            Text.Range.full, None, Rendering.text_color_elements,
+            { case (_, m) => Some(Some(m.info.markup)) })
+        val entries =
+          (for {
+            case Text.Info(range, Some(markup)) <- markups
+            color <- Rendering.get_text_color(markup)
+          } yield color -> document.range(range))
+            .groupMap(_._1)(p => LSP.Decoration_Range(p._2))
+            .iterator.map({ case (c, rs) => LSP.Decoration_Entry.text_color(c, rs) })
+            .toList
+
+        channel.write(output_json(converted_text, Some(LSP.Decoration(entries))))
+        current_formatted = formatted
+      }
     }
   }
 }

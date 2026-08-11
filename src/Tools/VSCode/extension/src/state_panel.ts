@@ -9,7 +9,6 @@ import { ExtensionContext, Uri, ViewColumn, WebviewPanel, window } from "vscode"
 import { LanguageClient } from "vscode-languageclient/node"
 
 import * as LSP from "./lsp"
-import * as Output_View from "./output_view"
 import * as VSCode_Lib from "./vscode_lib"
 import * as Webview from "./webview"
 
@@ -64,14 +63,8 @@ class Panel {
           case "locate":
             language_client.sendNotification(LSP.state_locate_type, { id: this.get_id() })
             break
-          case "open":
-            Output_View.open_webview_link(message.link)
-            break
-          case "resize":
-            language_client.sendNotification(
-              LSP.state_set_margin_type, { id: this.get_id(), margin: message.margin })
-            break
           default:
+            language_client.sendNotification(message.method, message.params)
             break
         }
       })

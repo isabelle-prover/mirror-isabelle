@@ -35,13 +35,14 @@ form > * {
 }
 
 a {
-  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  color: inherit;
   text-decoration: none;
 }
 
 a:hover,
 a:active {
-  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
 }
 
 code {
