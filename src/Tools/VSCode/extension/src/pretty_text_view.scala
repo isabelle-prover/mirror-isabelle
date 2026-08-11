@@ -32,6 +32,11 @@ object Pretty_Text_View {
           val script = Webview_Api.Post.function(JSON.Format(json))
           HTML.entity_ref(HTML.GUI.onclick(script)(HTML.link("#", body)))
         }
+
+      override def make_file_ref(file: String, body: XML.Body): Option[XML.Elem] = {
+        val script = Webview_Api.Post.function(JSON.Format(LSP.Goto_File(file)))
+        Some(HTML.GUI.onclick(script)(HTML.link("#", body)))
+      }
     }
 
   private var on_update: XML.Body => Unit = { _ => }
