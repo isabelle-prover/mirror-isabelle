@@ -8,6 +8,7 @@ package isabelle.vscode.extension
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import org.scalajs.dom
 
 import isabelle._
 
@@ -26,6 +27,12 @@ object Webview_Api {
   private def acquireVsCodeApi(): WebviewApi = js.native
 
   lazy val acquire = new Webview_Api(acquireVsCodeApi())
+
+  object Post extends Scalajs.Fun_Any {
+    def invoke(arg: Any): Unit = { Scalajs.JSON.unapply(arg).foreach(acquire.post) }
+  }
+
+  def on_message(f: dom.MessageEvent => Unit): Unit = dom.window.addEventListener("message", f)
 }
 
 class Webview_Api private(api: Webview_Api.WebviewApi) {
