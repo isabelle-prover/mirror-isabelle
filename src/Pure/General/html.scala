@@ -326,6 +326,9 @@ object HTML {
   /* GUI elements */
 
   object GUI {
+    def onclick(script: String): Attribute = new Attribute("onclick", script)
+    def onchange(script: String): Attribute = new Attribute("onchange", script)
+
     private def optional_value(text: String): XML.Attributes =
       proper_string(text).map(a => "value" -> a).toList
 
@@ -345,10 +348,10 @@ object HTML {
       proper_string(action).map(a => "action" -> a).toList
 
     private def optional_onclick(script: String): XML.Attributes =
-      proper_string(script).map(a => "onclick" -> a).toList
+      proper_string(script).map(onclick(_).xml).toList
 
     private def optional_onchange(script: String): XML.Attributes =
-      proper_string(script).map(a => "onchange" -> a).toList
+      proper_string(script).map(onchange(_).xml).toList
 
     def button(body: XML.Body, name: String = "", tooltip: String = "", submit: Boolean = false,
         script: String = ""): XML.Elem =
