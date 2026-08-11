@@ -164,8 +164,8 @@ export async function activate(context: ExtensionContext) {
         editor.revealRange(new Range(pos, pos), TextEditorRevealType.InCenterIfOutsideViewport)
       }
 
-      if (caret_update.uri) {
-        workspace.openTextDocument(Uri.parse(caret_update.uri)).then(document =>
+      function show_file(uri: Uri) {
+        workspace.openTextDocument(uri).then(document =>
           {
             const editor = VSCode_Lib.find_file_editor(document.uri)
             const column = editor ? editor.viewColumn : ViewColumn.One
@@ -175,6 +175,13 @@ export async function activate(context: ExtensionContext) {
                 selection: new Selection(pos, pos) }
             window.showTextDocument(document, options).then(show_position)
           })
+      }
+
+      if (caret_update.uri) {
+        const uri = Uri.parse(caret_update.uri)
+        workspace.fs.stat(uri).then(
+          _ => show_file(uri),
+          _ => show_file(uri.with({ scheme: "untitled" })))
       }
     }
 
