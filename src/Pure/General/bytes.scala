@@ -446,12 +446,12 @@ final class Bytes private(
         else if (size != other.size) false
         else {
           if (chunks.isEmpty && other.chunks.isEmpty) {
-            Arrays.equals(chunk0, offset.toInt, (offset + size).toInt,
-              other.chunk0, other.offset.toInt, (other.offset + other.size).toInt)
+            Library.array_equals(chunk0, offset.toInt, size.toInt,
+              other.chunk0, other.offset.toInt, other.size.toInt)
           }
           else if (!is_sliced && !other.is_sliced) {
             (subarray_iterator zip other.subarray_iterator)
-              .forall((a, b) => Arrays.equals(a.array, b.array))
+              .forall((a, b) => Library.array_equals(a.array, b.array))
           }
           else sha256_digest == other.sha256_digest
         }

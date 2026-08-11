@@ -11,6 +11,7 @@ import java.util.Locale
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.immutable
 import scala.util.matching.Regex
 
 
@@ -347,6 +348,28 @@ object Library {
     flush()
     result.toList
   }
+
+
+  /* arrays */
+
+  def array_equals[A](
+    a: Array[A],
+    a_offset: Int,
+    a_size: Int,
+    b: Array[A],
+    b_offset: Int,
+    b_size: Int
+  ): Boolean = {
+    if (a.eq(b) && a_offset == b_offset && a_size == b_size) true
+    else if (a_size != b_size) false
+    else {
+      immutable.ArraySeq.unsafeWrapArray(a).slice(a_offset, a_offset + a_size) ==
+        immutable.ArraySeq.unsafeWrapArray(b).slice(b_offset, b_offset + b_size)
+    }
+  }
+
+  def array_equals[A](a: Array[A], b: Array[A]): Boolean =
+    array_equals(a, 0, a.length, b, 0, b.length)
 
 
   /* proper values */
