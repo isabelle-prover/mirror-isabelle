@@ -451,13 +451,54 @@ object LSP {
   }
 
 
-  /* goto definition request */
+  /* goto requests */
 
   object GotoDefinition extends RequestTextDocumentPosition("textDocument/definition") {
     def reply(id: Id, result: List[Line.Node_Range]): JSON.T =
       ResponseMessage(id, Some(result.map(Location.apply)))
   }
 
+  object Goto_File {
+    def apply(name: String): JSON.T = Notification("PIDE/goto_file", JSON.Object("name" -> name))
+
+    def unapply(json: JSON.T): Option[String] =
+      json match {
+        case Notification("PIDE/goto_file", Some(params)) => JSON.string(params, "name")
+        case _ => None
+      }
+  }
+
+  object Goto_Source_File {
+    def apply(name: String, line: Int, offset: Symbol.Offset): JSON.T =
+      Notification("PIDE/goto_source_file",
+        JSON.Object("name" -> name, "line" -> line, "offset" -> offset))
+
+    def unapply(json: JSON.T): Option[(String, Int, Symbol.Offset)] =
+      json match {
+        case Notification("PIDE/goto_source_file", Some(params)) =>
+          for {
+            name <- JSON.string(params, "name")
+            line <- JSON.int(params, "line")
+            offset <- JSON.int(params, "offset")
+          } yield (name, line, offset)
+        case _ => None
+      }
+  }
+
+  object Goto_Command {
+    def apply(id: Long, offset: Symbol.Offset): JSON.T =
+      Notification("PIDE/goto_command", JSON.Object("id" -> id, "offset" -> offset))
+
+    def unapply(json: JSON.T): Option[(Long, Symbol.Offset)] =
+      json match {
+        case Notification("PIDE/goto_command", Some(params)) =>
+          for {
+            id <- JSON.long(params, "id")
+            offset <- JSON.int(params, "offset")
+          } yield (id, offset)
+        case _ => None
+      }
+  }
 
   /* document highlights request */
 

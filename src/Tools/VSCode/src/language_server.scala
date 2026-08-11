@@ -477,7 +477,7 @@ class Language_Server(
   }
 
 
-  /* goto definition */
+  /* gotos */
 
   def goto_definition(id: LSP.Id, node_pos: Line.Node_Position): Unit = {
     val result =
@@ -487,6 +487,17 @@ class Language_Server(
       }
     channel.write(LSP.GotoDefinition.reply(id, result.map(_.info)))
   }
+
+  def goto_file(file: String): Unit = editor.hyperlink_file(file).follow(())
+
+  def goto_source_file(file: String, line: Int, offset: Symbol.Offset): Unit =
+    editor.hyperlink_source_file(file, line, offset, focus = true).foreach(_.follow(()))
+
+  def goto_command(id: Long, offset: Symbol.Offset): Unit =
+    for {
+      snapshot <- editor.current_node_snapshot(())
+      hyperlink <- editor.hyperlink_command(snapshot, id, offset = offset, focus = true)
+    } hyperlink.follow(())
 
 
   /* document highlights */
@@ -580,6 +591,9 @@ class Language_Server(
           case LSP.Reset_Words() => reset_dictionary()
           case LSP.Hover(id, node_pos) => hover(id, node_pos)
           case LSP.GotoDefinition(id, node_pos) => goto_definition(id, node_pos)
+          case LSP.Goto_File(name) => goto_file(name)
+          case LSP.Goto_Source_File(name, line, offset) => goto_source_file(name, line, offset)
+          case LSP.Goto_Command(id, offset) => goto_command(id, offset)
           case LSP.DocumentHighlights(id, node_pos) => document_highlights(id, node_pos)
           case LSP.CodeActionRequest(id, file, range) => code_action_request(id, file, range)
           case LSP.Decoration_Request(file) => decoration_request(file)
