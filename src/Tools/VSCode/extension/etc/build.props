@@ -4,6 +4,7 @@ sources = \
   $ISABELLE_HOME/src/Pure/Build/browser_info.scala \
   $ISABELLE_HOME/src/Pure/General/bytes.scala \
   $ISABELLE_HOME/src/Pure/General/cache.scala \
+  $ISABELLE_HOME/src/Pure/General/codepoint.scala \
   $ISABELLE_HOME/src/Pure/General/exn.scala \
   $ISABELLE_HOME/src/Pure/General/html.scala \
   $ISABELLE_HOME/src/Pure/General/js.scala \
@@ -37,6 +38,7 @@ sources = \
   $ISABELLE_VSCODE_HOME/src/lsp.scala \
   src/no_message_digest.scala \
   src/output_view.scala \
+  src/dom_metric.scala \
   src/pretty_text_view.scala \
   src/state_panel.scala \
   src/webview_api.scala

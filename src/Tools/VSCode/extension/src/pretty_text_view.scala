@@ -46,7 +46,8 @@ object Pretty_Text_View {
   /* gui state */
 
   private var current_output: XML.Body = Nil
-  private var current_margin: Double = get_window_margin()
+  private var current_metric: DOM_Metric = DOM_Metric()
+  private var current_margin: Double = current_metric.content()
   private var resize_timeout: Option[Int] = None
   private var window_loaded = false
 
@@ -60,31 +61,17 @@ object Pretty_Text_View {
     }
 
   def on_load(): Unit = {
-    current_margin = get_window_margin()
+    current_metric = DOM_Metric()
+    current_margin = current_metric.content()
     window_loaded = true
     update()
-  }
-
-  def get_symbol_width(): Double = {
-    val test_string = "mix"
-    val test_span = dom.document.createElement("span")
-    test_span.textContent = test_string
-    dom.document.body.appendChild(test_span)
-    val symbol_width = test_span.getBoundingClientRect().width / test_string.length
-    dom.document.body.removeChild(test_span)
-    symbol_width
-  }
-
-  def get_window_margin(): Double = {
-    val width = dom.window.innerWidth / get_symbol_width()
-    Math.max(width - 16, 1)
   }
 
   private def update(): Unit = {
     if (window_loaded) {
       val formatted =
         Pretty.formatted(Pretty.separate(current_output), margin = current_margin,
-          metric = Symbol.Metric)
+          metric = current_metric)
       on_update(List(HTML.source(node_context.make_html(elements, formatted))))
     }
   }
@@ -97,7 +84,7 @@ object Pretty_Text_View {
   }
 
   def handle_resize(): Unit = {
-    val margin = get_window_margin()
+    val margin = current_metric.content()
 
     if (margin != current_margin) {
       current_margin = margin
