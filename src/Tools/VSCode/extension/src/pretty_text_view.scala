@@ -57,7 +57,7 @@ object Pretty_Text_View {
   def on_resize(): Unit =
     if (window_loaded) {
       resize_timeout.foreach(dom.window.clearTimeout)
-      resize_timeout = Some(dom.window.setTimeout(() => handle_resize(), 500.0))
+      resize_timeout = Some(dom.window.setTimeout(() => handle_resize(), 50.0))
     }
 
   def on_load(): Unit = {
