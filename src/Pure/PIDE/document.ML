@@ -674,7 +674,9 @@ fun last_common the_command_name_kind node_required node0 node =
         val initial' = initial andalso
           (case prev of
             NONE => true
-          | SOME command_id => #name (the_command_name_kind command_id) <> Thy_Header.theoryN);
+          | SOME command_id =>
+              let val {kind, ...} = the_command_name_kind command_id
+              in not (Symset.member Keyword.theory_begin_kinds kind) end);
       in (visible', initial') end;
 
     fun get_common ((prev, command_id), opt_exec) (_, ok, flags, assign_update) =
@@ -725,11 +727,11 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val blobs = map (resolve_blob state) blob_digests;
       val span = Lazy.force span0;
 
-      val command_is_theory = command_name = Thy_Header.theoryN;
+      val is_theory_begin = Symset.member Keyword.theory_begin_kinds command_kind;
       val opts = header_options node;
       val eval' =
         Command.eval
-          (if command_is_theory then [] else opts)
+          (if is_theory_begin then [] else opts)
           keywords
           (master_directory node)
           (fn () => the_default illegal_init init span)
@@ -738,7 +740,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val exec' = (eval', prints');
 
       val assign_update' = assign_update_new (command_id', SOME exec') assign_update;
-      val init' = if command_is_theory then NONE else init;
+      val init' = if is_theory_begin then NONE else init;
     in SOME (assign_update', (command_id', exec'), init') end;
 
 fun removed_execs node0 (command_id, exec_ids) =
