@@ -666,7 +666,7 @@ fun check_theory full name node =
   Thy_Info.defined_theory name orelse
   null (#errors (get_header node)) andalso (not full orelse is_some (get_result node));
 
-fun last_common keywords the_command_name_kind node_required node0 node =
+fun last_common the_command_name_kind node_required node0 node =
   let
     fun update_flags prev (visible, initial) =
       let
@@ -876,7 +876,7 @@ fun update old_version_id new_version_id edits consolidate state =
                         val (print_execs, common, (still_visible, initial)) =
                           if imports_result_changed
                           then (assign_update_empty, NONE, (true, true))
-                          else last_common keywords the_command_name_kind node_required node0 node;
+                          else last_common the_command_name_kind node_required node0 node;
 
                         val common_command_exec =
                           (case common of
