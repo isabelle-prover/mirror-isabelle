@@ -60,7 +60,7 @@ object Pretty_Text_View {
     }
 
   def on_load(): Unit = {
-    handle_resize()
+    current_margin = get_window_margin()
     window_loaded = true
     update()
   }
