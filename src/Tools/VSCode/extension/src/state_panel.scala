@@ -60,7 +60,8 @@ object State_Panel {
 
   def main(): Unit = {
     Pretty_Text_View.on_update { output =>
-      dom.document.body.innerHTML = XML.string_of_body(controls :: output)
+      dom.document.body.innerHTML =
+        HTML.output(controls :: output, hidden = true, structural = true)
     }
 
     dom.window.onresize = { _ => Pretty_Text_View.on_resize() }
