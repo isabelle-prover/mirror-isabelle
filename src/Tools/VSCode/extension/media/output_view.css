@@ -107,3 +107,13 @@ textarea::placeholder {
   margin-left: 5px;
   margin-top: 5px;
 }
+
+sub, sup {
+  font-size: 80%;
+}
+
+.hidden {
+  font-family: Vacuous;
+  font-size: 1%;
+  color: rgba(255,255,255,0);
+}
