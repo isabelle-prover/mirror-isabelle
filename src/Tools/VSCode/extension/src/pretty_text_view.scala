@@ -46,7 +46,7 @@ object Pretty_Text_View {
   /* gui state */
 
   private var current_output: XML.Body = Nil
-  private var current_margin: Int = get_window_margin()
+  private var current_margin: Double = get_window_margin()
   private var resize_timeout: Option[Int] = None
   private var window_loaded = false
 
@@ -75,9 +75,9 @@ object Pretty_Text_View {
     symbol_width
   }
 
-  def get_window_margin(): Int = {
+  def get_window_margin(): Double = {
     val width = dom.window.innerWidth / get_symbol_width()
-    Math.max(width.toInt - 16, 1)
+    Math.max(width - 16, 1)
   }
 
   private def update(): Unit = {
