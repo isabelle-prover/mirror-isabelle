@@ -290,11 +290,11 @@ fun eq_conv cv1 cv2 ct =
   | _ => raise CTERM ("eq_conv", [ct]));
 
 
-fun all_const T = Const (\<^const_name>\<open>All\<close>, (T --> boolT) --> boolT);
+fun all_const T = \<^Const>\<open>All T\<close>;
 fun mk_all (x, T, P) = all_const T $ absfree (x, T) P;
 fun list_all (xs, t) = fold_rev (fn (x, T) => fn P => all_const T $ Abs (x, T, P)) xs t;
 
-fun exists_const T = Const (\<^const_name>\<open>Ex\<close>, (T --> boolT) --> boolT);
+fun exists_const T = \<^Const>\<open>Ex T\<close>;
 fun mk_exists (x, T, P) = exists_const T $ absfree (x, T) P;
 
 fun choice_const T = Const(\<^unchecked_name>\<open>Hilbert_Choice.Eps\<close>, (T --> boolT) --> T);
