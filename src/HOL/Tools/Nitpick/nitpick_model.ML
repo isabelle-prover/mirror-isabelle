@@ -148,7 +148,7 @@ fun nth_atom_name thy atomss pool prefix T j =
          else substring (s', 0, 1)) ^ atom_suffix s m
       end
     | TFree (s, _) => prefix ^ perhaps (try (unprefix "'")) s ^ atom_suffix s m
-    | _ => raise TYPE ("Nitpick_Model.nth_atom_name", [T], [])
+    | _ => raise TYPE (\<^unchecked_name>\<open>Nitpick_Model.nth_atom_name\<close>, [T], [])
   end
 
 fun nth_atom thy atomss pool T j =
@@ -259,7 +259,7 @@ val dest_plain_fun =
         let val (maybe_opt, (ts1, ts2)) = aux t0 in
           (maybe_opt, (t1 :: ts1, t2 :: ts2))
         end
-      | aux t = raise TERM ("Nitpick_Model.dest_plain_fun", [t])
+      | aux t = raise TERM (\<^unchecked_name>\<open>Nitpick_Model.dest_plain_fun\<close>, [t])
   in apsnd (apply2 rev) o aux end
 
 fun break_in_two T T1 T2 t =
@@ -309,7 +309,7 @@ fun format_fun T' T1 T2 t =
                (T1' --> T2') --> T1' --> T2' --> T1' --> T2')
         $ do_arrow T1' T2' T1 T2 t0 $ do_term T1' T1 t1 $ do_term T2' T2 t2
       | do_arrow _ _ _ _ t =
-        raise TERM ("Nitpick_Model.format_fun.do_arrow", [t])
+        raise TERM (\<^unchecked_name>\<open>Nitpick_Model.format_fun.do_arrow\<close>, [t])
     and do_fun T1' T2' T1 T2 t =
       case factor_out_types T1' T1 of
         ((_, NONE), (_, NONE)) => t |> do_arrow T1' T2' T1 T2
@@ -317,7 +317,7 @@ fun format_fun T' T1 T2 t =
         t |> do_curry T1 T1a T1b T2 |> do_arrow T1' T2' T1a (T1b --> T2)
       | ((T1a', SOME T1b'), (_, NONE)) =>
         t |> do_arrow T1a' (T1b' --> T2') T1 T2 |> do_uncurry T1' T2'
-      | _ => raise TYPE ("Nitpick_Model.format_fun.do_fun", [T1, T1'], [])
+      | _ => raise TYPE (\<^unchecked_name>\<open>Nitpick_Model.format_fun.do_fun\<close>, [T1, T1'], [])
     and do_term (Type (\<^type_name>\<open>fun\<close>, [T1', T2']))
                 (Type (\<^type_name>\<open>fun\<close>, [T1, T2])) t =
         do_fun T1' T2' T1 T2 t
@@ -328,7 +328,7 @@ fun format_fun T' T1 T2 t =
         $ do_term T1' T1 t1 $ do_term T2' T2 t2
       | do_term T' T t =
         if T = T' then t
-        else raise TYPE ("Nitpick_Model.format_fun.do_term", [T, T'], [])
+        else raise TYPE (\<^unchecked_name>\<open>Nitpick_Model.format_fun.do_term\<close>, [T, T'], [])
   in if T1' = T1 andalso T2' = T2 then t else do_fun T1' T2' T1 T2 t end
 
 fun truth_const_sort_key \<^Const_>\<open>True\<close> = "0"
@@ -339,7 +339,7 @@ fun mk_tuple (Type (\<^type_name>\<open>prod\<close>, [T1, T2])) ts =
     HOLogic.mk_prod (mk_tuple T1 ts,
         mk_tuple T2 (List.drop (ts, length (HOLogic.flatten_tupleT T1))))
   | mk_tuple _ (t :: _) = t
-  | mk_tuple T [] = raise TYPE ("Nitpick_Model.mk_tuple", [T], [])
+  | mk_tuple T [] = raise TYPE (\<^unchecked_name>\<open>Nitpick_Model.mk_tuple\<close>, [T], [])
 
 fun varified_type_match ctxt (candid_T, pat_T) =
   let val thy = Proof_Context.theory_of ctxt in
@@ -622,7 +622,7 @@ and reconstruct_term maybe_opt unfold pool
       end
     and term_for_rep _ seen T T' (R as Atom (k, j0)) [[j]] =
         if j >= j0 andalso j < j0 + k then term_for_atom seen T T' (j - j0) k
-        else raise REP ("Nitpick_Model.reconstruct_term.term_for_rep", [R])
+        else raise REP (\<^unchecked_name>\<open>Nitpick_Model.reconstruct_term.term_for_rep\<close>, [R])
       | term_for_rep _ seen (Type (\<^type_name>\<open>prod\<close>, [T1, T2])) _
                      (Struct [R1, R2]) [js] =
         let
@@ -661,7 +661,7 @@ and reconstruct_term maybe_opt unfold pool
         if null jss then Const (unknown, T)
         else term_for_rep true seen T T' R jss
       | term_for_rep _ _ T _ R jss =
-        raise ARG ("Nitpick_Model.reconstruct_term.term_for_rep",
+        raise ARG (\<^unchecked_name>\<open>Nitpick_Model.reconstruct_term.term_for_rep\<close>,
                    Syntax.string_of_typ ctxt T ^ " " ^ string_for_rep R ^ " " ^
                    string_of_int (length jss))
   in
@@ -675,7 +675,7 @@ fun dest_n_tuple_type 1 T = [T]
   | dest_n_tuple_type n (Type (_, [T1, T2])) =
     T1 :: dest_n_tuple_type (n - 1) T2
   | dest_n_tuple_type _ T =
-    raise TYPE ("Nitpick_Model.dest_n_tuple_type", [T], [])
+    raise TYPE (\<^unchecked_name>\<open>Nitpick_Model.dest_n_tuple_type\<close>, [T], [])
 
 fun const_format thy def_tables (x as (s, T)) =
   if String.isPrefix unrolled_prefix s then
@@ -985,7 +985,7 @@ fun reconstruct_hol_model {show_types, show_skolems, show_consts}
       [{typ = T, card = card_of_type card_assigns T, co = false,
         self_rec = true, complete = (false, false), concrete = (true, true),
         deep = true, constrs = []}]
-      handle TYPE ("Nitpick_HOL.card_of_type", _, _) => []
+      handle TYPE (\<^unchecked_name>\<open>Nitpick_HOL.card_of_type\<close>, _, _) => []
     val data_types =
       data_types |> filter #deep
                  |> append (maps integer_data_type [nat_T, int_T])

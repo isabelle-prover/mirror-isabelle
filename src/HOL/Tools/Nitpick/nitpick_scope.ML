@@ -100,7 +100,7 @@ val is_asymmetric_non_data_type =
 fun data_type_spec (dtypes : data_type_spec list) T =
   List.find (curry (op =) T o #typ) dtypes
 
-fun constr_spec [] x = raise TERM ("Nitpick_Scope.constr_spec", [Const x])
+fun constr_spec [] x = raise TERM (\<^unchecked_name>\<open>Nitpick_Scope.constr_spec\<close>, [Const x])
   | constr_spec ({constrs, ...} :: dtypes : data_type_spec list) (x as (s, T)) =
     case List.find (curry (op =) (s, body_type T) o (apsnd body_type o #const))
                    constrs of
@@ -136,7 +136,7 @@ fun offset_of_type ofs T =
 
 fun spec_of_type ({card_assigns, ofs, ...} : scope) T =
   (card_of_type card_assigns T
-   handle TYPE ("Nitpick_HOL.card_of_type", _, _) => ~1, offset_of_type ofs T)
+   handle TYPE (\<^unchecked_name>\<open>Nitpick_HOL.card_of_type\<close>, _, _) => ~1, offset_of_type ofs T)
 
 fun quintuple_for_scope code_type code_term code_string
         ({hol_ctxt = {ctxt, ...}, card_assigns, bits, bisim_depth,
@@ -230,17 +230,17 @@ fun project_block (column, block) = map (project_row column) block
 fun lookup_ints_assign eq assigns key =
   case triple_lookup eq assigns key of
     SOME ks => ks
-  | NONE => raise ARG ("Nitpick_Scope.lookup_ints_assign", "")
+  | NONE => raise ARG (\<^unchecked_name>\<open>Nitpick_Scope.lookup_ints_assign\<close>, "")
 
 fun lookup_type_ints_assign thy assigns T =
   map (Integer.max 1) (lookup_ints_assign (type_match thy) assigns T)
-  handle ARG ("Nitpick_Scope.lookup_ints_assign", _) =>
-         raise TYPE ("Nitpick_Scope.lookup_type_ints_assign", [T], [])
+  handle ARG (\<^unchecked_name>\<open>Nitpick_Scope.lookup_ints_assign\<close>, _) =>
+         raise TYPE (\<^unchecked_name>\<open>Nitpick_Scope.lookup_type_ints_assign\<close>, [T], [])
 
 fun lookup_const_ints_assign thy assigns x =
   lookup_ints_assign (const_match thy) assigns x
-  handle ARG ("Nitpick_Scope.lookup_ints_assign", _) =>
-         raise TERM ("Nitpick_Scope.lookup_const_ints_assign", [Const x])
+  handle ARG (\<^unchecked_name>\<open>Nitpick_Scope.lookup_ints_assign\<close>, _) =>
+         raise TERM (\<^unchecked_name>\<open>Nitpick_Scope.lookup_const_ints_assign\<close>, [Const x])
 
 fun row_for_constr thy maxes_assigns constr =
   SOME (Max constr, lookup_const_ints_assign thy maxes_assigns constr)
@@ -483,9 +483,9 @@ fun scope_from_descriptor (hol_ctxt as {ctxt, ...}) binarize deep_dataTs
                                                 finitizable_dataTs desc)
           (filter (is_data_type ctxt o fst) card_assigns)
     val bits = card_of_type card_assigns \<^typ>\<open>signed_bit\<close> - 1
-               handle TYPE ("Nitpick_HOL.card_of_type", _, _) =>
+               handle TYPE (\<^unchecked_name>\<open>Nitpick_HOL.card_of_type\<close>, _, _) =>
                       card_of_type card_assigns \<^typ>\<open>unsigned_bit\<close>
-                      handle TYPE ("Nitpick_HOL.card_of_type", _, _) => 0
+                      handle TYPE (\<^unchecked_name>\<open>Nitpick_HOL.card_of_type\<close>, _, _) => 0
     val bisim_depth = card_of_type card_assigns \<^typ>\<open>bisim_iterator\<close> - 1
   in
     {hol_ctxt = hol_ctxt, binarize = binarize, card_assigns = card_assigns,

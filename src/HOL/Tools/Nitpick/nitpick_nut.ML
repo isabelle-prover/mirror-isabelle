@@ -323,16 +323,16 @@ fun nickname_of (BoundName (_, _, _, nick)) = nick
   | nickname_of (ConstName (s, _, _)) = s
   | nickname_of (BoundRel (_, _, _, nick)) = nick
   | nickname_of (FreeRel (_, _, _, nick)) = nick
-  | nickname_of u = raise NUT ("Nitpick_Nut.nickname_of", [u])
+  | nickname_of u = raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.nickname_of\<close>, [u])
 
 fun is_skolem_name u =
   space_explode name_sep (nickname_of u)
   |> exists (String.isPrefix skolem_prefix)
-  handle NUT ("Nitpick_Nut.nickname_of", _) => false
+  handle NUT (\<^unchecked_name>\<open>Nitpick_Nut.nickname_of\<close>, _) => false
 
 fun is_eval_name u =
   String.isPrefix eval_prefix (nickname_of u)
-  handle NUT ("Nitpick_Nut.nickname_of", _) => false
+  handle NUT (\<^unchecked_name>\<open>Nitpick_Nut.nickname_of\<close>, _) => false
 
 fun is_Cst cst (Cst (cst', _, _)) = (cst = cst')
   | is_Cst _ _ = false
@@ -371,7 +371,7 @@ fun name_ord (BoundName (j1, _, _, _), BoundName (j2, _, _, _)) =
     (case fast_string_ord (s1, s2) of
        EQUAL => Term_Ord.typ_ord (T1, T2)
      | ord => ord)
-  | name_ord (u1, u2) = raise NUT ("Nitpick_Nut.name_ord", [u1, u2])
+  | name_ord (u1, u2) = raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.name_ord\<close>, [u1, u2])
 
 fun num_occurrences_in_nut needle_u stack_u =
   fold_nut (fn u => if u = needle_u then Integer.add 1 else I) stack_u 0
@@ -389,19 +389,19 @@ val add_free_and_const_names =
 fun modify_name_rep (BoundName (j, T, _, nick)) R = BoundName (j, T, R, nick)
   | modify_name_rep (FreeName (s, T, _)) R = FreeName (s, T, R)
   | modify_name_rep (ConstName (s, T, _)) R = ConstName (s, T, R)
-  | modify_name_rep u _ = raise NUT ("Nitpick_Nut.modify_name_rep", [u])
+  | modify_name_rep u _ = raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.modify_name_rep\<close>, [u])
 
 structure NameTable = Table(type key = nut val ord = name_ord)
 
 fun the_name table name =
   case NameTable.lookup table name of
     SOME u => u
-  | NONE => raise NUT ("Nitpick_Nut.the_name", [name])
+  | NONE => raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.the_name\<close>, [name])
 
 fun the_rel table name =
   case the_name table name of
     FreeRel (x, _, _, _) => x
-  | u => raise NUT ("Nitpick_Nut.the_rel", [u])
+  | u => raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.the_rel\<close>, [u])
 
 fun mk_fst (_, Const (\<^const_name>\<open>Pair\<close>, T) $ t1 $ _) = (domain_type T, t1)
   | mk_fst (T, t) =
@@ -603,13 +603,13 @@ fun nut_from_term (hol_ctxt as {ctxt, ...}) eq =
             (case arity_of_built_in_const x of
                SOME n =>
                (case n - length ts of
-                  0 => raise TERM ("Nitpick_Nut.nut_from_term.aux", [t])
+                  0 => raise TERM (\<^unchecked_name>\<open>Nitpick_Nut.nut_from_term.aux\<close>, [t])
                 | k => if k > 0 then sub (eta_expand Ts t k)
                        else do_apply t0 ts)
              | NONE => if null ts then ConstName (s, T, Any)
                        else do_apply t0 ts)
         | (Free (s, T), []) => FreeName (s, T, Any)
-        | (Var _, []) => raise TERM ("Nitpick_Nut.nut_from_term.aux", [t])
+        | (Var _, []) => raise TERM (\<^unchecked_name>\<open>Nitpick_Nut.nut_from_term.aux\<close>, [t])
         | (Bound j, []) =>
           BoundName (length Ts - j - 1, nth Ts j, Any, nth ss j)
         | (Abs (s, T, t1), []) =>
@@ -712,7 +712,7 @@ fun choose_rep_for_bound_var scope v =
     val arity = arity_of_rep R
   in
     if arity > KK.max_arity min_univ_card then
-      raise TOO_LARGE ("Nitpick_Nut.choose_rep_for_bound_var",
+      raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Nut.choose_rep_for_bound_var\<close>,
                        "arity " ^ string_of_int arity ^ " of bound variable \
                        \too large")
     else
@@ -967,7 +967,7 @@ fun choose_reps_in_nut (scope as {card_assigns, bits, data_types, ofs, ...})
                  if is_opt_rep (rep_of u2') then opt_rep ofs T R
                  else unopt_rep R
              in s_op2 Lambda T R u1' u2' end
-           | _ => raise NUT ("Nitpick_Nut.choose_reps_in_nut.aux", [u]))
+           | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.choose_reps_in_nut.aux\<close>, [u]))
         | Op2 (oper, T, _, u1, u2) =>
           if oper = All orelse oper = Exist then
             let
@@ -1110,8 +1110,8 @@ fun shape_tuple (T as Type (\<^type_name>\<open>prod\<close>, [T1, T2])) (R as S
     Tuple (T, R, map (shape_tuple (pseudo_range_type T) R')
                      (chunk_list (length us div k) us))
   | shape_tuple T _ [u] =
-    if type_of u = T then u else raise NUT ("Nitpick_Nut.shape_tuple", [u])
-  | shape_tuple _ _ us = raise NUT ("Nitpick_Nut.shape_tuple", us)
+    if type_of u = T then u else raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.shape_tuple\<close>, [u])
+  | shape_tuple _ _ us = raise NUT (\<^unchecked_name>\<open>Nitpick_Nut.shape_tuple\<close>, us)
 
 fun rename_n_ary_var rename_free v (ws, pool, table) =
   let

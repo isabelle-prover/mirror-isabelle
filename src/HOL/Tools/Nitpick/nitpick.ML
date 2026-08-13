@@ -210,7 +210,7 @@ fun pick_them_nits_in_term deadline state (params : params) mode i n step
          kodkod_sym_break, tac_timeout, max_threads, show_types, show_skolems,
          show_consts, evals, formats, atomss, max_potential, max_genuine,
          batch_size, ...} = params
-    val outcome = Synchronized.var "Nitpick.outcome" (Queue.empty: string Queue.T)
+    val outcome = Synchronized.var \<^unchecked_name>\<open>Nitpick.outcome\<close> (Queue.empty: string Queue.T)
     fun pprint print prt =
       if mode = Auto_Try then
         Synchronized.change outcome (Queue.enqueue (Pretty.string_of prt))
@@ -324,7 +324,7 @@ fun pick_them_nits_in_term deadline state (params : params) mode i n step
                                  (tl nondef_ts)))
     val _ = List.app (ignore o Term.type_of) (nondef_ts @ def_ts)
             handle TYPE (_, Ts, ts) =>
-                   raise TYPE ("Nitpick.pick_them_nits_in_term", Ts, ts)
+                   raise TYPE (\<^unchecked_name>\<open>Nitpick.pick_them_nits_in_term\<close>, Ts, ts)
 
     val nondef_us = nondef_ts |> map (nut_from_term hol_ctxt Eq)
     val def_us = def_ts |> map (nut_from_term hol_ctxt DefEq)
@@ -470,7 +470,7 @@ fun pick_them_nits_in_term deadline state (params : params) mode i n step
         val (nat_card, nat_j0) = spec_of_type scope nat_T
         val (int_card, int_j0) = spec_of_type scope int_T
         val _ = (nat_j0 = main_j0 andalso int_j0 = main_j0) orelse
-                raise BAD ("Nitpick.pick_them_nits_in_term.problem_for_scope",
+                raise BAD (\<^unchecked_name>\<open>Nitpick.pick_them_nits_in_term.problem_for_scope\<close>,
                            "bad offsets")
         val kk = kodkod_constrs peephole_optim nat_card int_card main_j0
         val (free_names, rep_table) =
@@ -569,7 +569,7 @@ fun pick_them_nits_in_term deadline state (params : params) mode i n step
                unsound = unsound, scope = scope})
       end
       handle TOO_LARGE (loc, msg) =>
-             if loc = "Nitpick_Kodkod.check_arity" andalso
+             if loc = \<^unchecked_name>\<open>Nitpick_Kodkod.check_arity\<close> andalso
                 not (Typtab.is_empty ofs) then
                problem_for_scope unsound
                    {hol_ctxt = hol_ctxt, binarize = binarize,

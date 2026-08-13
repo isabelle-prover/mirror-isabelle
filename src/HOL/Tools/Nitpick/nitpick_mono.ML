@@ -84,7 +84,7 @@ fun is_MRec (MRec _) = true
   | is_MRec _ = false
 
 fun dest_MFun (MFun z) = z
-  | dest_MFun M = raise MTYPE ("Nitpick_Mono.dest_MFun", [M], [])
+  | dest_MFun M = raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.dest_MFun\<close>, [M], [])
 
 val no_prec = 100
 
@@ -411,7 +411,7 @@ fun do_mtype_comp _ _ _ _ NONE = NONE
                   cset =
     (cset |> fold (uncurry (do_mtype_comp cmp xs)) [(M11, M21), (M12, M22)]
      handle ListPair.UnequalLengths =>
-            raise MTYPE ("Nitpick_Mono.do_mtype_comp", [M1, M2], []))
+            raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.do_mtype_comp\<close>, [M1, M2], []))
   | do_mtype_comp _ _ (MType _) (MType _) cset =
     cset (* no need to compare them thanks to the cache *)
   | do_mtype_comp cmp _ M1 M2 _ =
@@ -458,7 +458,7 @@ fun do_notin_mtype_fv _ _ _ NONE = NONE
   | do_notin_mtype_fv sn unless (MType (_, Ms)) cset =
     cset |> fold (do_notin_mtype_fv sn unless) Ms
  | do_notin_mtype_fv _ _ M _ =
-   raise MTYPE ("Nitpick_Mono.do_notin_mtype_fv", [M], [])
+   raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.do_notin_mtype_fv\<close>, [M], [])
 
 fun add_notin_mtype_fv sn unless M (comps, clauses) =
   (trace_msg (fn () => "*** Add " ^ string_for_mtype M ^ " is " ^
@@ -813,12 +813,12 @@ fun consider_term (mdata as {hol_ctxt = {ctxt, ...}, alpha_T, max_fresh, ...}) =
       case mtype_for (nth_range_type 2 T) of
         M as MPair (a_M, b_M) =>
         (MFun (a_M, A Gen, MFun (b_M, A Gen, M)), accum)
-      | M => raise MTYPE ("Nitpick_Mono.consider_term.do_pair_constr", [M], [])
+      | M => raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.consider_term.do_pair_constr\<close>, [M], [])
     fun do_nth_pair_sel n T =
       case mtype_for (domain_type T) of
         M as MPair (a_M, b_M) =>
         pair (MFun (M, A Gen, if n = 0 then a_M else b_M))
-      | M => raise MTYPE ("Nitpick_Mono.consider_term.do_nth_pair_sel", [M], [])
+      | M => raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.consider_term.do_nth_pair_sel\<close>, [M], [])
     and do_connect spec t1 t2 accum =
       (bool_M, consider_connective mdata spec (snd o do_term t1)
                                    (snd o do_term t2) accum)
@@ -1007,7 +1007,7 @@ fun consider_term (mdata as {hol_ctxt = {ctxt, ...}, alpha_T, max_fresh, ...}) =
 fun force_gen_funs 0 _ = I
   | force_gen_funs n (M as MFun (M1, _, M2)) =
     add_mtypes_equal M (MFun (M1, A Gen, M2)) #> force_gen_funs (n - 1) M2
-  | force_gen_funs _ M = raise MTYPE ("Nitpick_Mono.force_gen_funs", [M], [])
+  | force_gen_funs _ M = raise MTYPE (\<^unchecked_name>\<open>Nitpick_Mono.force_gen_funs\<close>, [M], [])
 
 fun consider_general_equals mdata def t1 t2 accum =
   let
