@@ -141,14 +141,14 @@ struct
 
 (* functions *)
 
-fun id_const T = Const ("Fun.id", T --> T);
+fun id_const T = Const (\<^unchecked_name>\<open>Fun.id\<close>, T --> T);
 
 fun mk_comp (f, g) =
   let
     val fT = fastype_of f;
     val gT = fastype_of g;
     val compT = fT --> gT --> domain_type gT --> range_type fT;
-  in Const ("Fun.comp", compT) $ f $ g end;
+  in Const (\<^unchecked_name>\<open>Fun.comp\<close>, compT) $ f $ g end;
 
 
 (* bool and set *)
@@ -156,35 +156,35 @@ fun mk_comp (f, g) =
 val boolT = \<^Type>\<open>bool\<close>;
 val boolN = dest_Type_name boolT;
 
-fun mk_induct_forall T = Const ("HOL.induct_forall", (T --> boolT) --> boolT);
+fun mk_induct_forall T = Const (\<^unchecked_name>\<open>HOL.induct_forall\<close>, (T --> boolT) --> boolT);
 
-fun mk_setT T = Type ("Set.set", [T]);
+fun mk_setT T = Type (\<^unchecked_name>\<open>Set.set\<close>, [T]);
 
-fun dest_setT (Type ("Set.set", [T])) = T
+fun dest_setT (Type (\<^unchecked_name>\<open>Set.set\<close>, [T])) = T
   | dest_setT T = raise TYPE ("dest_setT: set type expected", [T], []);
 
 fun mk_set T ts =
   let
     val sT = mk_setT T;
-    val empty = Const ("Orderings.bot_class.bot", sT);
-    fun insert t u = Const ("Set.insert", T --> sT --> sT) $ t $ u;
+    val empty = Const (\<^unchecked_name>\<open>Orderings.bot_class.bot\<close>, sT);
+    fun insert t u = Const (\<^unchecked_name>\<open>Set.insert\<close>, T --> sT --> sT) $ t $ u;
   in fold_rev insert ts empty end;
 
-fun mk_UNIV T = Const ("Orderings.top_class.top", mk_setT T);
+fun mk_UNIV T = Const (\<^unchecked_name>\<open>Orderings.top_class.top\<close>, mk_setT T);
 
-fun dest_set (Const ("Orderings.bot_class.bot", _)) = []
-  | dest_set (Const ("Set.insert", _) $ t $ u) = t :: dest_set u
+fun dest_set (Const (\<^unchecked_name>\<open>Orderings.bot_class.bot\<close>, _)) = []
+  | dest_set (Const (\<^unchecked_name>\<open>Set.insert\<close>, _) $ t $ u) = t :: dest_set u
   | dest_set t = raise TERM ("dest_set", [t]);
 
-fun Collect_const T = Const ("Set.Collect", (T --> boolT) --> mk_setT T);
+fun Collect_const T = Const (\<^unchecked_name>\<open>Set.Collect\<close>, (T --> boolT) --> mk_setT T);
 fun mk_Collect (a, T, t) = Collect_const T $ absfree (a, T) t;
 
 fun mk_mem (x, A) =
   let val setT = fastype_of A in
-    Const ("Set.member", dest_setT setT --> setT --> boolT) $ x $ A
+    Const (\<^unchecked_name>\<open>Set.member\<close>, dest_setT setT --> setT --> boolT) $ x $ A
   end;
 
-fun dest_mem (Const ("Set.member", _) $ x $ A) = (x, A)
+fun dest_mem (Const (\<^unchecked_name>\<open>Set.member\<close>, _) $ x $ A) = (x, A)
   | dest_mem t = raise TERM ("dest_mem", [t]);
 
 
@@ -290,16 +290,16 @@ fun eq_conv cv1 cv2 ct =
   | _ => raise CTERM ("eq_conv", [ct]));
 
 
-fun all_const T = Const ("HOL.All", (T --> boolT) --> boolT);
+fun all_const T = Const (\<^const_name>\<open>All\<close>, (T --> boolT) --> boolT);
 fun mk_all (x, T, P) = all_const T $ absfree (x, T) P;
 fun list_all (xs, t) = fold_rev (fn (x, T) => fn P => all_const T $ Abs (x, T, P)) xs t;
 
-fun exists_const T = Const ("HOL.Ex", (T --> boolT) --> boolT);
+fun exists_const T = Const (\<^const_name>\<open>Ex\<close>, (T --> boolT) --> boolT);
 fun mk_exists (x, T, P) = exists_const T $ absfree (x, T) P;
 
-fun choice_const T = Const("Hilbert_Choice.Eps", (T --> boolT) --> T);
+fun choice_const T = Const(\<^unchecked_name>\<open>Hilbert_Choice.Eps\<close>, (T --> boolT) --> T);
 
-val class_equal = "HOL.equal";
+val class_equal = \<^unchecked_name>\<open>HOL.equal\<close>;
 
 
 (* binary operations and relations *)
@@ -322,63 +322,64 @@ fun dest_bin c T (tm as Const (c', \<^Type>\<open>fun T' _\<close>) $ t $ u) =
 
 (* unit *)
 
-val unitT = Type ("Product_Type.unit", []);
+val unitT = Type (\<^unchecked_name>\<open>Product_Type.unit\<close>, []);
 
-fun is_unitT (Type ("Product_Type.unit", [])) = true
+fun is_unitT (Type (\<^unchecked_name>\<open>Product_Type.unit\<close>, [])) = true
   | is_unitT _ = false;
 
-val unit = Const ("Product_Type.Unity", unitT);
+val unit = Const (\<^unchecked_name>\<open>Product_Type.Unity\<close>, unitT);
 
-fun is_unit (Const ("Product_Type.Unity", _)) = true
+fun is_unit (Const (\<^unchecked_name>\<open>Product_Type.Unity\<close>, _)) = true
   | is_unit _ = false;
 
 
 (* prod *)
 
-fun mk_prodT (T1, T2) = Type ("Product_Type.prod", [T1, T2]);
+fun mk_prodT (T1, T2) = Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2]);
 
-fun dest_prodT (Type ("Product_Type.prod", [T1, T2])) = (T1, T2)
+fun dest_prodT (Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2])) = (T1, T2)
   | dest_prodT T = raise TYPE ("dest_prodT", [T], []);
 
-fun pair_const T1 T2 = Const ("Product_Type.Pair", T1 --> T2 --> mk_prodT (T1, T2));
+fun pair_const T1 T2 = Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, T1 --> T2 --> mk_prodT (T1, T2));
 
 fun mk_prod (t1, t2) =
   let val T1 = fastype_of t1 and T2 = fastype_of t2 in
     pair_const T1 T2 $ t1 $ t2
   end;
 
-fun dest_prod (Const ("Product_Type.Pair", _) $ t1 $ t2) = (t1, t2)
+fun dest_prod (Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, _) $ t1 $ t2) = (t1, t2)
   | dest_prod t = raise TERM ("dest_prod", [t]);
 
 fun mk_fst p =
   let val pT = fastype_of p in
-    Const ("Product_Type.prod.fst", pT --> fst (dest_prodT pT)) $ p
+    Const (\<^unchecked_name>\<open>Product_Type.prod.fst\<close>, pT --> fst (dest_prodT pT)) $ p
   end;
 
 fun mk_snd p =
   let val pT = fastype_of p in
-    Const ("Product_Type.prod.snd", pT --> snd (dest_prodT pT)) $ p
+    Const (\<^unchecked_name>\<open>Product_Type.prod.snd\<close>, pT --> snd (dest_prodT pT)) $ p
   end;
 
 fun case_prod_const (A, B, C) =
-  Const ("Product_Type.prod.case_prod", (A --> B --> C) --> mk_prodT (A, B) --> C);
+  Const (\<^unchecked_name>\<open>Product_Type.prod.case_prod\<close>, (A --> B --> C) --> mk_prodT (A, B) --> C);
 
 fun mk_case_prod t =
   (case Term.fastype_of t of
     T as \<^Type>\<open>fun A \<^Type>\<open>fun B C\<close>\<close> =>
-      Const ("Product_Type.prod.case_prod", T --> mk_prodT (A, B) --> C) $ t
+      Const (\<^unchecked_name>\<open>Product_Type.prod.case_prod\<close>, T --> mk_prodT (A, B) --> C) $ t
   | _ => raise TERM ("mk_case_prod: bad body type", [t]));
 
 (*Maps the type T1 * ... * Tn to [T1, ..., Tn], however nested*)
-fun flatten_tupleT (Type ("Product_Type.prod", [T1, T2])) = flatten_tupleT T1 @ flatten_tupleT T2
+fun flatten_tupleT (Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2])) =
+      flatten_tupleT T1 @ flatten_tupleT T2
   | flatten_tupleT T = [T];
 
 (*abstraction over nested tuples*)
 fun tupled_lambda (x as Free _) b = lambda x b
   | tupled_lambda (x as Var _) b = lambda x b
-  | tupled_lambda (Const ("Product_Type.Pair", _) $ u $ v) b =
+  | tupled_lambda (Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, _) $ u $ v) b =
       mk_case_prod (tupled_lambda u (tupled_lambda v b))
-  | tupled_lambda (Const ("Product_Type.Unity", _)) b =
+  | tupled_lambda (Const (\<^unchecked_name>\<open>Product_Type.Unity\<close>, _)) b =
       Abs ("x", unitT, b)
   | tupled_lambda t _ = raise TERM ("tupled_lambda: bad tuple", [t]);
 
@@ -388,15 +389,15 @@ fun tupled_lambda (x as Free _) b = lambda x b
 fun mk_tupleT [] = unitT
   | mk_tupleT Ts = foldr1 mk_prodT Ts;
 
-fun strip_tupleT (Type ("Product_Type.unit", [])) = []
-  | strip_tupleT (Type ("Product_Type.prod", [T1, T2])) = T1 :: strip_tupleT T2
+fun strip_tupleT (Type (\<^unchecked_name>\<open>Product_Type.unit\<close>, [])) = []
+  | strip_tupleT (Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2])) = T1 :: strip_tupleT T2
   | strip_tupleT T = [T];
 
 fun mk_tuple [] = unit
   | mk_tuple ts = foldr1 mk_prod ts;
 
-fun strip_tuple (Const ("Product_Type.Unity", _)) = []
-  | strip_tuple (Const ("Product_Type.Pair", _) $ t1 $ t2) = t1 :: strip_tuple t2
+fun strip_tuple (Const (\<^unchecked_name>\<open>Product_Type.Unity\<close>, _)) = []
+  | strip_tuple (Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, _) $ t1 $ t2) = t1 :: strip_tuple t2
   | strip_tuple t = [t];
 
 
@@ -422,14 +423,14 @@ fun mk_ptupleT ps =
 fun strip_ptupleT ps =
   let
     fun factors p T = if member (op =) ps p then (case T of
-        Type ("Product_Type.prod", [T1, T2]) =>
+        Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2]) =>
           factors (1::p) T1 @ factors (2::p) T2
       | _ => ptuple_err "strip_ptupleT") else [T]
   in factors [] end;
 
 val flat_tupleT_paths =
   let
-    fun factors p (Type ("Product_Type.prod", [T1, T2])) =
+    fun factors p (Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2])) =
           p :: factors (1::p) T1 @ factors (2::p) T2
       | factors p _ = []
   in factors [] end;
@@ -438,7 +439,7 @@ fun mk_ptuple ps =
   let
     fun mk p T ts =
       if member (op =) ps p then (case T of
-          Type ("Product_Type.prod", [T1, T2]) =>
+          Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2]) =>
             let
               val (t, ts') = mk (1::p) T1 ts;
               val (u, ts'') = mk (2::p) T2 ts'
@@ -450,14 +451,14 @@ fun mk_ptuple ps =
 fun strip_ptuple ps =
   let
     fun dest p t = if member (op =) ps p then (case t of
-        Const ("Product_Type.Pair", _) $ t $ u =>
+        Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, _) $ t $ u =>
           dest (1::p) t @ dest (2::p) u
       | _ => ptuple_err "strip_ptuple") else [t]
   in dest [] end;
 
 val flat_tuple_paths =
   let
-    fun factors p (Const ("Product_Type.Pair", _) $ t $ u) =
+    fun factors p (Const (\<^unchecked_name>\<open>Product_Type.Pair\<close>, _) $ t $ u) =
           p :: factors (1::p) t @ factors (2::p) u
       | factors p _ = []
   in factors [] end;
@@ -469,7 +470,7 @@ fun mk_ptupleabs ps T T3 u =
   let
     fun ap ((p, T) :: pTs) =
           if member (op =) ps p then (case T of
-              Type ("Product_Type.prod", [T1, T2]) =>
+              Type (\<^unchecked_name>\<open>Product_Type.prod\<close>, [T1, T2]) =>
                 case_prod_const (T1, T2, map snd pTs ---> T3) $
                   ap ((1::p, T1) :: (2::p, T2) :: pTs)
             | _ => ptuple_err "mk_ptupleabs")
@@ -482,7 +483,7 @@ fun mk_ptupleabs ps T T3 u =
 val strip_ptupleabs =
   let
     fun strip [] qs Ts t = (t, rev Ts, qs)
-      | strip (p :: ps) qs Ts (Const ("Product_Type.prod.case_prod", _) $ t) =
+      | strip (p :: ps) qs Ts (Const (\<^unchecked_name>\<open>Product_Type.prod.case_prod\<close>, _) $ t) =
           strip ((1 :: p) :: (2 :: p) :: ps) (p :: qs) Ts t
       | strip (p :: ps) qs Ts (Abs (s, T, t)) = strip ps qs (T :: Ts) t
       | strip (p :: ps) qs Ts t = strip ps qs
@@ -493,16 +494,16 @@ val strip_ptupleabs =
 
 (* nat *)
 
-val natT = Type ("Nat.nat", []);
+val natT = Type (\<^unchecked_name>\<open>Nat.nat\<close>, []);
 
-val zero = Const ("Groups.zero_class.zero", natT);
+val zero = Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, natT);
 
-fun is_zero (Const ("Groups.zero_class.zero", _)) = true
+fun is_zero (Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, _)) = true
   | is_zero _ = false;
 
-fun mk_Suc t = Const ("Nat.Suc", natT --> natT) $ t;
+fun mk_Suc t = Const (\<^unchecked_name>\<open>Nat.Suc\<close>, natT --> natT) $ t;
 
-fun dest_Suc (Const ("Nat.Suc", _) $ t) = t
+fun dest_Suc (Const (\<^unchecked_name>\<open>Nat.Suc\<close>, _) $ t) = t
   | dest_Suc t = raise TERM ("dest_Suc", [t]);
 
 val Suc_zero = mk_Suc zero;
@@ -513,23 +514,23 @@ fun mk_nat n =
       | mk n = mk_Suc (mk (n - 1));
   in if n < 0 then raise TERM ("mk_nat: negative number", []) else mk n end;
 
-fun dest_nat (Const ("Groups.zero_class.zero", _)) = 0
-  | dest_nat (Const ("Nat.Suc", _) $ t) = dest_nat t + 1
+fun dest_nat (Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, _)) = 0
+  | dest_nat (Const (\<^unchecked_name>\<open>Nat.Suc\<close>, _) $ t) = dest_nat t + 1
   | dest_nat t = raise TERM ("dest_nat", [t]);
 
-val class_size = "Nat.size";
+val class_size = \<^unchecked_name>\<open>Nat.size\<close>;
 
-fun size_const T = Const ("Nat.size_class.size", T --> natT);
+fun size_const T = Const (\<^unchecked_name>\<open>Nat.size_class.size\<close>, T --> natT);
 
 
 (* binary numerals and int *)
 
-val numT = Type ("Num.num", []);
-val intT = Type ("Int.int", []);
+val numT = Type (\<^unchecked_name>\<open>Num.num\<close>, []);
+val intT = Type (\<^unchecked_name>\<open>Int.int\<close>, []);
 
-val one_const = Const ("Num.num.One", numT)
-and bit0_const = Const ("Num.num.Bit0", numT --> numT)
-and bit1_const = Const ("Num.num.Bit1", numT --> numT);
+val one_const = Const (\<^unchecked_name>\<open>Num.num.One\<close>, numT)
+and bit0_const = Const (\<^unchecked_name>\<open>Num.num.Bit0\<close>, numT --> numT)
+and bit1_const = Const (\<^unchecked_name>\<open>Num.num.Bit1\<close>, numT --> numT);
 
 fun mk_numeral i =
   let
@@ -542,63 +543,65 @@ fun mk_numeral i =
     if i > 0 then mk i else raise TERM ("mk_numeral: " ^ string_of_int i, [])
   end
 
-fun dest_numeral (Const ("Num.num.One", _)) = 1
-  | dest_numeral (Const ("Num.num.Bit0", _) $ bs) = 2 * dest_numeral bs
-  | dest_numeral (Const ("Num.num.Bit1", _) $ bs) = 2 * dest_numeral bs + 1
+fun dest_numeral (Const (\<^unchecked_name>\<open>Num.num.One\<close>, _)) = 1
+  | dest_numeral (Const (\<^unchecked_name>\<open>Num.num.Bit0\<close>, _) $ bs) = 2 * dest_numeral bs
+  | dest_numeral (Const (\<^unchecked_name>\<open>Num.num.Bit1\<close>, _) $ bs) = 2 * dest_numeral bs + 1
   | dest_numeral t = raise TERM ("dest_num", [t]);
 
-fun numeral_const T = Const ("Num.numeral_class.numeral", numT --> T);
+fun numeral_const T = Const (\<^unchecked_name>\<open>Num.numeral_class.numeral\<close>, numT --> T);
 
-fun add_numerals (Const ("Num.numeral_class.numeral", Type (_, [_, T])) $ t) = cons (t, T)
+fun add_numerals (Const (\<^unchecked_name>\<open>Num.numeral_class.numeral\<close>, Type (_, [_, T])) $ t) =
+      cons (t, T)
   | add_numerals (t $ u) = add_numerals t #> add_numerals u
   | add_numerals (Abs (_, _, t)) = add_numerals t
   | add_numerals _ = I;
 
-fun mk_number T 0 = Const ("Groups.zero_class.zero", T)
-  | mk_number T 1 = Const ("Groups.one_class.one", T)
+fun mk_number T 0 = Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, T)
+  | mk_number T 1 = Const (\<^unchecked_name>\<open>Groups.one_class.one\<close>, T)
   | mk_number T i =
     if i > 0 then numeral_const T $ mk_numeral i
-    else Const ("Groups.uminus_class.uminus", T --> T) $ mk_number T (~ i);
+    else Const (\<^unchecked_name>\<open>Groups.uminus_class.uminus\<close>, T --> T) $ mk_number T (~ i);
 
-fun dest_number (Const ("Groups.zero_class.zero", T)) = (T, 0)
-  | dest_number (Const ("Groups.one_class.one", T)) = (T, 1)
-  | dest_number (Const ("Num.numeral_class.numeral", \<^Type>\<open>fun _ T\<close>) $ t) = (T, dest_numeral t)
-  | dest_number (Const ("Groups.uminus_class.uminus", \<^Type>\<open>fun _ _\<close>) $ t) =
+fun dest_number (Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, T)) = (T, 0)
+  | dest_number (Const (\<^unchecked_name>\<open>Groups.one_class.one\<close>, T)) = (T, 1)
+  | dest_number (Const (\<^unchecked_name>\<open>Num.numeral_class.numeral\<close>, \<^Type>\<open>fun _ T\<close>) $ t) =
+      (T, dest_numeral t)
+  | dest_number (Const (\<^unchecked_name>\<open>Groups.uminus_class.uminus\<close>, \<^Type>\<open>fun _ _\<close>) $ t) =
       apsnd (op ~) (dest_number t)
   | dest_number t = raise TERM ("dest_number", [t]);
 
 
 (* code target numerals *)
 
-val code_integerT = Type ("Code_Numeral.integer", []);
+val code_integerT = Type (\<^unchecked_name>\<open>Code_Numeral.integer\<close>, []);
 
-val code_naturalT = Type ("Code_Numeral.natural", []);
+val code_naturalT = Type (\<^unchecked_name>\<open>Code_Numeral.natural\<close>, []);
 
 
 (* real *)
 
-val realT = Type ("Real.real", []);
+val realT = Type (\<^unchecked_name>\<open>Real.real\<close>, []);
 
 
 (* list *)
 
-fun listT T = Type ("List.list", [T]);
+fun listT T = Type (\<^unchecked_name>\<open>List.list\<close>, [T]);
 
-fun nil_const T = Const ("List.list.Nil", listT T);
+fun nil_const T = Const (\<^unchecked_name>\<open>List.list.Nil\<close>, listT T);
 
 fun cons_const T =
   let val lT = listT T
-  in Const ("List.list.Cons", T --> lT --> lT) end;
+  in Const (\<^unchecked_name>\<open>List.list.Cons\<close>, T --> lT --> lT) end;
 
 fun mk_list T ts =
   let
     val lT = listT T;
-    val Nil = Const ("List.list.Nil", lT);
-    fun Cons t u = Const ("List.list.Cons", T --> lT --> lT) $ t $ u;
+    val Nil = Const (\<^unchecked_name>\<open>List.list.Nil\<close>, lT);
+    fun Cons t u = Const (\<^unchecked_name>\<open>List.list.Cons\<close>, T --> lT --> lT) $ t $ u;
   in fold_rev Cons ts Nil end;
 
-fun dest_list (Const ("List.list.Nil", _)) = []
-  | dest_list (Const ("List.list.Cons", _) $ t $ u) = t :: dest_list u
+fun dest_list (Const (\<^unchecked_name>\<open>List.list.Nil\<close>, _)) = []
+  | dest_list (Const (\<^unchecked_name>\<open>List.list.Cons\<close>, _) $ t $ u) = t :: dest_list u
   | dest_list t = raise TERM ("dest_list", [t]);
 
 
@@ -620,16 +623,16 @@ val dest_bits = Integer.eval_radix 2 o map dest_bit;
 
 (* char *)
 
-val charT = Type ("String.char", []);
+val charT = Type (\<^unchecked_name>\<open>String.char\<close>, []);
 
-val Char_const = Const ("String.char.Char", replicate 8 boolT ---> charT);
+val Char_const = Const (\<^unchecked_name>\<open>String.char.Char\<close>, replicate 8 boolT ---> charT);
 
 fun mk_char i =
   if 0 <= i andalso i <= 255
   then list_comb (Char_const, mk_bits 8 i)
   else raise TERM ("mk_char", [])
 
-fun dest_char (Const ("String.char.Char", _) $ b0 $ b1 $ b2 $ b3 $ b4 $ b5 $ b6 $ b7) =
+fun dest_char (Const (\<^unchecked_name>\<open>String.char.Char\<close>, _) $ b0 $ b1 $ b2 $ b3 $ b4 $ b5 $ b6 $ b7) =
       dest_bits [b0, b1, b2, b3, b4, b5, b6, b7]
   | dest_char t = raise TERM ("dest_char", [t]);
 
@@ -644,14 +647,15 @@ val dest_string = implode o map (chr o dest_char) o dest_list;
 
 (* literal *)
 
-val literalT = Type ("String.literal", []);
+val literalT = Type (\<^unchecked_name>\<open>String.literal\<close>, []);
 
-val Literal_const = Const ("String.Literal", replicate 7 boolT ---> literalT --> literalT);
+val Literal_const =
+  Const (\<^unchecked_name>\<open>String.Literal\<close>, replicate 7 boolT ---> literalT --> literalT);
 
 fun mk_literal s = 
   let
     fun mk [] =
-          Const ("Groups.zero_class.zero", literalT)
+          Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, literalT)
       | mk (c :: cs) =
           list_comb (Literal_const, mk_bits 7 c) $ mk cs;
     val cs = map ord (raw_explode s);
@@ -663,8 +667,8 @@ fun mk_literal s =
 
 val dest_literal =
   let
-    fun dest (Const ("Groups.zero_class.zero", Type ("String.literal", []))) = []
-      | dest (Const ("String.Literal", _) $ b0 $ b1 $ b2 $ b3 $ b4 $ b5 $ b6 $ t) =
+    fun dest (Const (\<^unchecked_name>\<open>Groups.zero_class.zero\<close>, Type (\<^unchecked_name>\<open>String.literal\<close>, []))) = []
+      | dest (Const (\<^unchecked_name>\<open>String.Literal\<close>, _) $ b0 $ b1 $ b2 $ b3 $ b4 $ b5 $ b6 $ t) =
           chr (dest_bits [b0, b1, b2, b3, b4, b5, b6]) :: dest t
       | dest t = raise TERM ("dest_literal", [t]);
   in implode o dest end;
@@ -672,25 +676,25 @@ val dest_literal =
 
 (* typerep and term *)
 
-val typerepT = Type ("Typerep.typerep", []);
+val typerepT = Type (\<^unchecked_name>\<open>Typerep.typerep\<close>, []);
 
-fun mk_typerep (Type (tyco, Ts)) = Const ("Typerep.typerep.Typerep",
+fun mk_typerep (Type (tyco, Ts)) = Const (\<^unchecked_name>\<open>Typerep.typerep.Typerep\<close>,
       literalT --> listT typerepT --> typerepT) $ mk_literal tyco
         $ mk_list typerepT (map mk_typerep Ts)
-  | mk_typerep (T as TFree _) = Const ("Typerep.typerep_class.typerep",
+  | mk_typerep (T as TFree _) = Const (\<^unchecked_name>\<open>Typerep.typerep_class.typerep\<close>,
       Term.itselfT T --> typerepT) $ Logic.mk_type T;
 
-val termT = Type ("Code_Evaluation.term", []);
+val termT = Type (\<^unchecked_name>\<open>Code_Evaluation.term\<close>, []);
 
-fun term_of_const T = Const ("Code_Evaluation.term_of_class.term_of", T --> termT);
+fun term_of_const T = Const (\<^unchecked_name>\<open>Code_Evaluation.term_of_class.term_of\<close>, T --> termT);
 
 fun mk_term_of T t = term_of_const T $ t;
 
 fun reflect_term (Const (c, T)) =
-      Const ("Code_Evaluation.Const", literalT --> typerepT --> termT)
+      Const (\<^unchecked_name>\<open>Code_Evaluation.Const\<close>, literalT --> typerepT --> termT)
         $ mk_literal c $ mk_typerep T
   | reflect_term (t1 $ t2) =
-      Const ("Code_Evaluation.App", termT --> termT --> termT)
+      Const (\<^unchecked_name>\<open>Code_Evaluation.App\<close>, termT --> termT --> termT)
         $ reflect_term t1 $ reflect_term t2
   | reflect_term (Abs (v, _, t)) = Abs (v, termT, reflect_term t)
   | reflect_term t = t;
@@ -698,7 +702,7 @@ fun reflect_term (Const (c, T)) =
 fun mk_valtermify_app c vs T =
   let
     fun termifyT T = mk_prodT (T, unitT --> termT);
-    fun valapp T T' = Const ("Code_Evaluation.valapp",
+    fun valapp T T' = Const (\<^unchecked_name>\<open>Code_Evaluation.valapp\<close>,
       termifyT (T --> T') --> termifyT T --> termifyT T');
     fun mk_fTs [] _ = []
       | mk_fTs (_ :: Ts) T = (Ts ---> T) :: mk_fTs Ts T;
@@ -717,10 +721,10 @@ fun mk_ST clauses t U (someT, V) =
   let
     val R = case someT of SOME T => mk_prodT (T, V) | NONE => V
     fun mk_clause ((t, U), SOME (v, T)) (t', U') =
-          (Const ("Product_Type.scomp", (U --> mk_prodT (T, U')) --> (T --> U' --> R) --> U --> R)
+          (Const (\<^unchecked_name>\<open>Product_Type.scomp\<close>, (U --> mk_prodT (T, U')) --> (T --> U' --> R) --> U --> R)
             $ t $ lambda (Free (v, T)) t', U)
       | mk_clause ((t, U), NONE) (t', U') =
-          (Const ("Product_Type.fcomp", (U --> U') --> (U' --> R) --> U --> R)
+          (Const (\<^unchecked_name>\<open>Product_Type.fcomp\<close>, (U --> U') --> (U' --> R) --> U --> R)
             $ t $ t', U)
   in fold_rev mk_clause clauses (t, U) |> fst end;
 
@@ -729,7 +733,7 @@ fun mk_ST clauses t U (someT, V) =
 
 val random_seedT = mk_prodT (code_naturalT, code_naturalT);
 
-fun mk_random T t = Const ("Quickcheck_Random.random_class.random", code_naturalT
+fun mk_random T t = Const (\<^unchecked_name>\<open>Quickcheck_Random.random_class.random\<close>, code_naturalT
   --> random_seedT --> mk_prodT (mk_prodT (T, unitT --> termT), random_seedT)) $ t;
 
 end;
