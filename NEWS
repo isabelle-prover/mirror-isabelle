@@ -287,6 +287,12 @@ the abbreviation "matrix_det". INCOMPATIBILITY
 
 *** ML ***
 
+* ML antiquotation @{unchecked_name a} inlines a syntactically
+wellformed long name as string literal, without any formal checking in
+the logical context. This may be used as last resort, when Isabelle/ML
+sources need to make forward-references to term consts or type
+constructors that are introduced later on.
+
 * Both SHA1 and SHA256 are supported via Isabelle/Scala, with minor
 changes of the supported operations: Minor INCOMPATIBILITY. SHA1.fake
 has been replaced by SHA1.parse (including proper checks). Structure

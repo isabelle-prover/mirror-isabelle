@@ -51,7 +51,12 @@ val _ = Theory.setup
 (* formal entities *)
 
 val _ = Theory.setup
- (ML_Antiquotation.value_embedded \<^binding>\<open>system_option\<close>
+ (ML_Antiquotation.inline_embedded \<^binding>\<open>unchecked_name\<close>
+    (Scan.lift Parse.embedded_position >> (fn (s, pos) =>
+      if Long_Name.is_identifier s then ML_Syntax.print_string s
+      else error ("Malformed long name: " ^ quote s ^ Position.here pos))) #>
+
+  ML_Antiquotation.value_embedded \<^binding>\<open>system_option\<close>
     (Args.context -- Scan.lift Parse.embedded_position >> (fn (ctxt, (name, pos)) =>
       (Completion.check_option (Options.default []) ctxt (name, pos) |> ML_Syntax.print_string))) #>
 
