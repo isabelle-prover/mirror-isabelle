@@ -205,7 +205,7 @@ object Completion {
             List(original, xname1).map(Token.explode(Keyword.Keywords.empty, _)) match {
               case List(List(tok), _) if tok.kind == Token.Kind.CARTOUCHE =>
                 Symbol.cartouche_decoded(xname1)
-              case List(_, List(tok)) if tok.is_name => xname1
+              case List(_, List(tok)) if tok.is_name || tok.kind == Token.Kind.CONTROL => xname1
               case _ => quote(xname1)
             }
           Item(range, original, full_name, description, replacement, 0, true)
