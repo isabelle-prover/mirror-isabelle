@@ -145,8 +145,8 @@ fun check_string context tok =
       val pos = ML_Lex.pos_of tok;
     in
       if Long_Name.is_identifier txt then
-        legacy_feature ("ML string looks like formal name: better use antiquotations like\n\
-          \\<^const_name>\<open>\<dots>\<close>, \<^type_name>\<open>\<dots>\<close>, \<^unchecked_name>\<open>\<dots>\<close>, \<^verbatim>\<open>\<dots>\<close> etc." ^
+        legacy_feature ("ML string looks like formal name: " ^ quote txt ^
+          "\nbetter use antiquotations like \<^const_name>\<open>\<dots>\<close>, \<^type_name>\<open>\<dots>\<close>, \<^unchecked_name>\<open>\<dots>\<close>, \<^verbatim>\<open>\<dots>\<close> etc." ^
           Position.here pos ^ Completion.markup_report [formal_completion ctxt (txt, pos)])
       else ()
     end
