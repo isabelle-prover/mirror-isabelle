@@ -876,13 +876,13 @@ val _ = Theory.setup
   (Code_Target.add_language
     (target_SML, {serializer = serializer_sml, literals = literals_sml,
       check = {env_var = "",
-        make_destination = fn p => p + Path.explode "ROOT.ML",
+        make_destination = fn p => p + \<^path>\<open>ROOT.ML\<close>,
         run_command = fn {cwd, ...} =>
           let
             val args =
               ML_Process.args |> ML_Process.cwd cwd |> ML_Process.redirect
               |> ML_Process.eval_expr \<^verbatim>\<open>datatype ref = datatype Unsynchronized.ref\<close>
-              |> ML_Process.eval_file (cwd + Path.explode "ROOT.ML")
+              |> ML_Process.eval_file (cwd + \<^path>\<open>ROOT.ML\<close>)
               |> ML_Process.logic "Pure";
             val cmd_line = "isabelle" :: "ML_process" :: ML_Process.command_line args;
           in (Bash.strings cmd_line, Isabelle_System.ML_process args) end},
@@ -890,7 +890,7 @@ val _ = Theory.setup
   #> Code_Target.add_language
     (target_OCaml, {serializer = serializer_ocaml, literals = literals_ocaml,
       check = {env_var = "ISABELLE_OCAMLFIND",
-        make_destination = fn p => p + Path.explode "ROOT.ml"
+        make_destination = fn p => p + \<^path>\<open>ROOT.ml\<close>
           (*extension demanded by OCaml compiler*),
         run_command = Code_Target.run_command_bash (fn _ =>
           \<^verbatim>\<open>"$ISABELLE_OCAMLFIND" ocamlopt -w -p-u -package zarith -linkpkg ROOT.ml\<close>)},
