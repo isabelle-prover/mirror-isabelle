@@ -731,8 +731,8 @@ fun terminates_by ctxt timeout goal tac =
     #> Goal.finish ctxt) goal;
 
 val max_cached_wfs = 50;
-val cached_timeout = Synchronized.var "Nunchaku_Collect.cached_timeout" Time.zeroTime;
-val cached_wf_props = Synchronized.var "Nunchaku_Collect.cached_wf_props" ([] : (term * bool) list);
+val cached_timeout = Synchronized.var \<^unchecked_name>\<open>Nunchaku_Collect.cached_timeout\<close> Time.zeroTime;
+val cached_wf_props = Synchronized.var \<^unchecked_name>\<open>Nunchaku_Collect.cached_wf_props\<close> ([] : (term * bool) list);
 
 val termination_tacs = [Lexicographic_Order.lex_order_tac true, ScnpReconstruct.sizechange_tac];
 

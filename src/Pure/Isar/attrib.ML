@@ -616,6 +616,7 @@ val _ = Theory.setup
   register_config_bool Name_Space.names_unique #>
   register_config_int ML_Print_Depth.print_depth #>
   register_config_string ML_Env.ML_environment #>
+  register_config_bool ML_Env.ML_check_strings #>
   register_config_bool ML_Env.ML_read_global #>
   register_config_bool ML_Env.ML_write_global #>
   register_config_bool ML_Compiler.ML_catch_all #>

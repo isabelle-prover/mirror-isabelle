@@ -147,7 +147,7 @@ val max_squeeze_card = 49
 
 fun squeeze (m, n) =
   if n > max_squeeze_card then
-    raise TOO_LARGE ("Nitpick_Peephole.squeeze",
+    raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Peephole.squeeze\<close>,
                      "too large cardinality (" ^ string_of_int n ^ ")")
   else
     (max_squeeze_card + 1) * m + n
@@ -203,18 +203,18 @@ fun rel_expr_intersects (Atom j1) (Atom j2) = SOME (j1 = j2)
   | rel_expr_intersects r1 r2 =
     if is_none_product r1 orelse is_none_product r2 then SOME false else NONE
 
-fun empty_n_ary_rel 0 = raise ARG ("Nitpick_Peephole.empty_n_ary_rel", "0")
+fun empty_n_ary_rel 0 = raise ARG (\<^unchecked_name>\<open>Nitpick_Peephole.empty_n_ary_rel\<close>, "0")
   | empty_n_ary_rel n = funpow (n - 1) (curry Product None) None
 
 fun decl_one_set (DeclOne (_, r)) = r
   | decl_one_set _ =
-    raise ARG ("Nitpick_Peephole.decl_one_set", "not \"DeclOne\"")
+    raise ARG (\<^unchecked_name>\<open>Nitpick_Peephole.decl_one_set\<close>, "not \"DeclOne\"")
 
 fun is_Num (Num _) = true
   | is_Num _ = false
 
 fun dest_Num (Num k) = k
-  | dest_Num _ = raise ARG ("Nitpick_Peephole.dest_Num", "not \"Num\"")
+  | dest_Num _ = raise ARG (\<^unchecked_name>\<open>Nitpick_Peephole.dest_Num\<close>, "not \"Num\"")
 
 fun num_seq j0 n = map Num (index_seq j0 n)
 

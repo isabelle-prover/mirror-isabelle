@@ -102,6 +102,59 @@ fun apply_antiquotation range src ctxt =
   in antiquotation range src' ctxt end;
 
 
+(* formality check for string literals *)
+
+local
+
+fun name_space_completions ctxt a (antiq_name, global_space, local_space, read) =
+  if can (Name_Space.the_entry global_space) a then
+    let val kind = Name_Space.kind_of local_space in
+      [Name_Space.extern ctxt local_space a, a]
+      |> distinct (op =)
+      |> map_filter (fn b =>
+          if try read b = SOME a
+          then SOME (Antiquote.make_control_antiq antiq_name b, (kind, a))
+          else NONE)
+    end
+  else [];
+
+fun formal_completion ctxt (a, pos) =
+  let
+    val read_flags = {proper = true, strict = true};
+    val read_const = Proof_Context.read_const read_flags ctxt #> dest_Const_name;
+    val read_type = Proof_Context.read_type_name read_flags ctxt #> dest_Type_name;
+
+    val thy = Proof_Context.theory_of ctxt;
+    val consts = ("const_name", Sign.const_space thy, Proof_Context.const_space ctxt, read_const);
+    val types = ("type_name", Sign.type_space thy, Proof_Context.type_space ctxt, read_type);
+
+    val names =
+      maps (name_space_completions ctxt a) [consts, types] @
+      [(Antiquote.make_control_antiq "unchecked_name" a, (Markup.ML_stringN, a))];
+  in Completion.names pos names end;
+
+in
+
+fun check_string context tok =
+  if ML_Lex.check_string tok andalso Config.get_generic context ML_Env.ML_check_strings andalso
+    exists_string (fn "." => true | _ => false) (ML_Lex.content_of tok)
+  then
+    let
+      val ctxt = Context.proof_of context;
+      val txt = unenclose (ML_Lex.content_of tok);
+      val pos = ML_Lex.pos_of tok;
+    in
+      if Long_Name.is_identifier txt then
+        legacy_feature ("ML string looks like formal name: " ^ quote txt ^
+          "\nbetter use antiquotations like \<^const_name>\<open>\<dots>\<close>, \<^type_name>\<open>\<dots>\<close>, \<^unchecked_name>\<open>\<dots>\<close>, \<^verbatim>\<open>\<dots>\<close> etc." ^
+          Position.here pos ^ Completion.markup_report [formal_completion ctxt (txt, pos)])
+      else ()
+    end
+  else ();
+
+end;
+
+
 (* parsing *)
 
 local
@@ -111,7 +164,7 @@ val antiq =
 
 fun expand_antiquote ant ctxt =
   (case ant of
-    Antiquote.Text tok => (K ([], [tok]), ctxt)
+    Antiquote.Text tok => (check_string (Context.Proof ctxt) tok; (K ([], [tok]), ctxt))
   | Antiquote.Control {name, range, body} =>
       ctxt |> apply_antiquotation range
         (Token.make_src name (if null body then [] else [Token.read_cartouche body]))
@@ -151,10 +204,18 @@ fun make_env name visible =
 
 fun reset_env name = ML_Lex.tokenize ("structure " ^ name ^ " = struct end");
 
+fun no_eval_antiquote opt_context ant =
+  let
+    val tok = Antiquote.the_text "No context -- cannot expand ML antiquotations" ant;
+    val _ =
+      (case opt_context of
+        NONE => ()
+      | SOME context => check_string context tok);
+  in tok end;
+
 fun eval_antiquotes ants opt_context =
   if forall Antiquote.is_text ants orelse is_none opt_context then
-    (([], map (Antiquote.the_text "No context -- cannot expand ML antiquotations") ants),
-      Option.map Context.proof_of opt_context)
+    (([], map (no_eval_antiquote opt_context) ants), Option.map Context.proof_of opt_context)
   else
     let
       val context = the opt_context;

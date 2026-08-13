@@ -86,7 +86,7 @@ fun check_bits bits formula =
         if is_twos_complement_representable bits k then
           ()
         else
-          raise TOO_SMALL ("Nitpick_Kodkod.check_bits",
+          raise TOO_SMALL (\<^unchecked_name>\<open>Nitpick_Kodkod.check_bits\<close>,
                            "\"bits\" value " ^ string_of_int bits ^
                            " too small for problem")
       | int_expr_func _ () = ()
@@ -96,7 +96,7 @@ fun check_bits bits formula =
 
 fun check_arity guilty_party univ_card n =
   if n > KK.max_arity univ_card then
-    raise TOO_LARGE ("Nitpick_Kodkod.check_arity",
+    raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Kodkod.check_arity\<close>,
                      "arity " ^ string_of_int n ^
                      (if guilty_party = "" then
                         ""
@@ -153,7 +153,7 @@ val max_table_size = 65536
 
 fun check_table_size k =
   if k > max_table_size then
-    raise TOO_LARGE ("Nitpick_Kodkod.check_table_size",
+    raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Kodkod.check_table_size\<close>,
                      "precomputed table too large (" ^ string_of_int k ^ ")")
   else
     ()
@@ -261,7 +261,7 @@ fun tabulate_built_in_rel debug univ_card nat_card int_card j0
      ("norm_frac", tabulate_int_op2_2 debug univ_card (int_card, j0)
                                       isa_norm_frac)
    else
-     raise ARG ("Nitpick_Kodkod.tabulate_built_in_rel", "unknown relation"))
+     raise ARG (\<^unchecked_name>\<open>Nitpick_Kodkod.tabulate_built_in_rel\<close>, "unknown relation"))
 
 fun bound_for_built_in_rel debug univ_card nat_card int_card main_j0
                            (x as (n, j)) =
@@ -311,11 +311,11 @@ fun bound_for_plain_rel ctxt debug (u as FreeRel (x, T, R, nick)) =
      if nick = \<^const_name>\<open>bisim_iterator_max\<close> then
        case R of
          Atom (k, j0) => [single_atom (k - 1 + j0)]
-       | _ => raise NUT ("Nitpick_Kodkod.bound_for_plain_rel", [u])
+       | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.bound_for_plain_rel\<close>, [u])
      else
        [KK.TupleSet [], upper_bound_for_rep R])
   | bound_for_plain_rel _ _ u =
-    raise NUT ("Nitpick_Kodkod.bound_for_plain_rel", [u])
+    raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.bound_for_plain_rel\<close>, [u])
 
 fun is_data_type_nat_like ({typ, constrs, ...} : data_type_spec) =
   case constrs of
@@ -419,7 +419,7 @@ fun bound_for_sel_rel ctxt debug need_vals dtypes
          end)
     end
   | bound_for_sel_rel _ _ _ _ u =
-    raise NUT ("Nitpick_Kodkod.bound_for_sel_rel", [u])
+    raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.bound_for_sel_rel\<close>, [u])
 
 fun merge_bounds bs =
   let
@@ -440,7 +440,7 @@ fun all_singletons_for_rep R =
   if is_lone_rep R then
     all_combinations_for_rep R |> map singleton_from_combination
   else
-    raise REP ("Nitpick_Kodkod.all_singletons_for_rep", [R])
+    raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.all_singletons_for_rep\<close>, [R])
 
 fun unpack_products (KK.Product (r1, r2)) =
     unpack_products r1 @ unpack_products r2
@@ -453,7 +453,7 @@ val empty_rel_for_rep = empty_n_ary_rel o arity_of_rep
 
 fun full_rel_for_rep R =
   case atom_schema_of_rep R of
-    [] => raise REP ("Nitpick_Kodkod.full_rel_for_rep", [R])
+    [] => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.full_rel_for_rep\<close>, [R])
   | schema => foldl1 KK.Product (map KK.AtomSeq schema)
 
 fun decls_for_atom_schema j0 schema =
@@ -530,7 +530,7 @@ fun atom_from_formula ({kk_rel_if, ...} : kodkod_constrs) j0 f =
 fun rel_expr_from_formula kk R f =
   case unopt_rep R of
     Atom (2, j0) => atom_from_formula kk j0 f
-  | _ => raise REP ("Nitpick_Kodkod.rel_expr_from_formula", [R])
+  | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.rel_expr_from_formula\<close>, [R])
 
 fun unpack_vect_in_chunks ({kk_project_seq, ...} : kodkod_constrs) chunk_arity
                           num_chunks r =
@@ -569,13 +569,13 @@ fun lone_rep_fallback kk new_R old_R r =
       if is_lone_rep old_R andalso is_lone_rep new_R andalso
          card = card_of_rep new_R then
         if card >= lone_rep_fallback_max_card then
-          raise TOO_LARGE ("Nitpick_Kodkod.lone_rep_fallback",
+          raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Kodkod.lone_rep_fallback\<close>,
                            "too high cardinality (" ^ string_of_int card ^ ")")
         else
           kk_case_switch kk old_R new_R r (all_singletons_for_rep old_R)
                          (all_singletons_for_rep new_R)
       else
-        raise REP ("Nitpick_Kodkod.lone_rep_fallback", [old_R, new_R])
+        raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.lone_rep_fallback\<close>, [old_R, new_R])
     end
 and atom_from_rel_expr kk x old_R r =
   case old_R of
@@ -587,7 +587,7 @@ and atom_from_rel_expr kk x old_R r =
       atom_from_rel_expr kk x (Vect (dom_card, R2'))
                          (vect_from_rel_expr kk dom_card R2' old_R r)
     end
-  | Opt _ => raise REP ("Nitpick_Kodkod.atom_from_rel_expr", [old_R])
+  | Opt _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.atom_from_rel_expr\<close>, [old_R])
   | _ => lone_rep_fallback kk (Atom x) old_R r
 and struct_from_rel_expr kk Rs old_R r =
   case old_R of
@@ -606,7 +606,7 @@ and struct_from_rel_expr kk Rs old_R r =
       end
     else
       lone_rep_fallback kk (Struct Rs) old_R r
-  | _ => raise REP ("Nitpick_Kodkod.struct_from_rel_expr", [old_R])
+  | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.struct_from_rel_expr\<close>, [old_R])
 and vect_from_rel_expr kk k R old_R r =
   case old_R of
     Atom _ => lone_rep_fallback kk (Vect (k, R)) old_R r
@@ -620,14 +620,14 @@ and vect_from_rel_expr kk k R old_R r =
                      rel_expr_from_formula kk R (#kk_subset kk arg_r r))
                  (all_singletons_for_rep R1))
     else
-      raise REP ("Nitpick_Kodkod.vect_from_rel_expr", [old_R])
+      raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.vect_from_rel_expr\<close>, [old_R])
   | Func (R1, R2) =>
     fold1 (#kk_product kk)
           (map (fn arg_r =>
                    rel_expr_from_rel_expr kk R R2
                                          (kk_n_fold_join kk true R1 R2 arg_r r))
                (all_singletons_for_rep R1))
-  | _ => raise REP ("Nitpick_Kodkod.vect_from_rel_expr", [old_R])
+  | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.vect_from_rel_expr\<close>, [old_R])
 and func_from_no_opt_rel_expr kk R1 R2 (Atom x) r =
     let
       val dom_card = card_of_rep R1
@@ -662,7 +662,7 @@ and func_from_no_opt_rel_expr kk R1 R2 (Atom x) r =
      | Func (R1', Atom (2, j0)) =>
        func_from_no_opt_rel_expr kk R1 (Formula Neut)
            (Func (R1', Formula Neut)) (#kk_join kk r (KK.Atom (j0 + 1)))
-     | _ => raise REP ("Nitpick_Kodkod.func_from_no_opt_rel_expr",
+     | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.func_from_no_opt_rel_expr\<close>,
                        [old_R, Func (R1, Formula Neut)]))
   | func_from_no_opt_rel_expr kk R1 R2 old_R r =
     case old_R of
@@ -691,7 +691,7 @@ and func_from_no_opt_rel_expr kk R1 R2 (Atom x) r =
                                  (#kk_subset kk r2 r3)
              end
            end
-         | _ => raise REP ("Nitpick_Kodkod.func_from_no_opt_rel_expr",
+         | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.func_from_no_opt_rel_expr\<close>,
                            [old_R, Func (R1, R2)]))
     | Func (R1', R2') =>
       if R1 = R1' andalso R2 = R2' then
@@ -714,7 +714,7 @@ and func_from_no_opt_rel_expr kk R1 R2 (Atom x) r =
                                                       (dom_schema @ ran_schema))
                                (kk_xeq ran_prod app)
         end
-    | _ => raise REP ("Nitpick_Kodkod.func_from_no_opt_rel_expr",
+    | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.func_from_no_opt_rel_expr\<close>,
                       [old_R, Func (R1, R2)])
 and rel_expr_from_rel_expr kk new_R old_R r =
   let
@@ -722,7 +722,7 @@ and rel_expr_from_rel_expr kk new_R old_R r =
     val unopt_new_R = unopt_rep new_R
   in
     if unopt_old_R <> old_R andalso unopt_new_R = new_R then
-      raise REP ("Nitpick_Kodkod.rel_expr_from_rel_expr", [old_R, new_R])
+      raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.rel_expr_from_rel_expr\<close>, [old_R, new_R])
     else if unopt_new_R = unopt_old_R then
       r
     else
@@ -731,7 +731,7 @@ and rel_expr_from_rel_expr kk new_R old_R r =
        | Struct Rs => struct_from_rel_expr kk Rs
        | Vect (k, R') => vect_from_rel_expr kk k R'
        | Func (R1, R2) => func_from_no_opt_rel_expr kk R1 R2
-       | _ => raise REP ("Nitpick_Kodkod.rel_expr_from_rel_expr",
+       | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.rel_expr_from_rel_expr\<close>,
                          [old_R, new_R]))
           unopt_old_R r
   end
@@ -898,15 +898,15 @@ fun kodkod_formula_from_nut ofs
            kk_formula_if (to_f u1) (to_f_with_polarity polar u2)
                          (to_f_with_polarity polar u3)
          | FormulaReg (j, _, _) => KK.FormulaReg j
-         | _ => raise NUT ("Nitpick_Kodkod.to_f", [u]))
+         | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_f\<close>, [u]))
       | Atom (2, j0) => formula_from_atom j0 (to_r u)
-      | _ => raise NUT ("Nitpick_Kodkod.to_f", [u])
+      | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_f\<close>, [u])
     and to_f_with_polarity polar u =
       case rep_of u of
         Formula _ => to_f u
       | Atom (2, j0) => formula_from_atom j0 (to_r u)
       | Opt (Atom (2, j0)) => formula_from_opt_atom polar j0 (to_r u)
-      | _ => raise NUT ("Nitpick_Kodkod.to_f_with_polarity", [u])
+      | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_f_with_polarity\<close>, [u])
     and to_r u =
       case u of
         Cst (False, _, Atom _) => false_atom
@@ -1287,15 +1287,15 @@ fun kodkod_formula_from_nut ofs
       | BoundRel (x, _, _, _) => KK.Var x
       | FreeRel (x, _, _, _) => KK.Rel x
       | RelReg (j, _, R) => KK.RelReg (arity_of_rep R, j)
-      | u => raise NUT ("Nitpick_Kodkod.to_r", [u])
+      | u => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_r\<close>, [u])
     and to_decl (BoundRel (x, _, R, _)) =
         KK.DeclOne (x, KK.AtomSeq (the_single (atom_schema_of_rep R)))
-      | to_decl u = raise NUT ("Nitpick_Kodkod.to_decl", [u])
+      | to_decl u = raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_decl\<close>, [u])
     and to_expr_assign (FormulaReg (j, _, _)) u =
         KK.AssignFormulaReg (j, to_f u)
       | to_expr_assign (RelReg (j, _, R)) u =
         KK.AssignRelReg ((arity_of_rep R, j), to_r u)
-      | to_expr_assign u1 _ = raise NUT ("Nitpick_Kodkod.to_expr_assign", [u1])
+      | to_expr_assign u1 _ = raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_expr_assign\<close>, [u1])
     and to_atom (x as (_, j0)) u =
       case rep_of u of
         Formula _ => atom_from_formula kk j0 (to_f u)
@@ -1315,7 +1315,7 @@ fun kodkod_formula_from_nut ofs
       | to_rep (Vect (k, R)) u = to_vect k R u
       | to_rep (Func (R1, R2)) u = to_func R1 R2 u
       | to_rep (Opt R) u = to_opt R u
-      | to_rep R _ = raise REP ("Nitpick_Kodkod.to_rep", [R])
+      | to_rep R _ = raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.to_rep\<close>, [R])
     and to_integer u = to_opt (one_rep ofs (type_of u) (rep_of u)) u
     and to_guard guard_us R r =
       let
@@ -1372,8 +1372,8 @@ fun kodkod_formula_from_nut ofs
           (case body_rep R' of
              Formula Neut => set_oper r1 r2
            | Atom _ => set_oper (kk_join r1 true_atom) (kk_join r2 true_atom)
-           | _ => raise REP ("Nitpick_Kodkod.to_set_bool_op", [min_R]))
-        | _ => raise REP ("Nitpick_Kodkod.to_set_bool_op", [min_R])
+           | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.to_set_bool_op\<close>, [min_R]))
+        | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.to_set_bool_op\<close>, [min_R])
       end
     and to_bit_word_unary_op T R oper =
       let
@@ -1405,7 +1405,7 @@ fun kodkod_formula_from_nut ofs
                                        oper (KK.IntReg 0) (KK.IntReg 1))]))))
       end
     and to_apply (R as Formula _) _ _ =
-        raise REP ("Nitpick_Kodkod.to_apply", [R])
+        raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.to_apply\<close>, [R])
       | to_apply res_R func_u arg_u =
         case unopt_rep (rep_of func_u) of
           Atom (1, j0) =>
@@ -1432,7 +1432,7 @@ fun kodkod_formula_from_nut ofs
           rel_expr_from_rel_expr kk res_R R2
               (kk_n_fold_join kk true R1 R2 (to_opt R1 arg_u) (to_r func_u))
           |> body_rep R2 = Formula Neut ? to_guard [arg_u] res_R
-        | _ => raise NUT ("Nitpick_Kodkod.to_apply", [func_u])
+        | _ => raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.to_apply\<close>, [func_u])
     and to_apply_vect k R' res_R func_r arg_u =
       let
         val arg_R = one_rep ofs (type_of arg_u) (unopt_rep (rep_of arg_u))
@@ -1460,12 +1460,12 @@ fun declarative_axiom_for_plain_rel kk (FreeRel (x, _, R as Func _, nick)) =
     else if is_lone_rep R andalso card_of_rep R > 1 then kk_lone (KK.Rel x)
     else KK.True
   | declarative_axiom_for_plain_rel _ u =
-    raise NUT ("Nitpick_Kodkod.declarative_axiom_for_plain_rel", [u])
+    raise NUT (\<^unchecked_name>\<open>Nitpick_Kodkod.declarative_axiom_for_plain_rel\<close>, [u])
 
 fun const_triple rel_table (x as (s, T)) =
   case the_name rel_table (ConstName (s, T, Any)) of
     FreeRel ((n, j), _, R, _) => (KK.Rel (n, j), R, n)
-  | _ => raise TERM ("Nitpick_Kodkod.const_triple", [Const x])
+  | _ => raise TERM (\<^unchecked_name>\<open>Nitpick_Kodkod.const_triple\<close>, [Const x])
 
 fun discr_rel_expr rel_table = #1 o const_triple rel_table o discr_for_constr
 
@@ -1552,7 +1552,7 @@ fun atom_equation_for_nut ofs kk (u, j) =
     case Op2 (DefEq, bool_T, Formula Pos, dummy_u, u)
          |> kodkod_formula_from_nut ofs kk of
       KK.RelEq (KK.RelReg _, r) => SOME (KK.RelEq (KK.Atom j, r))
-    | _ => raise BAD ("Nitpick_Kodkod.atom_equation_for_nut",
+    | _ => raise BAD (\<^unchecked_name>\<open>Nitpick_Kodkod.atom_equation_for_nut\<close>,
                       "malformed Kodkod formula")
   end
 
@@ -1673,7 +1673,7 @@ fun sym_break_axioms_for_constr_pair hol_ctxt binarize
         val z =
           (case #2 (const_triple rel_table (discr_for_constr const1)) of
              Func (Atom x, Formula _) => x
-           | R => raise REP ("Nitpick_Kodkod.sym_break_axioms_for_constr_pair",
+           | R => raise REP (\<^unchecked_name>\<open>Nitpick_Kodkod.sym_break_axioms_for_constr_pair\<close>,
                              [R]), should_tabulate_suc_for_type dtypes dataT)
         val (rec_sel_xs2, nonrec_sel_xs2) = rec_and_nonrec_sels const2
         val sel_xs2 = rec_sel_xs2 @ nonrec_sel_xs2
@@ -1771,7 +1771,7 @@ fun sel_axioms_for_sel hol_ctxt binarize j0
     val rel_x =
       case r of
         KK.Rel x => x
-      | _ => raise BAD ("Nitpick_Kodkod.sel_axioms_for_sel", "non-Rel")
+      | _ => raise BAD (\<^unchecked_name>\<open>Nitpick_Kodkod.sel_axioms_for_sel\<close>, "non-Rel")
     val R2 = dest_Func R |> snd
     val z = (epsilon - delta, delta + j0)
   in
@@ -1807,7 +1807,7 @@ fun sel_axioms_for_constr hol_ctxt binarize bits j0 kk need_vals rel_table
                is_twos_complement_representable bits (epsilon - delta) then
             KK.LE (KK.Cardinality dom_r, KK.Num explicit_max)
           else
-            raise TOO_SMALL ("Nitpick_Kodkod.sel_axioms_for_constr",
+            raise TOO_SMALL (\<^unchecked_name>\<open>Nitpick_Kodkod.sel_axioms_for_constr\<close>,
                              "\"bits\" value " ^ string_of_int bits ^
                              " too small for \"max\"")
       in

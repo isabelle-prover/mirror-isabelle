@@ -240,16 +240,20 @@ fun merge_keywords
 
 val add_keywords =
   fold (fn ((name, pos), spec as {kind, ...}: spec) => map_keywords (fn (minor, major, commands) =>
-    if kind = "" orelse kind = before_command orelse kind = quasi_command then
-      let
-        val minor' = Scan.extend_lexicon (Symbol.explode name) minor;
-      in (minor', major, commands) end
-    else
-      let
-        val entry = check_spec pos spec;
-        val major' = Scan.extend_lexicon (Symbol.explode name) major;
-        val commands' = Symtab.update (name, entry) commands;
-      in (minor, major', commands') end));
+    let val name_syms = Symbol.explode name in
+      if exists Symbol.is_blank name_syms then
+        error ("Illegal blank in keyword " ^ quote name)
+      else if kind = "" orelse kind = before_command orelse kind = quasi_command then
+        let
+          val minor' = Scan.extend_lexicon name_syms minor;
+        in (minor', major, commands) end
+      else
+        let
+          val entry = check_spec pos spec;
+          val major' = Scan.extend_lexicon name_syms major;
+          val commands' = Symtab.update (name, entry) commands;
+        in (minor, major', commands') end
+    end));
 
 val add_minor_keywords =
   add_keywords o map (fn name => ((name, Position.none), no_spec));

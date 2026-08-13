@@ -495,6 +495,7 @@
 \<^type_syntax>         argument: cartouche
 \<^var>                 argument: cartouche
 \<^oracle_name>         argument: cartouche
+\<^unchecked_name>      argument: cartouche
 \<^Const>               argument: cartouche
 \<^Const_>              argument: cartouche
 \<^Const_fn>            argument: cartouche

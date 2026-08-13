@@ -105,7 +105,7 @@ fun is_opt_rep (Func (_, R2)) = is_opt_rep R2
   | is_opt_rep (Opt _) = true
   | is_opt_rep _ = false
 
-fun card_of_rep Any = raise REP ("Nitpick_Rep.card_of_rep", [Any])
+fun card_of_rep Any = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.card_of_rep\<close>, [Any])
   | card_of_rep (Formula _) = 2
   | card_of_rep (Atom (k, _)) = k
   | card_of_rep (Struct rs) = Integer.prod (map card_of_rep rs)
@@ -114,7 +114,7 @@ fun card_of_rep Any = raise REP ("Nitpick_Rep.card_of_rep", [Any])
     reasonable_power (card_of_rep R2) (card_of_rep R1)
   | card_of_rep (Opt R) = card_of_rep R
 
-fun arity_of_rep Any = raise REP ("Nitpick_Rep.arity_of_rep", [Any])
+fun arity_of_rep Any = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.arity_of_rep\<close>, [Any])
   | arity_of_rep (Formula _) = 0
   | arity_of_rep (Atom _) = 1
   | arity_of_rep (Struct Rs) = Integer.sum (map arity_of_rep Rs)
@@ -123,7 +123,7 @@ fun arity_of_rep Any = raise REP ("Nitpick_Rep.arity_of_rep", [Any])
   | arity_of_rep (Opt R) = arity_of_rep R
 
 fun min_univ_card_of_rep Any =
-    raise REP ("Nitpick_Rep.min_univ_card_of_rep", [Any])
+    raise REP (\<^unchecked_name>\<open>Nitpick_Rep.min_univ_card_of_rep\<close>, [Any])
   | min_univ_card_of_rep (Formula _) = 0
   | min_univ_card_of_rep (Atom (k, j0)) = k + j0 + 1
   | min_univ_card_of_rep (Struct Rs) =
@@ -142,7 +142,7 @@ fun is_lone_rep (Opt R) = is_one_rep R
   | is_lone_rep R = is_one_rep R
 
 fun dest_Func (Func z) = z
-  | dest_Func R = raise REP ("Nitpick_Rep.dest_Func", [R])
+  | dest_Func R = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.dest_Func\<close>, [R])
 
 fun lazy_range_rep _ _ _ (Vect (_, R)) = R
   | lazy_range_rep _ _ _ (Func (_, R2)) = R2
@@ -152,7 +152,7 @@ fun lazy_range_rep _ _ _ (Vect (_, R)) = R
     Atom (1, offset_of_type ofs T2)
   | lazy_range_rep ofs (Type (\<^type_name>\<open>fun\<close>, [_, T2])) ran_card (Atom _) =
     Atom (ran_card (), offset_of_type ofs T2)
-  | lazy_range_rep _ _ _ R = raise REP ("Nitpick_Rep.lazy_range_rep", [R])
+  | lazy_range_rep _ _ _ R = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.lazy_range_rep\<close>, [R])
 
 fun binder_reps (Func (R1, R2)) = R1 :: binder_reps R2
   | binder_reps _ = []
@@ -164,7 +164,7 @@ fun flip_rep_polarity (Formula polar) = Formula (flip_polarity polar)
   | flip_rep_polarity (Func (R1, R2)) = Func (R1, flip_rep_polarity R2)
   | flip_rep_polarity R = R
 
-fun one_rep _ _ Any = raise REP ("Nitpick_Rep.one_rep", [Any])
+fun one_rep _ _ Any = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.one_rep\<close>, [Any])
   | one_rep _ _ (Atom x) = Atom x
   | one_rep _ _ (Struct Rs) = Struct Rs
   | one_rep _ _ (Vect z) = Vect z
@@ -195,7 +195,7 @@ fun min_polarity polar1 polar2 =
   else if polar2 = Neut then
     polar1
   else
-    raise ARG ("Nitpick_Rep.min_polarity",
+    raise ARG (\<^unchecked_name>\<open>Nitpick_Rep.min_polarity\<close>,
                commas (map (quote o string_for_polarity) [polar1, polar2]))
 
 (* It's important that Func is before Vect, because if the range is Opt we
@@ -225,7 +225,7 @@ fun min_rep (Opt R1) (Opt R2) = Opt (min_rep R1 R2)
     if k1 < k2 then Vect (k1, R1)
     else if k1 > k2 then Vect (k2, R2)
     else Vect (k1, min_rep R1 R2)
-  | min_rep R1 R2 = raise REP ("Nitpick_Rep.min_rep", [R1, R2])
+  | min_rep R1 R2 = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.min_rep\<close>, [R1, R2])
 and min_reps [] _ = []
   | min_reps _ [] = []
   | min_reps (R1 :: Rs1) (R2 :: Rs2) =
@@ -239,7 +239,7 @@ fun card_of_domain_from_rep ran_card R =
   | Vect (k, _) => k
   | Func (R1, _) => card_of_rep R1
   | Opt R => card_of_domain_from_rep ran_card R
-  | _ => raise REP ("Nitpick_Rep.card_of_domain_from_rep", [R])
+  | _ => raise REP (\<^unchecked_name>\<open>Nitpick_Rep.card_of_domain_from_rep\<close>, [R])
 
 fun rep_to_binary_rel_rep ofs T R =
   let
@@ -283,9 +283,9 @@ fun best_non_opt_symmetric_reps_for_fun_type (scope as {ofs, ...})
     (optable_rep ofs T1 (best_one_rep_for_type scope T1),
      optable_rep ofs T2 (best_one_rep_for_type scope T2))
   | best_non_opt_symmetric_reps_for_fun_type _ T =
-    raise TYPE ("Nitpick_Rep.best_non_opt_symmetric_reps_for_fun_type", [T], [])
+    raise TYPE (\<^unchecked_name>\<open>Nitpick_Rep.best_non_opt_symmetric_reps_for_fun_type\<close>, [T], [])
 
-fun atom_schema_of_rep Any = raise REP ("Nitpick_Rep.atom_schema_of_rep", [Any])
+fun atom_schema_of_rep Any = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.atom_schema_of_rep\<close>, [Any])
   | atom_schema_of_rep (Formula _) = []
   | atom_schema_of_rep (Atom x) = [x]
   | atom_schema_of_rep (Struct Rs) = atom_schema_of_reps Rs
@@ -306,7 +306,7 @@ fun type_schema_of_rep _ (Formula _) = []
   | type_schema_of_rep (Type (\<^type_name>\<open>set\<close>, [T'])) R =
     type_schema_of_rep (T' --> bool_T) R
   | type_schema_of_rep T (Opt R) = type_schema_of_rep T R
-  | type_schema_of_rep _ R = raise REP ("Nitpick_Rep.type_schema_of_rep", [R])
+  | type_schema_of_rep _ R = raise REP (\<^unchecked_name>\<open>Nitpick_Rep.type_schema_of_rep\<close>, [R])
 and type_schema_of_reps Ts Rs = flat (map2 type_schema_of_rep Ts Rs)
 
 val all_combinations_for_rep = all_combinations o atom_schema_of_rep

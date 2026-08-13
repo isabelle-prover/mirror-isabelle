@@ -342,14 +342,14 @@ fun literal lexicon =
 
 fun extend_lexicon chrs lexicon =
   let
-    fun ext [] lex = lex
-      | ext (c :: cs) (Lexicon tab) =
+    fun extend [] lex = lex
+      | extend (c :: cs) (Lexicon tab) =
           (case Symtab.lookup tab c of
-            SOME (tip, lex) => Lexicon (Symtab.update (c, (tip orelse null cs, ext cs lex)) tab)
-          | NONE => Lexicon (Symtab.update (c, (null cs, ext cs empty_lexicon)) tab));
-  in if is_literal lexicon chrs then lexicon else ext chrs lexicon end;
+            SOME (tip, lex) => Lexicon (Symtab.update (c, (tip orelse null cs, extend cs lex)) tab)
+          | NONE => Lexicon (Symtab.update (c, (null cs, build_lexicon (extend cs))) tab));
+  in if is_literal lexicon chrs then lexicon else extend chrs lexicon end;
 
-fun make_lexicon chrss = fold extend_lexicon chrss empty_lexicon;
+val make_lexicon = build_lexicon o fold extend_lexicon;
 
 
 (* merge lexicons *)

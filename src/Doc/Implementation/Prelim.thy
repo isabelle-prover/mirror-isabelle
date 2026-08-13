@@ -772,6 +772,23 @@ text %mlref \<open>
   names.
 \<close>
 
+text %mlantiq \<open>
+  \begin{matharray}{rcl}
+  @{ML_antiquotation_def "unchecked_name"} & : & \<open>ML_antiquotation\<close> \\
+  \end{matharray}
+
+  \<^rail>\<open>@@{ML_antiquotation unchecked_name} embedded\<close>
+
+  \<^descr> \<open>@{unchecked_name a}\<close> inlines a syntactically wellformed long name as
+  \<^ML_type>\<open>string\<close> literal, without any formal checking in the logical
+  context. This may be used as last resort, when Isabelle/ML sources need to
+  make forward-references to term consts or type constructors that are
+  introduced later on.
+
+  The proper way to refer to existing formal entities is via antiquotations
+  for terms (\secref{sec:terms}) and types (\secref{sec:types}).
+\<close>
+
 
 subsection \<open>Name spaces \label{sec:name-space}\<close>
 

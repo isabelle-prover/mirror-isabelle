@@ -74,7 +74,7 @@ val nunchaku_home_env_var = "NUNCHAKU_HOME";
 
 val unknown_solver = "unknown";
 
-val cached_outcome = Synchronized.var "Nunchaku_Tool.cached_outcome"
+val cached_outcome = Synchronized.var \<^unchecked_name>\<open>Nunchaku_Tool.cached_outcome\<close>
   (NONE : ((tool_params * nun_problem) * nun_outcome) option);
 
 fun uncached_solve_nun_problem ({solvers, overlord, min_bound, max_bound, bound_increment,

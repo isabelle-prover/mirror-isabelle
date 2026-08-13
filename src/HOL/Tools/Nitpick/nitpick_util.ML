@@ -108,10 +108,10 @@ fun reasonable_power _ 0 = 1
   | reasonable_power 1 _ = 1
   | reasonable_power a b =
     if b < 0 then
-      raise ARG ("Nitpick_Util.reasonable_power",
+      raise ARG (\<^unchecked_name>\<open>Nitpick_Util.reasonable_power\<close>,
                  "negative exponent (" ^ signed_string_of_int b ^ ")")
     else if b > max_exponent then
-      raise TOO_LARGE ("Nitpick_Util.reasonable_power",
+      raise TOO_LARGE (\<^unchecked_name>\<open>Nitpick_Util.reasonable_power\<close>,
                        "too large exponent (" ^ signed_string_of_int a ^ " ^ " ^
                        signed_string_of_int b ^ ")")
     else
@@ -126,7 +126,7 @@ fun exact_log m n =
     if reasonable_power m r = n then
       r
     else
-      raise ARG ("Nitpick_Util.exact_log",
+      raise ARG (\<^unchecked_name>\<open>Nitpick_Util.exact_log\<close>,
                  commas (map signed_string_of_int [m, n]))
   end
 
@@ -135,7 +135,7 @@ fun exact_root m n =
     if reasonable_power r m = n then
       r
     else
-      raise ARG ("Nitpick_Util.exact_root",
+      raise ARG (\<^unchecked_name>\<open>Nitpick_Util.exact_root\<close>,
                  commas (map signed_string_of_int [m, n]))
   end
 
@@ -153,7 +153,7 @@ fun filter_indices js xs =
     fun aux _ [] _ = []
       | aux i (j :: js) (x :: xs) =
         if i = j then x :: aux (i + 1) js xs else aux (i + 1) (j :: js) xs
-      | aux _ _ _ = raise ARG ("Nitpick_Util.filter_indices",
+      | aux _ _ _ = raise ARG (\<^unchecked_name>\<open>Nitpick_Util.filter_indices\<close>,
                                "indices unordered or out of range")
   in aux 0 js xs end
 
@@ -162,7 +162,7 @@ fun filter_out_indices js xs =
     fun aux _ [] xs = xs
       | aux i (j :: js) (x :: xs) =
         if i = j then aux (i + 1) js xs else x :: aux (i + 1) (j :: js) xs
-      | aux _ _ _ = raise ARG ("Nitpick_Util.filter_out_indices",
+      | aux _ _ _ = raise ARG (\<^unchecked_name>\<open>Nitpick_Util.filter_out_indices\<close>,
                                "indices unordered or out of range")
   in aux 0 js xs end
 

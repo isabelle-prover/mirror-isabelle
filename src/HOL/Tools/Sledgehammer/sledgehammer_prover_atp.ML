@@ -271,7 +271,7 @@ fun run_atp mode name
             (* Hackish: The following lines try to make the TPTP problem and command line more
             deterministic and constant. *)
             val hackish_lines = drop 2 lines_of_atp_problem
-            val hackish_command = make_command (make_args (Path.basic "fake_prob_path.p"))
+            val hackish_command = make_command (make_args \<^path>\<open>fake_prob_path.p\<close>)
             val arg = cat_lines (hackish_command :: hackish_lines)
           in
             Timing.timing (memoize_fun_call f) arg

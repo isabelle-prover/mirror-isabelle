@@ -35,6 +35,6 @@ ML \<open>
 
 setup \<open>Context.theory_map ML_Env.bootstrap_name_space\<close>
 
-declare [[ML_read_global = false, ML_catch_all = true]]
+declare [[ML_read_global = false, ML_check_strings = false, ML_catch_all = true]]
 
 end

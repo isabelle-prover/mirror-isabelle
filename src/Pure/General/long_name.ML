@@ -21,6 +21,7 @@ sig
   val dest_local: string -> string option
   val implode: string list -> string
   val explode: string -> string list
+  val is_identifier: string -> bool
   type chunks
   val count_chunks: chunks -> int
   val size_chunks: chunks -> int
@@ -85,6 +86,8 @@ val dest_local = try (unprefix "local.");
 
 val implode = space_implode separator;
 val explode = space_explode separator;
+
+fun is_identifier s = s <> "" andalso forall Symbol_Pos.is_identifier (explode s);
 
 
 (* compact representation of chunks *)

@@ -891,7 +891,7 @@ val parse_instance =
 val extract_instance =
   fst o Scan.finite Symbol.stopper
             (Scan.error (!! (fn _ =>
-                                raise SYNTAX ("Kodkod.extract_instance",
+                                raise SYNTAX (\<^unchecked_name>\<open>Kodkod.extract_instance\<close>,
                                               "ill-formed Kodkodi output"))
                             parse_instance))
   o strip_blanks o raw_explode
@@ -907,7 +907,7 @@ fun read_section_body marker =
 fun read_next_instance s =
   let val s = Substring.position instance_marker s |> snd in
     if Substring.isEmpty s then
-      raise SYNTAX ("Kodkod.read_next_instance", "expected \"INSTANCE\" marker")
+      raise SYNTAX (\<^unchecked_name>\<open>Kodkod.read_next_instance\<close>, "expected \"INSTANCE\" marker")
     else
       read_section_body instance_marker s |> extract_instance
   end
@@ -928,7 +928,7 @@ fun read_next_outcomes j (s, ps, js) =
         else if String.isSuffix "SATISFIABLE" outcome then
           read_next_outcomes j (s, (j, read_next_instance s2) :: ps, js)
         else
-          raise SYNTAX ("Kodkod.read_next_outcomes",
+          raise SYNTAX (\<^unchecked_name>\<open>Kodkod.read_next_outcomes\<close>,
                         "unknown outcome " ^ quote outcome)
       end
   end
@@ -945,7 +945,7 @@ fun read_next_problems (s, ps, js) =
         val j = j_plus_1 - 1
       in read_next_problems (read_next_outcomes j (s, ps, js)) end
   end
-  handle Option.Option => raise SYNTAX ("Kodkod.read_next_problems",
+  handle Option.Option => raise SYNTAX (\<^unchecked_name>\<open>Kodkod.read_next_problems\<close>,
                                         "expected number after \"PROBLEM\"")
 
 
@@ -1057,7 +1057,7 @@ fun uncached_solve_any_problem kodkod_scala overlord deadline max_threads0 max_s
   end
 
 val cached_outcome =
-  Synchronized.var "Kodkod.cached_outcome"
+  Synchronized.var \<^unchecked_name>\<open>Kodkod.cached_outcome\<close>
                    (NONE : ((int * problem list) * outcome) option)
 
 fun solve_any_problem kodkod_scala debug overlord deadline max_threads max_solutions

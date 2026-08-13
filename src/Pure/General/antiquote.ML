@@ -16,6 +16,8 @@ sig
   type text_antiquote = Symbol_Pos.T list antiquote
   val text_antiquote_range: text_antiquote -> Position.range
   val text_range: text_antiquote list -> Position.range
+  val make_control_name: string -> string
+  val make_control_antiq: string -> string -> string
   val split_lines: text_antiquote list -> text_antiquote list list
   val antiq_reports: 'a antiquote list -> Position.report list
   val update_reports: bool -> Position.T -> string list -> Position.report_text list
@@ -62,6 +64,9 @@ fun text_range ants =
   else
     Position.range (#1 (text_antiquote_range (hd ants)), #2 (text_antiquote_range (List.last ants)));
 
+fun make_control_name name = Symbol.control_prefix ^ name ^ Symbol.control_suffix;
+fun make_control_antiq name arg = make_control_name name ^ cartouche arg;
+
 
 (* split lines *)
 
@@ -103,7 +108,7 @@ fun update_reports embedded pos src =
         name :: _ =>
           if Symbol.is_ascii_identifier name andalso name <> "cartouche" andalso
             (no_arg orelse embedded_arg)
-          then SOME (Symbol.control_prefix ^ name ^ Symbol.control_suffix)
+          then SOME (make_control_name name)
           else NONE
       | [] => NONE);
     val arg = if embedded_arg then cartouche (nth src 1) else "";

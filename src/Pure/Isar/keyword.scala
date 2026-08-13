@@ -170,6 +170,9 @@ object Keyword {
     /* add keywords */
 
     def + (name: String, kind: String = "", load_command: String = ""): Keywords = {
+      if (Symbol.iterator(name).exists(Symbol.is_blank)) {
+        error("Illegal blank in keyword " + quote(name))
+      }
       val kinds1 = kinds + (name -> kind)
       val load_commands1 =
         if (kind == THY_LOAD) {

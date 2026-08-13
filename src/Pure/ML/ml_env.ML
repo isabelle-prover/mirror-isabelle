@@ -26,6 +26,7 @@ sig
   val Isabelle_operations: operations
   val SML_operations: operations
   val operations: Context.generic option -> string -> operations
+  val ML_check_strings: bool Config.T
   val touch: Context.generic -> Context.generic
   val forget_structure: string -> Context.generic -> Context.generic
   val bootstrap_name_space: Context.generic -> Context.generic
@@ -49,7 +50,9 @@ val SML = "SML";
 val ML_environment = Config.declare_string ("ML_environment", \<^here>) (K Isabelle);
 
 
-(* global read/write *)
+(* context options *)
+
+val ML_check_strings = Config.declare_bool ("ML_check_strings", \<^here>) (K false);
 
 val ML_read_global = Config.declare_bool ("ML_read_global", \<^here>) (K true);
 val ML_write_global = Config.declare_bool ("ML_write_global", \<^here>) (K true);

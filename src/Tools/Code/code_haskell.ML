@@ -386,7 +386,7 @@ fun serialize_haskell module_prefix string_classes ctxt { module_name,
       :: Pretty.enclose "import Data.Bits (" ");" (Pretty.commas
         (map (Pretty.str o enclose "(" ")") data_bits_import_operators))
       :: print_qualified_import "Prelude"
-      :: print_qualified_import "Data.Bits"
+      :: print_qualified_import \<^verbatim>\<open>Data.Bits\<close>
       :: map (print_qualified_import o fst) includes;
     fun print_module module_name (gr, imports) =
       let
