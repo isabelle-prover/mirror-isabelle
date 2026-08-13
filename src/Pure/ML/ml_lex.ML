@@ -8,7 +8,7 @@ signature ML_LEX =
 sig
   val keywords: string list
   datatype token_kind =
-    Keyword | Ident | Long_Ident | Type_Var | Word | Int | Real | Char | String |
+    Keyword | Ident | Long_Ident | Type_Var | Word | Int | Real | Char | String of bool |
     Space | Comment of Comment.kind option | Error of string | EOF
   eqtype token
   val stopper: token Scan.stopper
@@ -23,6 +23,7 @@ sig
   val kind_of: token -> token_kind
   val content_of: token -> string
   val check_content_of: token -> string
+  val check_string: token -> bool
   val flatten: token list -> string
   val tokenize: string -> token list
   val tokenize_range: Position.range -> string -> token list
@@ -68,7 +69,7 @@ val lexicon = Scan.make_lexicon (map raw_explode keywords);
 (* datatype token *)
 
 datatype token_kind =
-  Keyword | Ident | Long_Ident | Type_Var | Word | Int | Real | Char | String |
+  Keyword | Ident | Long_Ident | Type_Var | Word | Int | Real | Char | String of bool |
   Space | Comment of Comment.kind option | Error of string | EOF;
 
 datatype token = Token of Position.range * (token_kind * string);
@@ -135,6 +136,9 @@ fun check_content_of tok =
     Error msg => error msg
   | _ => content_of tok);
 
+fun check_string (Token (_, (String check, _))) = check
+  | check_string _ = false;
+
 
 (* flatten *)
 
@@ -157,7 +161,7 @@ val token_kind_markup =
   | Int => (Markup.ML_numeral, "")
   | Real => (Markup.ML_numeral, "")
   | Char => (Markup.ML_char, "")
-  | String => (Markup.ML_string, "")
+  | String _ => (Markup.ML_string, "")
   | Comment _ => (Markup.ML_comment, "")
   | Error msg => (Markup.bad (), msg)
   | _ => (Markup.empty, "");
@@ -302,9 +306,9 @@ local
 
 fun token k ss = Token (Symbol_Pos.range ss, (k, Symbol_Pos.content ss));
 
-val scan_token =
+fun scan_token {check_strings} =
   scan_char >> token Char ||
-  scan_string >> token String ||
+  scan_string >> token (String check_strings) ||
   scan_blanks1 >> token Space ||
   Symbol_Pos.scan_comment err_prefix >> token (Comment NONE) ||
   Scan.max token_leq
@@ -316,14 +320,14 @@ val scan_token =
     scan_ident >> token Ident ||
     scan_type_var >> token Type_Var);
 
-val scan_sml_antiq = scan_token >> Antiquote.Text;
+val scan_sml_antiq = scan_token {check_strings = false} >> Antiquote.Text;
 
 val scan_ml_antiq =
   Comment.scan_inner >> (fn (kind, ss) => Antiquote.Text (token (Comment (SOME kind)) ss)) ||
   Antiquote.scan_control Antiquote.err_prefix >> Antiquote.Control ||
   Antiquote.scan_antiq >> Antiquote.Antiq ||
   scan_rat_antiq >> Antiquote.Antiq ||
-  scan_sml_antiq;
+  scan_token {check_strings = true} >> Antiquote.Text;
 
 fun recover msg =
  (recover_char ||
@@ -362,7 +366,8 @@ in
 val tokenize =
   Symbol.explode #> Source.of_list #>
   Symbol_Pos.source (Position.line 1) #>
-  Source.source Symbol_Pos.stopper (Scan.recover (Scan.bulk (!!! "bad input" scan_token)) recover) #>
+  Source.source Symbol_Pos.stopper
+    (Scan.recover (Scan.bulk (!!! "bad input" (scan_token {check_strings = false}))) recover) #>
   Source.exhaust;
 
 fun tokenize_range range = tokenize #> map (set_range range);

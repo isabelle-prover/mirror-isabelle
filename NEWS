@@ -293,6 +293,17 @@ the logical context. This may be used as last resort, when Isabelle/ML
 sources need to make forward-references to term consts or type
 constructors that are introduced later on.
 
+* ML string literals that look like a formal entity (qualified name) are
+highlighted as "legacy feature", with an offer to replace it via
+suitable ML antiquotations: @{const_name}, @{type_name},
+@{unchecked_name}. It is also possible to use @{verbatim} for strings
+that are not intended as a name of any kind. The check may be disabled
+locally like this:
+
+  context notes [[ML_check_strings = false]]
+  begin
+  end
+
 * Both SHA1 and SHA256 are supported via Isabelle/Scala, with minor
 changes of the supported operations: Minor INCOMPATIBILITY. SHA1.fake
 has been replaced by SHA1.parse (including proper checks). Structure
