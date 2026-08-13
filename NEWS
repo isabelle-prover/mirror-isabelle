@@ -200,6 +200,8 @@ For example:
       . spass-3.8ds -- include arm64-darwin
       . zipperposition-2.1 -- include arm64-darwin
       . vampire-4.8 -- include arm64-darwin
+  - Tuned output of proof search to use "using" for local facts in
+    conjunction with "metis", "meson", and "smt".
   - Tuned output of proof reconstruction to detect more duplicate
     proofs.
 

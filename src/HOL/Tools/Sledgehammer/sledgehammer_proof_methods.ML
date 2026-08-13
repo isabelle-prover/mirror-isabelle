@@ -38,7 +38,6 @@ sig
   type one_line_params =
     ((Pretty.T * stature) list * (proof_method * play_outcome)) * string * int * int
 
-  val is_proof_method_direct : proof_method -> bool
   val pretty_proof_method : string -> string -> Pretty.T list -> proof_method -> Pretty.T
   val string_of_proof_method : string list -> proof_method -> string
   val tac_of_proof_method : Proof.context -> thm list * thm list -> proof_method -> int -> tactic
@@ -85,11 +84,19 @@ datatype play_outcome =
 type one_line_params =
   ((Pretty.T * stature) list * (proof_method * play_outcome)) * string * int * int
 
-fun is_proof_method_direct (Metis_Method _) = true
-  | is_proof_method_direct Meson_Method = true
-  | is_proof_method_direct (SMT_Method _) = true
-  | is_proof_method_direct Simp_Method = true
-  | is_proof_method_direct _ = false
+fun partition_proof_method_facts meth facts =
+  let
+    fun split_local_and_global () =
+      List.partition (fn (_, (sc, _)) => sc <> Global) facts
+  in
+    (case meth of
+      Metis_Method _ => split_local_and_global ()
+    | Meson_Method => split_local_and_global ()
+    | SMT_Method _ => split_local_and_global ()
+    | Simp_Method => ([], facts)
+    | _ => (facts, []))
+    |> apply2 (map fst)
+  end
 
 fun is_proof_method_multi_goal Auto_Method = true
   | is_proof_method_multi_goal _ = false
@@ -102,15 +109,12 @@ fun pretty_maybe_paren prefix suffix [pretty] =
       pretty_paren prefix suffix [pretty]
   | pretty_maybe_paren prefix suffix pretties = pretty_paren prefix suffix pretties
 
-(*
-Combine indexed fact names for pretty-printing.
+(* Combine indexed fact names for pretty-printing.
 Example: [... "assms(1)" "assms(3)" ...] becomes [... "assms(1,3)" ...]
 Combines only adjacent same names.
-Input should not have same name with and without index.
-*)
+Input should not have same name with and without index. *)
 fun merge_indexed_facts (facts: Pretty.T list) : Pretty.T list =
   let
-
     fun split (p: Pretty.T) : (string * string) option =
       try (unsuffix ")" o content_of_pretty) p
       |> Option.mapPartial (first_field "(")
@@ -123,7 +127,6 @@ fun merge_indexed_facts (facts: Pretty.T list) : Pretty.T list =
         else p1 :: merge (y :: zs)
       | merge ((_,p) :: ys) = p :: merge ys
       | merge [] = []
-
   in
     merge (map (`split) facts)
   end
@@ -168,6 +171,7 @@ fun tac_of_proof_method ctxt (local_facts, global_facts) meth =
     fun tac_of_metis (type_enc_opt, lam_trans_opt, additional_fact_names) =
       let
         val additional_facts = maps (thms_of_name ctxt) additional_fact_names
+        val local_facts = []
         val ctxt = ctxt
           |> Config.put Metis_Tactic.verbose false
           |> Config.put Metis_Tactic.trace false
@@ -180,13 +184,14 @@ fun tac_of_proof_method ctxt (local_facts, global_facts) meth =
       | tac_of_smt (SMT_Verit strategy) = Verit_Strategies.verit_tac_stgy strategy
   in
     (case meth of
-      Metis_Method options => tac_of_metis options
-    | SMT_Method backend => tac_of_smt backend ctxt (local_facts @ global_facts)
+      Simp_Method => Simplifier.asm_full_simp_tac (ctxt |>
+        Simplifier.add_simps (local_facts @ global_facts))
     | _ =>
       Method.insert_tac ctxt local_facts THEN'
       (case meth of
-        Meson_Method => Meson_Tactic.meson_general_tac ctxt global_facts
-      | Simp_Method => Simplifier.asm_full_simp_tac (ctxt |> Simplifier.add_simps global_facts)
+        Metis_Method options => tac_of_metis options
+      | SMT_Method backend => tac_of_smt backend ctxt global_facts
+      | Meson_Method => Meson_Tactic.meson_general_tac ctxt global_facts
       | _ =>
         Method.insert_tac ctxt global_facts THEN'
         (case meth of
@@ -223,7 +228,7 @@ fun apply_on_subgoal _ 1 = "by "
 fun proof_method_command meth i n extras =
   let
     val (indirect_facts, direct_facts) =
-      if is_proof_method_direct meth then ([], extras) else (extras, [])
+      partition_proof_method_facts meth extras
     val suffix =
       if is_proof_method_multi_goal meth andalso n <> 1 then "[1]" else ""
   in
@@ -247,10 +252,9 @@ val failed_command_line =
     Markup.markup (Markup.break {width = 1, indent = 2}) " ")
 
 fun one_line_proof_text ((used_facts, (meth, play)), banner, subgoal, subgoal_count) =
-  let val extra = filter_out (fn (_, (sc, _)) => sc = Chained) used_facts in
-    map fst extra
-    |> proof_method_command meth subgoal subgoal_count
-    |> (if play = Play_Failed then failed_command_line else try_command_line banner play)
-  end
+  used_facts
+  |> filter_out (fn (_, (sc, _)) => sc = Chained)
+  |> proof_method_command meth subgoal subgoal_count
+  |> (if play = Play_Failed then failed_command_line else try_command_line banner play)
 
 end;

@@ -13,7 +13,8 @@ sig
   type xref = Facts.ref * Token.src list
 
   type facts =
-    {usings: xref list,
+    {usings : xref list,
+     directs : xref list,
      simps : xref list,
      intros : xref list,
      elims : xref list,
@@ -56,15 +57,19 @@ datatype modifier = Use | Simp | Intro | Elim | Dest
 type xref = Facts.ref * Token.src list
 type tagged_xref = xref * modifier list
 type facts =
-  {usings: xref list,
+  {usings : xref list,
+   directs : xref list,
    simps : xref list,
    intros : xref list,
    elims : xref list,
    dests : xref list}
 
-val empty_facts: facts = {usings = [], simps = [], intros = [], elims = [], dests = []}
+val empty_facts: facts =
+  {usings = [], directs = [], simps = [], intros = [], elims = [], dests = []}
+
 fun union_facts (left : facts) (right : facts) : facts =
   {usings = #usings left @ #usings right,
+   directs = #directs left @ #directs right,
    simps = #simps left @ #simps right,
    intros = #intros left @ #intros right,
    elims = #elims left @ #elims right,
@@ -218,13 +223,13 @@ val parse_fact_refs = Scan.repeat1 (Scan.unless (Parse.name -- Args.colon) Parse
 
 val parse_attr =
   Args.$$$ "simp" |-- Args.colon |-- parse_fact_refs >> (fn xrefs =>
-    {usings = [], simps = xrefs, intros = [], elims = [], dests = []})
+    {usings = [], directs = [], simps = xrefs, intros = [], elims = [], dests = []})
   || Args.$$$ "intro" |-- Args.colon |-- parse_fact_refs >> (fn xrefs =>
-    {usings = [], simps = [], intros = xrefs, elims = [], dests = []})
+    {usings = [], directs = [], simps = [], intros = xrefs, elims = [], dests = []})
   || Args.$$$ "elim" |-- Args.colon |-- parse_fact_refs >> (fn xrefs =>
-    {usings = [], simps = [], intros = [], elims = xrefs, dests = []})
+    {usings = [], directs = [], simps = [], intros = [], elims = xrefs, dests = []})
   || Args.$$$ "dest" |-- Args.colon |-- parse_fact_refs >> (fn xrefs =>
-    {usings = [], simps = [], intros = [], elims = [], dests = xrefs})
+    {usings = [], directs = [], simps = [], intros = [], elims = [], dests = xrefs})
 
 fun parse_attrs x =
   (Args.parens parse_attrs

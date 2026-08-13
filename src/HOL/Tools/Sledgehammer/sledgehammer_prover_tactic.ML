@@ -20,6 +20,7 @@ end;
 structure Sledgehammer_Prover_Tactic : SLEDGEHAMMER_PROVER_TACTIC =
 struct
 
+open ATP_Problem_Generate
 open ATP_Proof
 open Sledgehammer_Proof_Methods
 open Sledgehammer_Prover
@@ -67,19 +68,30 @@ fun run_tactic_prover mode name ({slices, timeout, ...} : params)
     fun run_try0 () : Try0.result option =
       let
         val run_timeout = slice_timeout slice_size slices timeout
+        val (locals, globals) = List.partition (fn ((_, (sc, _)), _) => sc <> Global) non_chained
         fun is_cartouche str = String.isPrefix "\<open>" str andalso String.isSuffix "\<close>" str
         fun xref_of_fact (((name, _), thm) : Sledgehammer_Fact.fact) =
-            let
-              val xref =
-                if is_cartouche name then
-                  Facts.Fact (Pretty.pure_string_of (Thm.pretty_thm ctxt thm))
-                else
-                  Facts.named name
-            in
-              (xref, [])
-            end
-        val xrefs = map xref_of_fact (sort_by (fst o fst) non_chained)
-        val facts : Try0.facts = {usings = xrefs, simps = [], intros = [], elims = [], dests = []}
+          let
+            val xref =
+              if is_cartouche name then
+                Facts.Fact (Pretty.pure_string_of (Thm.pretty_thm ctxt thm))
+              else
+                (case try (unsuffix ")") name of
+                  SOME s' =>
+                  (case first_field "(" s' of
+                    SOME (name', num) =>
+                    (case Int.fromString num of
+                      SOME n => Facts.Named ((name', Position.none), SOME [Facts.Single n])
+                    | NONE => Facts.named name)
+                  | NONE => Facts.named name)
+                | NONE => Facts.named name)
+          in
+            (xref, [])
+          end
+        val usings_xrefs = map xref_of_fact (sort_by (fst o fst) locals)
+        val direct_xrefs = map xref_of_fact (sort_by (fst o fst) globals)
+        val facts : Try0.facts = {usings = usings_xrefs, directs = direct_xrefs, simps = [],
+          intros = [], elims = [], dests = []}
       in
         Try0.get_proof_method_or_noop name (SOME run_timeout) facts state
       end

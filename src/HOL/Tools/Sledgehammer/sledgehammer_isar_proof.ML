@@ -369,11 +369,16 @@ fun is_thesis ctxt t =
     SOME (_, t') => HOLogic.mk_Trueprop t' aconv t
   | NONE => false)
 
+fun is_proof_method_direct (Metis_Method _) = true
+  | is_proof_method_direct Meson_Method = true
+  | is_proof_method_direct (SMT_Method _) = true
+  | is_proof_method_direct Simp_Method = true
+  | is_proof_method_direct _ = false
+
 val indent_size = 2
 
 fun string_of_isar_proof ctxt0 i n proof =
   let
-
     (* Make sure only type constraints inserted by the type annotation code are printed. *)
     val ctxt = ctxt0
       |> Config.put show_markup false
