@@ -302,7 +302,7 @@ local
 
 fun token k ss = Token (Symbol_Pos.range ss, (k, Symbol_Pos.content ss));
 
-val scan_sml =
+val scan_token =
   scan_char >> token Char ||
   scan_string >> token String ||
   scan_blanks1 >> token Space ||
@@ -316,7 +316,7 @@ val scan_sml =
     scan_ident >> token Ident ||
     scan_type_var >> token Type_Var);
 
-val scan_sml_antiq = scan_sml >> Antiquote.Text;
+val scan_sml_antiq = scan_token >> Antiquote.Text;
 
 val scan_ml_antiq =
   Comment.scan_inner >> (fn (kind, ss) => Antiquote.Text (token (Comment (SOME kind)) ss)) ||
@@ -359,11 +359,12 @@ fun reader {opaque_warning} scan syms =
 
 in
 
-fun source src =
-  Symbol_Pos.source (Position.line 1) src
-  |> Source.source Symbol_Pos.stopper (Scan.recover (Scan.bulk (!!! "bad input" scan_sml)) recover);
+val tokenize =
+  Symbol.explode #> Source.of_list #>
+  Symbol_Pos.source (Position.line 1) #>
+  Source.source Symbol_Pos.stopper (Scan.recover (Scan.bulk (!!! "bad input" scan_token)) recover) #>
+  Source.exhaust;
 
-val tokenize = Symbol.explode #> Source.of_list #> source #> Source.exhaust;
 fun tokenize_range range = tokenize #> map (set_range range);
 val tokenize_no_range = tokenize_range Position.no_range;
 
