@@ -24,9 +24,6 @@ sig
   val content_of: token -> string
   val check_content_of: token -> string
   val flatten: token list -> string
-  val source: (Symbol.symbol, 'a) Source.source ->
-    (token, (Symbol_Pos.T, Position.T * (Symbol.symbol, 'a) Source.source)
-      Source.source) Source.source
   val tokenize: string -> token list
   val tokenize_range: Position.range -> string -> token list
   val tokenize_no_range: string -> token list
