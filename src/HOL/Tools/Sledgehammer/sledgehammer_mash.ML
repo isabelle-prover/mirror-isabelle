@@ -737,7 +737,7 @@ fun save_state _ (time_state as (_, {dirty_facts = SOME [], ...})) = time_state
        {access_G = access_G, xtabs = xtabs, ffds = ffds, freqs = freqs, dirty_facts = SOME []})
     end
 
-val global_state = Synchronized.var "Sledgehammer_MaSh.global_state" (Time.zeroTime, empty_state)
+val global_state = Synchronized.var \<^unchecked_name>\<open>Sledgehammer_MaSh.global_state\<close> (Time.zeroTime, empty_state)
 
 in
 
