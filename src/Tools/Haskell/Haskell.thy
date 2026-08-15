@@ -3647,6 +3647,7 @@ where
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
+import Data.Maybe (fromMaybe)
 import qualified Isabelle.Properties as Properties
 import Isabelle.Bytes (Bytes)
 import qualified Isabelle.Value as Value
@@ -3743,8 +3744,9 @@ instance Decode T where
       decode_entry :: Decode.T (Bytes, Opt)
       decode_entry body =
         let
-          (pos, (name, (typ, value))) =
-            Decode.pair Decode.properties (Decode.pair Decode.string (Decode.pair Decode.string Decode.string)) body
+          (pos, (name, (typ, (value, standard_value)))) =
+            Decode.pair Decode.properties (Decode.pair Decode.string (Decode.pair Decode.string
+              (Decode.pair Decode.string (Decode.option Decode.string)))) body
         in (name, Opt { _pos = pos, _name = name, _typ = typ, _value = value })
     in Options . Map.fromList . Decode.list decode_entry
 \<close>
