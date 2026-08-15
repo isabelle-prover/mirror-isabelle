@@ -80,21 +80,21 @@ Packaging
 - regular packaging:
 
   #on fast Linux machine, with access to build_host for each platform
-  Admin/build_release -D ~/tmp/isadist -b HOL -R Isabelle2025-1 -l -F -L \
+  Admin/build_release -D ~/tmp/isadist -b HOL -R Isabelle2026 -l -F -L \
     -e ISABELLE_SWIPL=/usr/bin/swipl -e ISABELLE_SMLNJ=/usr/bin/sml \
     -e 'ISABELLE_TOOL_JAVA_OPTIONS="-Djava.awt.headless=true -Xms512m -Xmx6g -Xss16m"'
 
 - Docker image:
 
-  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2025-1 Isabelle2025-1_linux.tar.gz
-  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2025-1_X11_Latex -P X11 -P latex Isabelle2025-1_linux.tar.gz
+  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2026 Isabelle2026_linux.tar.gz
+  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2026_X11_Latex -P X11 -P latex Isabelle2026_linux.tar.gz
 
-  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2025-1_ARM Isabelle2025-1_linux_arm.tar.gz
-  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2025-1_ARM_X11_Latex -P X11 -P latex Isabelle2025-1_linux_arm.tar.gz
+  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2026_ARM Isabelle2026_linux_arm.tar.gz
+  isabelle docker_build -o Dockerfile -E -t makarius/isabelle:Isabelle2026_ARM_X11_Latex -P X11 -P latex Isabelle2026_linux_arm.tar.gz
 
   docker login
 
-  docker push makarius/isabelle:Isabelle2025-1
+  docker push makarius/isabelle:Isabelle2026
 
   docker tag ... latest
   docker push makarius/isabelle:latest
