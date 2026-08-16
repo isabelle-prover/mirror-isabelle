@@ -28,14 +28,16 @@ sig
   val tokenize: string -> token list
   val tokenize_range: Position.range -> string -> token list
   val tokenize_no_range: string -> token list
-  val read_text: Symbol_Pos.text * Position.T -> token Antiquote.antiquote list
+  val read_text: {check_strings: bool} -> Symbol_Pos.text * Position.T ->
+    token Antiquote.antiquote list
+  val read_source_text: Symbol_Pos.text * Position.T -> token Antiquote.antiquote list
   val read: Symbol_Pos.text -> token Antiquote.antiquote list
   val read_range: Position.range -> Symbol_Pos.text -> token Antiquote.antiquote list
   val read_source': {language: bool -> Markup.T, opaque_warning: bool, symbols: bool} ->
     token Antiquote.antiquote Symbol_Pos.scanner -> Input.source -> token Antiquote.antiquote list
   val read_source: Input.source -> token Antiquote.antiquote list
   val read_source_sml: Input.source -> token Antiquote.antiquote list
-  val read_symbols: Symbol_Pos.T list -> token Antiquote.antiquote list
+  val read_symbols: {check_strings: bool} -> Symbol_Pos.T list -> token Antiquote.antiquote list
   val read_symbols_sml: Symbol_Pos.T list -> token Antiquote.antiquote list
 end;
 
@@ -322,12 +324,12 @@ fun scan_token {check_strings} =
 
 val scan_sml_antiq = scan_token {check_strings = false} >> Antiquote.Text;
 
-val scan_ml_antiq =
+fun scan_ml_antiq check_strings =
   Comment.scan_inner >> (fn (kind, ss) => Antiquote.Text (token (Comment (SOME kind)) ss)) ||
   Antiquote.scan_control Antiquote.err_prefix >> Antiquote.Control ||
   Antiquote.scan_antiq >> Antiquote.Antiq ||
   scan_rat_antiq >> Antiquote.Antiq ||
-  scan_token {check_strings = true} >> Antiquote.Text;
+  scan_token check_strings >> Antiquote.Text;
 
 fun recover msg =
  (recover_char ||
@@ -373,8 +375,11 @@ val tokenize =
 fun tokenize_range range = tokenize #> map (set_range range);
 val tokenize_no_range = tokenize_range Position.no_range;
 
-val read_text = reader {opaque_warning = true} scan_ml_antiq o Symbol_Pos.explode;
-fun read text = read_text (text, Position.none);
+fun read_text check_strings =
+  reader {opaque_warning = true} (scan_ml_antiq check_strings) o Symbol_Pos.explode;
+
+val read_source_text = read_text {check_strings = true};
+fun read text = read_text {check_strings = false} (text, Position.none);
 
 fun read_range range =
   read #> map (fn Antiquote.Text tok => Antiquote.Text (set_range range tok) | antiq => antiq);
@@ -394,13 +399,13 @@ fun read_source' {language, symbols, opaque_warning} scan source =
 
 val read_source =
   read_source' {language = Markup.language_ML, symbols = true, opaque_warning = true}
-    scan_ml_antiq;
+    (scan_ml_antiq {check_strings = true});
 
 val read_source_sml =
   read_source' {language = Markup.language_SML, symbols = false, opaque_warning = false}
     scan_sml_antiq;
 
-val read_symbols = reader {opaque_warning = true} scan_ml_antiq;
+fun read_symbols check_strings = reader {opaque_warning = true} (scan_ml_antiq check_strings);
 val read_symbols_sml = reader {opaque_warning = false} scan_sml_antiq;
 
 end;

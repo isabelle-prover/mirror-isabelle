@@ -495,7 +495,7 @@ val options = $$$ "[" |-- list1 option --| $$$ "]";
 val embedded_ml =
   input underscore >> ML_Lex.read_source ||
   embedded_input >> ML_Lex.read_source ||
-  control >> (ML_Lex.read_symbols o Antiquote.control_symbols);
+  control >> (ML_Lex.read_symbols {check_strings = true} o Antiquote.control_symbols);
 
 
 (* read embedded source, e.g. for antiquotations *)

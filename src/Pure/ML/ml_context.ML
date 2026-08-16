@@ -275,7 +275,7 @@ end;
 
 fun eval_file flags path =
   let val pos = Position.file (File.symbolic_path path)
-  in eval flags pos (ML_Lex.read_text (File.read path, pos)) end;
+  in eval flags pos (ML_Lex.read_source_text (File.read path, pos)) end;
 
 fun eval_source flags source =
   let
