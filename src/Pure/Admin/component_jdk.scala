@@ -25,9 +25,9 @@ object Component_JDK {
 
   /* defaults */
 
-  val default_jdk_version = "25.0.3"
-  val default_jdk_variant = "+9"
-  val default_zulu_version = "25.34.17-ca"
+  val default_jdk_version = "25.0.4"
+  val default_jdk_variant = "+7"
+  val default_zulu_version = "25.36.15-ca"
   val default_zulu_url = "https://cdn.azul.com/zulu/bin"
   val default_source_url =
     "https://github.com/openjdk/jdk{M}u-dev/archive/refs/tags/jdk-{V}{W}.tar.gz"
