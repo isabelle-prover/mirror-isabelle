@@ -1,50 +1,15 @@
-Subject: Announcing Isabelle2025-1
+Subject: Announcing Isabelle2026
 To: isabelle-users@cl.cam.ac.uk
 
-Isabelle2025-2 is now available.
+Isabelle2026 is now available.
 
-This version supersedes Isabelle2025-1, which in turn introduces many changes
-over Isabelle2025: see the NEWS file for further details. Here are notable
-details:
+This version introduces many changes over Isabelle2025-2: see the
+NEWS file for further details. Here are notable details:
 
-* PIDE: load markup from background session image (e.g. theory "HOL.Nat").
-
-* Isabelle/jEdit: support for command-line system options ("-o").
-
-* Isabelle/jEdit: support for dark mode and screen readers.
-
-* Isabelle/jEdit: built-in navigator, without requiring plugins.
-
-* Isabelle/jEdit: more reactive mouse handling, notably on macOS.
-
-* Isabelle/jEdit: updated FlatLaf GUI L&F with scalable SVG icons.
-
-* Isabelle/jEdit: improved appearance on Linux (GUI scaling) and macOS (L&F).
-
-* Isabelle/VSCode: more robust session build process on console.
-
-* Isabelle/VSCode: GUI panels for Documentation, Symbols, Sledgehammer.
-
-* Isabelle/VSCode: update of underlying VSCodium distribution.
-
-* HOL: various improvements of theory libraries.
-
-* HOL: various improvements to code generation.
-
-* HOL: updates and improvements of Sledgehammer and external provers.
-
-* HOL: generation of running time functions for HOL functions.
-
-* System: ML settings may depend on command-line system options ("-o").
-
-* System: command-line tool to process theories within adhoc session.
-
-* System: more detailed build progress.
-
-* System: more robust build cluster management.
+* TODO
 
 
-You may get Isabelle2025-2 from the following mirror sites:
+You may get Isabelle2026 from the following mirror sites:
 
   Cambridge (UK)       https://www.cl.cam.ac.uk/research/hvg/Isabelle
   Munich (Germany)     https://isabelle.in.tum.de
