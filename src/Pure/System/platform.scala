@@ -35,7 +35,7 @@ object Platform {
       def print(fam: Platform_Family): String = quote(fam.toString) + " (" + fam.native + ")"
       error("The Java platform is running as " + print(family) +
         ", but the system is " + print(family0) + ":" +
-        "\nPlease use the correct Isabelle application for " + quote(family0.toString))
+        "\nPlease use the correct Isabelle application for " + quote(family0.toString) + "!")
     }
   }
 
