@@ -4,8 +4,8 @@ Isabelle NEWS -- history of user-relevant changes
 (Note: Isabelle/jEdit shows a tree-view of the NEWS file in Sidekick.)
 
 
-New in this Isabelle version
-----------------------------
+New in Isabelle2026 (October 2026)
+----------------------------------
 
 *** General ***
 
@@ -39,37 +39,8 @@ class parameter from its origin class in generated code. It is still
 possible to specify code equations for instances of that class
 parameter.
 
-* Code generation: transitional legacy attribute [code del] is
+* Code generation: transitional legacy attribute [code del] has been
 discontinued. Minor INCOMPATIBILITY.
-
-* Config options simp_depth_limit, simp_trace_depth_limit, simp_debug,
-simp_trace now qualified in Isabelle/ML. Minor INCOMPATIBILITY.
-
-* Operations mk_rrules, eq_rrule, cert_simproc, transform_simproc,
-trim_context_simproc, mk_solver, empty_ss, merge_ss, empty_simpset,
-clear_simpset, simpset_map, map_theory_simpset, fold_rule,
-fold_goals_tac, norm_hhf, norm_hhf_protect from structure "Simplifier"
-are now qualified. Minor INCOMPATIBILITY.
-
-* Operation map_ss from structure "Simplifier" renamed to
-Simplifier.map_simpset, following the convention that "ss" refers to a
-"frozen" simpset only. Minor INCOMPATIBILITY.
-
-* Datatype proc_kind from structure "Simplifier" is now qualified. Rare
-INCOMPATIBILITY.
-
-* Discontinued alias "Raw_Simplifier.rewrite"; use
-"Simplifier.rewrite_wrt" instead. Rare INCOMPATIBILITY.
-
-* Discontinued infix "addsimps" and "delsimps"; use explicit
-"Simplifier.add_simp(s)" and "Simplifier.del_simp(s)" instead. Minor
-INCOMPATIBILITY. For existing applications that involve a lot of such
-declarations, consider including the infix declarations from
-Isabelle2025-2 in src/Tools/misc_legacy.ML to ease transition.
-
-* Discontinued infixes "addsimprocs" and "delsimprocs"; use explicit
-"Simplifier.add_proc" and "Simplifier.del_proc" instead. Minor
-INCOMPATIBILITY.
 
 
 *** Isabelle/jEdit Prover IDE ***
@@ -104,11 +75,6 @@ can be reversed via the ESCAPE key. Consequently, the NVDA Screen Reader
 will display the menu title on the Braille display properly ---
 otherwise no action was indicated. Minor INCOMPATIBILITY with native
 Windows GUI behavior of F10, which FlatLaf attempted to imitate here.
-
-* The Java Access Bridge on JDK/x86_64-windows has been patched
-slightly, for more robust detection of text lines via the regular API
-for javax.accessibility.AccessibleExtendedTable.LINE instead of historic
-workarounds.
 
 * The jEdit action "sidekick-tree" is more accessible via shortcut F8.
 
@@ -253,14 +219,14 @@ INCOMPATIBILITY.
 * Constants "open" and "uniformity" are not handled as class parameters
 any longer in generated code: there are hardly any instances with a
 reasonable implementation, but a lot of implementations would require
-these as (effectively unused) dictionary parameters.
-Minor INCOMPATIBILITY.
+these as (effectively unused) dictionary parameters. Minor
+INCOMPATIBILITY.
 
 * Constants "Inf", "Sup", "Lcd", "Gcd" are not handled as class
 parameters any longer in generated code but implemented using their
 counterparts on finite sets. Minor INCOMPATIBILITY.
 
-* Set difference is now written using the symbol "\<setminus>" (which is not a
+* Set difference may now be written using the symbol "\<setminus>" (which is not a
 backlash), although the former symbol "-" still works. Minor
 INCOMPATIBILITY.
 
@@ -274,14 +240,14 @@ generalised to Euclidean spaces. Stronger versions of the FTC, now for
 countable rather than finite sets. Minor INCOMPATIBILITY
 
 * Session "HOL-Analysis": Theory "Determinant_Linear_Function" provides
-"finite_dimensional_vector_space.det", i.e. the notion of the determinant of 
-a linear function from a finite-dimensional vector space into itself, 
-generalising (but not replacing) the earlier "Determinants.det", which operates
-on matrices. The related "abs_det" gives the absolute value of the determinant
-of a multiset of vectors.
+"finite_dimensional_vector_space.det", i.e. the notion of the
+determinant of a linear function from a finite-dimensional vector space
+into itself, generalising (but not replacing) the earlier
+"Determinants.det", which operates on matrices. The related "abs_det"
+gives the absolute value of the determinant of a multiset of vectors.
 
-The interpretation for Euclidean spaces, `eucl.det`, is now the
-default meaning of "det", and the previous "Determinants.det" is available with
+The interpretation for Euclidean spaces, "eucl.det", is now the default
+meaning of "det", and the previous "Determinants.det" is available with
 the abbreviation "matrix_det". INCOMPATIBILITY
 
 
@@ -329,6 +295,35 @@ Time.sleep.
 * Structures Posix, OS.Process and OS.IO are no longer exposed to
 Isabelle/ML user-space. Minor INCOMPATIBILITY: use regular Isabelle/ML
 operations, notably Time.sleep instead of OS.Process.sleep.
+
+* Config options simp_depth_limit, simp_trace_depth_limit, simp_debug,
+simp_trace now qualified in Isabelle/ML. Minor INCOMPATIBILITY.
+
+* Operations mk_rrules, eq_rrule, cert_simproc, transform_simproc,
+trim_context_simproc, mk_solver, empty_ss, merge_ss, empty_simpset,
+clear_simpset, simpset_map, map_theory_simpset, fold_rule,
+fold_goals_tac, norm_hhf, norm_hhf_protect from structure "Simplifier"
+are now qualified. Minor INCOMPATIBILITY.
+
+* Operation map_ss from structure "Simplifier" renamed to
+Simplifier.map_simpset, following the convention that "ss" refers to a
+"frozen" simpset only. Minor INCOMPATIBILITY.
+
+* Datatype proc_kind from structure "Simplifier" is now qualified. Rare
+INCOMPATIBILITY.
+
+* Discontinued alias "Raw_Simplifier.rewrite"; use
+"Simplifier.rewrite_wrt" instead. Rare INCOMPATIBILITY.
+
+* Discontinued infix "addsimps" and "delsimps"; use explicit
+"Simplifier.add_simp(s)" and "Simplifier.del_simp(s)" instead. Minor
+INCOMPATIBILITY. For existing applications that involve a lot of such
+declarations, consider including the infix declarations from
+Isabelle2025-2 in src/Tools/misc_legacy.ML to ease transition.
+
+* Discontinued infixes "addsimprocs" and "delsimprocs"; use explicit
+"Simplifier.add_proc" and "Simplifier.del_proc" instead. Minor
+INCOMPATIBILITY.
 
 
 *** System ***
@@ -411,6 +406,11 @@ does not change interrupt handling at all. Subtle INCOMPATIBILITY in
 very rare situations.
 
 * Update to OpenJDK 25: the current long-term support version of Java.
+
+* The Java Access Bridge on JDK/x86_64-windows has been patched
+slightly, for more robust detection of text lines via the regular API
+for javax.accessibility.AccessibleExtendedTable.LINE instead of historic
+workarounds.
 
 * Integration of Scala.js, to allow running Isabelle/Scala sources
 within JavaScript engines. This imposes additional side-conditions on
