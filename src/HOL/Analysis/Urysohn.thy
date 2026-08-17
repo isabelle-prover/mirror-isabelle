@@ -768,7 +768,7 @@ proof -
   have f_surj: \<open>\<forall>p \<in> pairs. \<exists>n. f n = gp p\<close>
     using from_nat_into_surj[OF pairs_count] unfolding f_def by metis
   (*The key separation property of the reindexed family:
-      for any x0 \<in> X and open U ∋ x0, there exists n with f n x0 > 0
+      for any x0 \<in> X and open U with x0 \<in> U, there exists n with f n x0 > 0
       and f n vanishing outside U.*)
   have f_sep: \<open>\<exists>n. f n x0 > 0 \<and> (\<forall>x \<in> topspace X - U. f n x = 0)\<close>
     if \<open>openin X U\<close> and \<open>x0 \<in> U\<close> for x0 U
