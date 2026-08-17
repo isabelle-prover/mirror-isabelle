@@ -54,7 +54,7 @@ next
       apply (simp add: eval_nat_numeral card_Suc_eq)
       by (metis antisym insert_subset linorder_not_le order.refl)
     \<comment> \<open>@{term y} lies in the open segment from some interior point to a closure point,
-      hence in the interior — contradiction.\<close>
+      hence in the interior --- contradiction.\<close>
     have y_cls: "y \<in> closure S" and y_nint: "y \<notin> interior S"
       using \<open>F \<subseteq> frontier S\<close> \<open>y \<in> F\<close> frontier_def by auto
     have x_cls: "x \<in> closure S"

@@ -1150,7 +1150,7 @@ subsection \<open>Fundamental theorem of calculus\<close>
 text \<open>
   Strong form of the fundamental theorem of calculus (Bartle's theorem).
   The derivative @{term f'} need only exist outside a negligible set @{term S},
-  provided the \<open>Henstock–Sacks\<close> condition holds: for every @{term \<open>\<epsilon> > 0\<close>}
+  provided the Henstock--Sacks condition holds: for every @{term \<open>\<epsilon> > 0\<close>}
   there is a gauge witnessing that the oscillation of @{term f} over any
   fine tagged partial division with all tags in @{term S} is small.
 \<close>
@@ -1464,7 +1464,7 @@ theorem fundamental_theorem_of_calculus_absolutely_continuous:
   shows "(f' has_integral (f b - f a)) {a..b}"
 proof (intro fundamental_theorem_of_calculus_Bartle)
   fix \<epsilon> :: real assume \<open>\<epsilon> > 0\<close>
-  \<comment> \<open>Need: @{term absolutely_continuous_on} implies the Henstock–Sacks condition\<close>
+  \<comment> \<open>Need: @{term absolutely_continuous_on} implies the Henstock--Sacks condition\<close>
   show \<open>\<exists>g. gauge g \<and>
         (\<forall>p. p tagged_partial_division_of cbox a b \<and> g fine p \<and> fst ` p \<subseteq> S \<longrightarrow>
           norm (\<Sum>(x,k)\<in>p. f (Sup k) - f (Inf k)) < \<epsilon>)\<close>
@@ -1784,7 +1784,7 @@ proof -
   define ff where "ff \<equiv> \<lambda>x. integral {\<phi> a..x} f"
   have f_int: "f integrable_on {\<phi> a..\<phi> b}"
     using integrable_continuous_real contf by blast
-  \<comment> \<open>f is bounded — needed for Lipschitz property of ff\<close>
+  \<comment> \<open>f is bounded --- needed for Lipschitz property of ff\<close>
   obtain M where M_pos: "0 \<le> M" and M_bound: "\<And>t. t \<in> {\<phi> a..\<phi> b} \<Longrightarrow> \<bar>f t\<bar> \<le> M"
     using continuous_on_compact_bound[of "{\<phi> a..\<phi> b}" f, OF _ contf]
     by (auto simp: norm_real)

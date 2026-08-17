@@ -1271,7 +1271,7 @@ proof -
         next
           case False
           then have "l1 < u2" by linarith
-          \<comment> \<open>Both @{term \<open>l2 < u1\<close>} and @{term \<open>l1 < u2\<close>}, so the open intervals overlap — unless one is degenerate\<close>
+          \<comment> \<open>Both @{term \<open>l2 < u1\<close>} and @{term \<open>l1 < u2\<close>}, so the open intervals overlap --- unless one is degenerate\<close>
           have "l1 = u1 \<or> l2 = u2"
             using \<open>l1 < u2\<close> \<open>l2 < u1\<close> disj lu1(1) lu2(1) by force
           then show ?thesis
