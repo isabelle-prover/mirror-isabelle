@@ -34,11 +34,10 @@ machines are as follows:
       - **Ubuntu 20.04 LTS** (e.g. via `docker run -it ubuntu:20.04 bash`)
 
   * `x86_64-darwin`
-      - **macOS 12 Monterey** (`mini1` Macmini8,1, 6 cores)
-      - macOS 13 Ventura (`mini3` Mac14,12 -- MacMini M2 Pro, 6+4 cores) (`kerman` Macmini8,1, 4 cores)
-      - macOS 14 Sonoma (`mini2` Macmini8,1, 6 cores)
-      - macOS 15 Sequoia (`hattusa` Mac16,11 -- MacMini M4 Pro, 10+4 cores)
-      - macOS 26 Tahoe (`hattusa` Mac16,11 -- MacMini M4 Pro, 10+4 cores)
+      - **macOS 12 Monterey** (`mini1` Macmini8,1, 6 cores) (`amasia` Macmini8,1, 4 cores)
+      - macOS 13 Ventura (`kerman` Macmini8,1, 4 cores)
+      - macOS 14 Sonoma (`mini2` Macmini8,1, 6 cores) (`babol` Macmini8,1, 4 cores)
+      - macOS 15 Sequoia (`isfahan` Macmini8,1, 4 cores)
   * `arm64-darwin`
       - **macOS 13 Ventura** (`mini3` Mac14,12 -- MacMini M2 Pro, 6+4 cores)
       - macOS 14 Sonoma (`studio1` Mac13,2 M1 Ultra, 16+4 cores)
