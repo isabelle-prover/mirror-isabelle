@@ -169,23 +169,6 @@ val eval_result_state = #state o eval_result;
 
 local
 
-fun reset_state tr st0 = Toplevel.setmp_thread_position tr (fn () =>
-  let
-    val kind = Toplevel.kind_of tr;
-    val res =
-      if Symset.member Keyword.theory_body_kinds kind then Toplevel.reset_theory st0
-      else if Symset.member Keyword.proof_kinds kind then Toplevel.reset_proof st0
-      else if Symset.member Keyword.theory_end_kinds kind then
-        (case Toplevel.reset_notepad st0 of
-          NONE => Toplevel.reset_theory st0
-        | some => some)
-      else NONE;
-  in
-    (case res of
-      NONE => st0
-    | SOME st => (Output.error_message (Toplevel.type_error tr ^ " -- using reset state"); st))
-  end) ();
-
 fun run tr st =
   if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (Toplevel.kind_of tr) then
     let
@@ -227,7 +210,7 @@ fun eval_state span tr ({state, ...}: eval_state) =
   let
     val _ = Isabelle_Thread.expose_interrupt ();
 
-    val st = reset_state tr state;
+    val st = Toplevel.reset_state tr state;
 
     val _ = report_indent tr st;
     val _ = status tr Markup.running;

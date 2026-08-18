@@ -90,9 +90,7 @@ sig
   val setmp_thread_position: transition -> ('a -> 'b) -> 'a -> 'b
   val command_errors: transition -> state -> Runtime.error list * state option
   val command_exception: transition -> state -> state
-  val reset_theory: state -> state option
-  val reset_proof: state -> state option
-  val reset_notepad: state -> state option
+  val reset_state: transition -> state -> state
   val fork_presentation: transition -> transition * transition
   type result
   val join_results: result -> (state * transition * state) list
@@ -682,27 +680,44 @@ end;
 
 local
 
-fun reset_state check trans st =
-  if check st then NONE
+fun reset_if cond trans st =
+  if cond st then NONE
   else #2 (command_errors (trans empty) st);
 
-in
-
-val reset_theory = reset_state is_theory forget_proof;
+val reset_theory = reset_if is_theory forget_proof;
 
 val reset_proof =
-  reset_state is_proof
+  reset_if is_proof
     (transaction0
       (fn Theory gthy => Skipped_Proof (0, (gthy, gthy))
         | _ => raise UNDEF));
 
 val reset_notepad =
-  reset_state
+  reset_if
     (fn st =>
       (case try proof_of st of
         SOME state => not (Proof.is_notepad state) orelse can Proof.end_notepad state
       | NONE => true))
     (proof Proof.reset_notepad);
+
+in
+
+fun reset_state tr st = setmp_thread_position tr (fn () =>
+  let
+    val kind = kind_of tr;
+    val res =
+      if Symset.member Keyword.theory_body_kinds kind then reset_theory st
+      else if Symset.member Keyword.proof_kinds kind then reset_proof st
+      else if Symset.member Keyword.theory_end_kinds kind then
+        (case reset_notepad st of
+          NONE => reset_theory st
+        | some => some)
+      else NONE;
+  in
+    (case res of
+      NONE => st
+    | SOME st' => (Output.error_message (type_error tr ^ " -- using reset state"); st'))
+  end) ();
 
 end;
 
