@@ -101,6 +101,7 @@ val bootstrap_keywords =
      ((txtN, \<^here>), Keyword.document_body_spec),
      ((text_rawN, \<^here>), Keyword.command_spec (Keyword.document_raw, ["document"])),
      ((theoryN, \<^here>), Keyword.command_spec (Keyword.thy_begin, ["theory"])),
+     ((endN, \<^here>), Keyword.command_spec (Keyword.thy_end, [])),
      (("ML", \<^here>), Keyword.command_spec (Keyword.thy_decl, ["ML"]))];
 
 

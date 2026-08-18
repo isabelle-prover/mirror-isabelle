@@ -33,6 +33,7 @@ object Thy_Header {
   val ABBREVS = "abbrevs"
   val AND = "and"
   val BEGIN = "begin"
+  val END = "end"
 
   val bootstrap_syntax: Outer_Syntax =
     Outer_Syntax.empty.add_keywords(
@@ -61,6 +62,7 @@ object Thy_Header {
         (TXT, Keyword.Spec(kind = Keyword.DOCUMENT_BODY)),
         (TEXT_RAW, Keyword.Spec(kind = Keyword.DOCUMENT_RAW)),
         (THEORY, Keyword.Spec(kind = Keyword.THY_BEGIN, tags = List("theory"))),
+        (END, Keyword.Spec(kind = Keyword.THY_END)),
         ("ML", Keyword.Spec(kind = Keyword.THY_DECL, tags = List("ML")))))
 
   def bootstrap_keywords: Keyword.Keywords = bootstrap_syntax.keywords
