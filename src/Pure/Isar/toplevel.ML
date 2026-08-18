@@ -23,7 +23,7 @@ sig
   val is_theory: state -> bool
   val is_proof: state -> bool
   val is_skipped_proof: state -> bool
-  val level: state -> int
+  val proof_level: state -> int
   val previous_theory_of: state -> theory option
   val output_of: state -> Latex.text option
   val context_of: state -> Proof.context
@@ -151,7 +151,7 @@ fun make_state opt_thy =
   let val node = (case opt_thy of NONE => Toplevel | SOME thy => Theory (Context.Theory thy))
   in State (node_presentation node, (NONE, NONE)) end;
 
-fun level state =
+fun proof_level state =
   (case node_of state of
     Toplevel => 0
   | Theory _ => 0

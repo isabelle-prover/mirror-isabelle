@@ -277,16 +277,16 @@ fun close_delim delim e = edge #1 bg_delim e #> delim #> edge #1 en_delim e;
 fun document_tag cmd_pos state state' tagging_stack =
   let
     val ctxt' = Toplevel.presentation_context state';
-    val nesting = Toplevel.level state' - Toplevel.level state;
+    val proof_nesting = Toplevel.proof_level state' - Toplevel.proof_level state;
 
     val (tagging, taggings) = tagging_stack;
     val (tag', tagging') = Document_Source.update_tagging ctxt' tagging;
 
     val tagging_stack' =
-      if nesting = 0 andalso not (Toplevel.is_proof state) then tagging_stack
-      else if nesting >= 0 then (tagging', replicate nesting tagging @ taggings)
+      if proof_nesting = 0 andalso not (Toplevel.is_proof state) then tagging_stack
+      else if proof_nesting >= 0 then (tagging', replicate proof_nesting tagging @ taggings)
       else
-        (case drop (~ nesting - 1) taggings of
+        (case drop (~ proof_nesting - 1) taggings of
           tg :: tgs => (tg, tgs)
         | [] => err_bad_nesting (Position.here cmd_pos));
   in (tag', tagging_stack') end;
