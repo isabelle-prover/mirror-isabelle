@@ -54,7 +54,6 @@ sig
   val is_theory_begin: transition -> bool
   val init: transition -> transition
   val modify_init: (unit -> theory) -> transition -> transition
-  val exit: transition -> transition
   val present: presentation -> transition -> transition
   val keep: (state -> unit) -> transition -> transition
   val keep_proof: (state -> unit) -> transition -> transition
@@ -66,9 +65,7 @@ sig
   val theory_presentation: (theory -> theory) -> presentation -> transition -> transition
   val theory: (theory -> theory) -> transition -> transition
   val begin_main_target: bool -> (theory -> local_theory) -> transition -> transition
-  val end_main_target: transition -> transition
   val begin_nested_target: (Context.generic -> local_theory) -> transition -> transition
-  val end_nested_target: transition -> transition
   val local_theory_presentation: (bool * Position.T) option -> (xstring * Position.T) option ->
     (local_theory -> local_theory) -> presentation -> transition -> transition
   val local_theory: (bool * Position.T) option -> (xstring * Position.T) option ->
@@ -86,6 +83,7 @@ sig
   val skip_proof: (unit -> unit) -> transition -> transition
   val skip_proof_open: transition -> transition
   val skip_proof_close: transition -> transition
+  val end_context: transition -> transition
   val exec_id: Document_ID.exec -> transition -> transition
   val setmp_thread_position: transition -> ('a -> 'b) -> 'a -> 'b
   val command_errors: transition -> state -> Runtime.error list * state option
@@ -414,8 +412,6 @@ fun init tr =
 fun modify_init f tr =
   if is_theory_begin tr then add_trans (Init f) (reset_trans tr) else tr;
 
-val exit = add_trans Exit;
-
 fun present_transaction f g = add_trans (Transaction (f, g));
 fun transaction f = present_transaction f NONE;
 fun transaction0 f = present_transaction (node_presentation o f) NONE;
@@ -609,6 +605,12 @@ val skip_proof_close = transaction0
   (fn Skipped_Proof (0, (gthy, _)) => Theory gthy
     | Skipped_Proof (d, x) => Skipped_Proof (d - 1, x)
     | _ => raise UNDEF);
+
+
+(* end context *)
+
+val end_context =
+  add_trans Exit o end_main_target o end_nested_target o end_proof Proof.end_notepad;
 
 
 

@@ -693,9 +693,7 @@ val _ =
 
 val _ =
   Outer_Syntax.command \<^command_keyword>\<open>end\<close> "end context"
-    (Scan.succeed
-      (Toplevel.exit o Toplevel.end_main_target o Toplevel.end_nested_target o
-        Toplevel.end_proof Proof.end_notepad));
+    (Scan.succeed Toplevel.end_context);
 
 in end\<close>
 
