@@ -147,7 +147,7 @@ type eval_state = {failed: bool, command: Toplevel.transition, state: Toplevel.s
 fun init_eval_state opt_thy =
  {failed = false,
   command = Toplevel.empty,
-  state = Toplevel.make_state opt_thy};
+  state = Toplevel.make_state (Option.map Context.Theory opt_thy)};
 
 datatype eval =
   Eval of

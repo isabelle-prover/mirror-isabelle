@@ -18,7 +18,7 @@ signature TOPLEVEL =
 sig
   exception UNDEF
   type state
-  val make_state: theory option -> state
+  val make_state: Context.generic option -> state
   val is_toplevel: state -> bool
   val is_theory: state -> bool
   val is_proof: state -> bool
@@ -147,8 +147,8 @@ fun node_of (State ((node, _), _)) = node;
 fun previous_theory_of (State (_, (prev_thy, _))) = prev_thy;
 fun output_of (State (_, (_, output))) = Option.map Future.join output;
 
-fun make_state opt_thy =
-  let val node = (case opt_thy of NONE => Toplevel | SOME thy => Theory (Context.Theory thy))
+fun make_state opt_gthy =
+  let val node = (case opt_gthy of NONE => Toplevel | SOME gthy => Theory gthy)
   in State (node_presentation node, (NONE, NONE)) end;
 
 fun proof_level state =
@@ -219,7 +219,7 @@ fun presentation_context (state as State (current, _)) =
 
 fun presentation_state ctxt =
   Presentation_State.get ctxt
-  |> \<^if_none>\<open>State (node_presentation (Theory (Context.Proof ctxt)), (NONE, NONE))\<close>;
+  |> \<^if_none>\<open>make_state (SOME (Context.Proof ctxt))\<close>;
 
 
 (* print state *)
@@ -298,8 +298,7 @@ fun update f g state =
 fun apply_tr trans state =
   (case (trans, node_of state) of
     (Init f, Toplevel) =>
-      Runtime.controlled_execution NONE (fn () =>
-        State (node_presentation (Theory (Context.Theory (f ()))), (NONE, NONE))) ()
+      Runtime.controlled_execution NONE (fn () => make_state (SOME (Context.Theory (f ())))) ()
   | (Exit, Theory (Context.Theory thy)) =>
       let
         val State ((node', pr_ctxt), _) =
