@@ -15,6 +15,7 @@ sig
   val make: string * Position.T -> (string * Position.T) list ->
     Options.update_pos -> keywords -> header
   val theoryN: string
+  val endN: string
   val bootstrap_keywords: Keyword.keywords
   val add_keywords: keywords -> theory -> theory
   val get_keywords: theory -> Keyword.keywords
@@ -71,6 +72,7 @@ val optionsN = "options";
 val keywordsN = "keywords";
 val abbrevsN = "abbrevs";
 val beginN = "begin";
+val endN = "end";
 
 val bootstrap_keywords =
   Keyword.empty_keywords

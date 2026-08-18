@@ -356,7 +356,15 @@ fun map_transition f (Transition {name, kind, is_begin, pos, markers, timing, tr
   make_transition (f (name, kind, is_begin, pos, markers, timing, trans));
 
 fun make {name, kind, is_begin, pos} =
-  make_transition (name, kind, is_begin, pos, [], Time.zeroTime, []);
+  let
+    val ok =
+      if name = Thy_Header.theoryN then Symset.member Keyword.theory_begin_kinds kind
+      else if name = Thy_Header.endN then Symset.member Keyword.theory_end_kinds kind
+      else true;
+  in
+    if ok then make_transition (name, kind, is_begin, pos, [], Time.zeroTime, [])
+    else raise Fail ("Bad command classification: name " ^ quote name ^ ", kind " ^ quote kind)
+  end;
 
 val empty = make {name = "", kind = "", is_begin = false, pos = Position.none};
 
