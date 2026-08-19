@@ -540,20 +540,20 @@ local
 
 fun begin_proof init_proof = transaction0
   (fn Theory gthy =>
-    let
-      val (finish, prf) = init_proof gthy;
-      val document = Options.default_string "document";
-      val skip = (document = "" orelse document = "false") andalso Goal.skip_proofs_enabled ();
-      val schematic_goal = try Proof.schematic_goal prf;
-      val _ =
-        if skip andalso schematic_goal = SOME true then
-          warning "Cannot skip proof of schematic goal statement"
-        else ();
-    in
-      if skip andalso schematic_goal = SOME false then
-        Skipped_Proof (0, (finish (Interactive.setmp true Proof.global_skip_proof prf), gthy))
-      else Proof (Proof_Node.init prf, (finish, gthy))
-    end
+        let
+          val (finish, prf) = init_proof gthy;
+          val document = Options.default_string "document";
+          val skip = (document = "" orelse document = "false") andalso Goal.skip_proofs_enabled ();
+          val schematic_goal = try Proof.schematic_goal prf;
+          val _ =
+            if skip andalso schematic_goal = SOME true then
+              warning "Cannot skip proof of schematic goal statement"
+            else ();
+        in
+          if skip andalso schematic_goal = SOME false then
+            Skipped_Proof (0, (finish (Interactive.setmp true Proof.global_skip_proof prf), gthy))
+          else Proof (Proof_Node.init prf, (finish, gthy))
+        end
   | _ => raise UNDEF);
 
 in
