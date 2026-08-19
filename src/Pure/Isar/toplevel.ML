@@ -423,7 +423,7 @@ fun modify_init f tr =
 
 fun present_transaction f g = add_trans (Transaction (f, g));
 fun transaction f = present_transaction f NONE;
-fun transaction0 f = present_transaction (node_presentation o f) NONE;
+fun transaction0 f = transaction (node_presentation o f);
 
 fun present g = add_trans (Keep (fn _ => (), SOME g));
 fun keep f = add_trans (Keep (f, NONE));
@@ -449,8 +449,8 @@ fun malformed pos msg =
 
 (* theory transitions *)
 
-fun generic_theory f = transaction
-  (fn Theory gthy => node_presentation (Theory (f gthy))
+fun generic_theory f = transaction0
+  (fn Theory gthy => Theory (f gthy)
     | _ => raise UNDEF);
 
 fun theory' f = present_transaction
