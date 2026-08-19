@@ -20,8 +20,8 @@ sig
   val bootstrap: bool Config.T
   val parse_spans: (string -> string) -> Token.T list -> Command_Span.span list
   val make_span: string -> Token.T list -> Command_Span.span
-  val parse_span: theory -> (unit -> theory) -> Token.T list -> Toplevel.transition
-  val parse_text: theory -> (unit -> theory) -> Position.T -> string -> Toplevel.transition list
+  val parse_span: theory -> Toplevel.init -> Token.T list -> Toplevel.transition
+  val parse_text: theory -> Toplevel.init -> Position.T -> string -> Toplevel.transition list
   val command_reports: theory -> Token.T -> Position.report_text list
   val check_command: Proof.context -> command_keyword -> string
 end;

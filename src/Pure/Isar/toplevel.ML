@@ -53,7 +53,8 @@ sig
   val timing: Time.time -> transition -> transition
   val is_theory_begin: transition -> bool
   val init: transition -> transition
-  val modify_init: (unit -> theory) -> transition -> transition
+  type init = unit -> theory
+  val modify_init: init -> transition -> transition
   val present: presentation -> transition -> transition
   val keep: (state -> unit) -> transition -> transition
   val keep_proof: (state -> unit) -> transition -> transition
@@ -256,9 +257,11 @@ val _ = ML_system_pp (fn _ => fn _ => Pretty.to_ML o pretty_abstract);
 
 type presentation = state -> Latex.text;
 
+type init = unit -> theory;
+
 datatype trans =
   (*init theory*)
-  Init of unit -> theory |
+  Init of init |
   (*formal exit of theory*)
   Exit |
   (*keep state unchanged*)

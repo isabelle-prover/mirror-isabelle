@@ -9,9 +9,9 @@ sig
   type blob =
     {file_node: string, src_path: Path.T, content: (Message_Digest.T * string list) option}
   val read_thy: Toplevel.state -> theory
-  val read: Keyword.keywords -> theory -> Path.T-> (unit -> theory) ->
+  val read: Keyword.keywords -> theory -> Path.T-> Toplevel.init ->
     blob Exn.result list * int -> Token.T list -> Toplevel.transition
-  val read_span: Keyword.keywords -> Toplevel.state -> Path.T -> (unit -> theory) ->
+  val read_span: Keyword.keywords -> Toplevel.state -> Path.T -> Toplevel.init ->
     Command_Span.span -> Toplevel.transition
   type eval
   val eval_command_id: eval -> Document_ID.command
@@ -21,7 +21,7 @@ sig
   val eval_finished: eval -> bool
   val eval_result_command: eval -> Toplevel.transition
   val eval_result_state: eval -> Toplevel.state
-  val eval: Options.update -> Keyword.keywords -> Path.T -> (unit -> theory) ->
+  val eval: Options.update -> Keyword.keywords -> Path.T -> Toplevel.init ->
     blob Exn.result list * int -> Document_ID.command -> Token.T list -> eval -> eval
   type print
   type print_fn = Toplevel.transition -> Toplevel.state -> unit
