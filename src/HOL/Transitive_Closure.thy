@@ -1496,6 +1496,14 @@ lemma [code]: "ntrancl (Suc n) r = (let r' = ntrancl n r in r' \<union> r' O r)"
 lemma finite_trancl_ntranl: "finite R \<Longrightarrow> trancl R = ntrancl (card R - 1) R"
   by (cases "card R") (auto simp: trancl_finite_eq_relpow relpow_empty ntrancl_def)
 
+text \<open>The two lemmas below make the reflexive transitive executable in certain contexts.\<close>
+
+lemma rtrancl_Image_code[code_unfold]: "R^* `` A = R^+ `` A \<union> A"
+unfolding rtrancl_trancl_reflcl Un_Image Image_Id ..
+
+lemma rtrancl_converse_code[code_unfold]: "(R^*)^-1 `` A = (R^+)^-1 `` A \<union> A"
+by(simp flip:  rtrancl_converse trancl_converse add: rtrancl_Image_code)
+
 
 subsection \<open>Acyclic relations\<close>
 
