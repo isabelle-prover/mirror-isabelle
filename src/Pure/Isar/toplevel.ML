@@ -498,16 +498,12 @@ val end_nested_target = transaction
         | NONE => raise UNDEF)
     | _ => raise UNDEF);
 
-fun restricted_context (SOME (strict, scope)) =
-      Proof_Context.map_naming (Name_Space.restricted strict scope)
-  | restricted_context NONE = I;
-
 fun local_theory' restricted target f = present_transaction
   (fn Theory gthy =>
         let
           val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
           val lthy' = lthy
-            |> restricted_context restricted
+            |> Proof_Context.restricted restricted
             |> Local_Theory.new_group
             |> f
             |> Local_Theory.reset_group;
@@ -567,7 +563,7 @@ fun local_theory_to_proof restricted target f = begin_proof
     let
       val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
       val prf = lthy
-        |> restricted_context restricted
+        |> Proof_Context.restricted restricted
         |> Local_Theory.new_group
         |> f;
     in (finish o Local_Theory.reset_group, prf) end);

@@ -39,6 +39,7 @@ sig
   val qualified_scope: Binding.scope -> Proof.context -> Proof.context
   val qualified: Position.T -> Proof.context -> Proof.context
   val concealed: Proof.context -> Proof.context
+  val restricted: (bool * Position.T) option -> Proof.context -> Proof.context
   val class_space: Proof.context -> Name_Space.T
   val type_space: Proof.context -> Name_Space.T
   val const_space: Proof.context -> Name_Space.T
@@ -361,6 +362,9 @@ val qualified_scope = map_naming o Name_Space.qualified_scope;
 val qualified = map_naming o Name_Space.qualified;
 
 val concealed = map_naming Name_Space.concealed;
+
+fun restricted (SOME (strict, scope)) = map_naming (Name_Space.restricted strict scope)
+  | restricted NONE = I;
 
 
 (* const vs. free *)
