@@ -1,7 +1,8 @@
 theory Reg_Exp_Example
-imports
-  "HOL-Library.Predicate_Compile_Quickcheck"
-  "HOL-Library.Code_Prolog"
+  imports
+    "HOL-Library.Predicate_Compile_Quickcheck"
+    "HOL-Library.Code_Prolog"
+  options [condition = ISABELLE_SWIPL, quick_and_dirty]
 begin
 
 text \<open>An example from the experiments from SmallCheck (\<^url>\<open>https://www.cs.york.ac.uk/fp/smallcheck\<close>)\<close>

@@ -6,6 +6,7 @@ section \<open>Test build of Isabelle/Haskell modules\<close>
 
 theory Test
   imports Haskell
+  options [condition = ISABELLE_GHC_STACK]
 begin
 
 compile_generated_files _ (in Haskell)

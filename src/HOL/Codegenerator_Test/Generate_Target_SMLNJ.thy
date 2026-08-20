@@ -6,6 +6,7 @@ theory Generate_Target_SMLNJ
   imports
     "HOL-Codegenerator_Test.Generate_Target_String_Literals"
     "HOL-Codegenerator_Test.Generate_Target_Bit_Operations"
+  options [condition = ISABELLE_SMLNJ]
 begin
 
 test_code Generate_Target_String_Literals.check in SMLNJ

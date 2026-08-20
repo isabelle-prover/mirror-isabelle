@@ -1,8 +1,9 @@
 theory List_Examples
-imports
-  Main
-  "HOL-Library.Predicate_Compile_Quickcheck"
-  "HOL-Library.Code_Prolog"
+  imports
+    Main
+    "HOL-Library.Predicate_Compile_Quickcheck"
+    "HOL-Library.Code_Prolog"
+  options [condition = ISABELLE_SWIPL]
 begin
 
 setup \<open>

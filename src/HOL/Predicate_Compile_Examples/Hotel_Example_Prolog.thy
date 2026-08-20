@@ -1,8 +1,9 @@
 theory Hotel_Example_Prolog
-imports
-  Hotel_Example
-  "HOL-Library.Predicate_Compile_Alternative_Defs"
-  "HOL-Library.Code_Prolog"
+  imports
+    Hotel_Example
+    "HOL-Library.Predicate_Compile_Alternative_Defs"
+    "HOL-Library.Code_Prolog"
+  options [condition = ISABELLE_SWIPL]
 begin
 
 declare Let_def[code_pred_inline]

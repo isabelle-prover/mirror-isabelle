@@ -3,9 +3,8 @@
 *)
 
 theory Code_Test_GHC
-imports
-  "HOL-Library.Code_Test"
-  Code_Lazy_Test
+  imports "HOL-Library.Code_Test" Code_Lazy_Test
+  options [condition = ISABELLE_GHC]
 begin
 
 text \<open>Test cases for \<^text>\<open>test_code\<close>\<close>
