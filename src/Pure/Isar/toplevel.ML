@@ -23,6 +23,7 @@ sig
   val is_theory: state -> bool
   val is_proof: state -> bool
   val is_skipped_proof: state -> bool
+  val is_skipped: state -> bool
   val proof_level: state -> int
   val previous_theory_of: state -> theory option
   val output_of: state -> Latex.text option
@@ -305,7 +306,10 @@ fun present_state fork g node_pr prev_thy =
         Execution.fork {name = "Toplevel.present_state", pos = Position.thread_data (), pri = ~1}
           (fn () => pr state)
       else Future.value (pr state);
-  in State (node_pr, (prev_thy, Option.map present g)) end;
+    val output =
+      if is_some prev_thy andalso is_skipped state
+      then NONE else Option.map present g;
+  in State (node_pr, (prev_thy, output)) end;
 
 fun no_update f g state =
   Runtime.controlled_execution (try generic_theory_of state)

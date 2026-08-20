@@ -58,16 +58,14 @@ fun add_presentation f = Presentation.map (cons (f, stamp ()));
 
 val _ =
   Theory.setup (add_presentation (fn {options, segments, ...} => fn thy =>
-    if exists (Toplevel.is_skipped_proof o #state) segments then ()
-    else
-      let
-        val keywords = Thy_Header.get_keywords thy;
-        val thy_name = Context.theory_base_name thy;
-        val latex = Document_Output.present_thy options keywords thy_name segments;
-      in
-        if Options.string options "document" = "false" then ()
-        else Export.export thy \<^path_binding>\<open>document/latex\<close> latex
-      end));
+    let
+      val keywords = Thy_Header.get_keywords thy;
+      val thy_name = Context.theory_base_name thy;
+      val latex = Document_Output.present_thy options keywords thy_name segments;
+    in
+      if Options.string options "document" = "false" then ()
+      else Export.export thy \<^path_binding>\<open>document/latex\<close> latex
+    end));
 
 
 

@@ -496,7 +496,11 @@ fun present_thy options keywords thy_name (segments: segment list) =
       Toplevel.setmp_thread_position tr (present_span command_tag span st st');
 
     fun present _ [] = I
-      | present st ((span, (tr, st')) :: rest) = present_command tr span st st' #> present st' rest;
+      | present st ((span, (tr, st')) :: rest) =
+          let
+            val skipped = Toplevel.is_skipped st;
+            val skipped' = Toplevel.is_skipped st';
+          in not (skipped andalso skipped') ? present_command tr span st st' #> present st' rest end;
   in
     if length command_results = length spans then
       (([], []), NONE, true, [], (I, I))
