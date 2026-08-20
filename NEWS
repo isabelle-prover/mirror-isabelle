@@ -9,6 +9,24 @@ New in Isabelle2026 (October 2026)
 
 *** General ***
 
+* The 'theory' header syntax allows for inlined 'options' that are only
+used for the subsequent theory body --- neither for the theory imports
+nor for other theories importing the current theory. This is analogous
+to session options within a ROOT file, but the scope of options is
+different, and inlined theory options may be edited within a running
+PIDE session.
+
+* The meaning of system option "condition" has been changed as follows.
+If the condition is false, the theory remains formally intact, based on
+the header with imports; the theory body commands are ignored. Likewise,
+document preparation presents only the document commands up to 'theory,
+and ignores everything until the final 'end'. This allows to import
+theories uniformly, but the respective contents may be empty depending
+on conditions. This allows to construct variants of specifications,
+depending on parameters that are changed by external means (e.g.
+environment variables): with suitable naming conventions and proof tool
+setup, later theories may work again uniformly on either variant.
+
 * The Isabelle application bundle has been split into "macos"
 (x86_64-darwin, Intel) and "macos_arm" (arm64-darwin, Apple Silicon).
 The correct version needs to be used for the actual system platform:

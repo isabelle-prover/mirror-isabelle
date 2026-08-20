@@ -14,7 +14,10 @@ sig
     keywords: keywords}
   val make: string * Position.T -> (string * Position.T) list ->
     Options.update_pos -> keywords -> header
+  val bad_conditions: Options.T -> string list
+  val skipping_theory: (string -> unit) -> string -> string list -> bool
   val theoryN: string
+  val endN: string
   val bootstrap_keywords: Keyword.keywords
   val add_keywords: keywords -> theory -> theory
   val get_keywords: theory -> Keyword.keywords
@@ -53,6 +56,18 @@ fun make name imports options keywords : header =
   {name = name, imports = imports, options = options, keywords = keywords};
 
 
+(* conditions *)
+
+fun bad_conditions options =
+  Options.string options "condition"
+  |> space_explode ","
+  |> filter (fn a => getenv a = "");
+
+fun skipping_theory output name bad =
+  if null bad then false
+  else (output ("Skipping theory " ^ quote name ^ " (undefined " ^ commas bad ^ ")"); true);
+
+
 (* bootstrap keywords *)
 
 val chapterN = "chapter";
@@ -71,6 +86,7 @@ val optionsN = "options";
 val keywordsN = "keywords";
 val abbrevsN = "abbrevs";
 val beginN = "begin";
+val endN = "end";
 
 val bootstrap_keywords =
   Keyword.empty_keywords
@@ -99,6 +115,7 @@ val bootstrap_keywords =
      ((txtN, \<^here>), Keyword.document_body_spec),
      ((text_rawN, \<^here>), Keyword.command_spec (Keyword.document_raw, ["document"])),
      ((theoryN, \<^here>), Keyword.command_spec (Keyword.thy_begin, ["theory"])),
+     ((endN, \<^here>), Keyword.command_spec (Keyword.thy_end, [])),
      (("ML", \<^here>), Keyword.command_spec (Keyword.thy_decl, ["ML"]))];
 
 

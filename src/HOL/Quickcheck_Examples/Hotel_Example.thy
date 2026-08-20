@@ -1,5 +1,6 @@
 theory Hotel_Example
-imports Main "HOL-Library.Predicate_Compile_Quickcheck"
+  imports Main "HOL-Library.Predicate_Compile_Quickcheck"
+  options [condition = ISABELLE_GHC]
 begin
 
 datatype guest = Guest0 | Guest1

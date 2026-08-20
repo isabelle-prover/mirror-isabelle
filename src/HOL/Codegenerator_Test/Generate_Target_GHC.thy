@@ -6,6 +6,7 @@ theory Generate_Target_GHC
   imports
     "HOL-Codegenerator_Test.Generate_Target_String_Literals"
     "HOL-Codegenerator_Test.Generate_Target_Bit_Operations"
+  options [condition = ISABELLE_GHC]
 begin
 
 test_code Generate_Target_String_Literals.check in GHC

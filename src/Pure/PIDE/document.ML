@@ -646,9 +646,12 @@ fun init_theory deps node span =
 
     val default = Options.the_process_default ();
     val _ = List.app (fn spec => ignore (Completion.check_option_value ctxt spec default)) options;
+    val bad_conditions =
+      Thy_Header.bad_conditions (fold (Options.update o Options.spec_no_pos) options default);
 
     val _ = Output.status [YXML.output_markup_only Markup.initialized];
-  in thy end;
+    val skipped = Thy_Header.skipping_theory warning (#1 (#name header)) bad_conditions;
+  in {skipped = skipped, theory = thy} end;
 
 fun get_special_parent node =
   let

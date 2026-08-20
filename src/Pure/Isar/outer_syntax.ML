@@ -20,8 +20,8 @@ sig
   val bootstrap: bool Config.T
   val parse_spans: (string -> string) -> Token.T list -> Command_Span.span list
   val make_span: string -> Token.T list -> Command_Span.span
-  val parse_span: theory -> (unit -> theory) -> Token.T list -> Toplevel.transition
-  val parse_text: theory -> (unit -> theory) -> Position.T -> string -> Toplevel.transition list
+  val parse_span: theory -> Toplevel.init -> Token.T list -> Toplevel.transition
+  val parse_text: theory -> Toplevel.init -> Position.T -> string -> Toplevel.transition list
   val command_reports: theory -> Token.T -> Position.report_text list
   val check_command: Proof.context -> command_keyword -> string
 end;
@@ -262,7 +262,7 @@ fun parse_span thy init span =
       |> Source.exhaust;
   in
     (case parse () of
-      [tr] => Toplevel.modify_init init tr
+      [tr] => Toplevel.provide_init init tr
     | [] => Toplevel.ignored (#1 full_range)
     | _ => Toplevel.malformed (#1 core_range) "Exactly one command expected")
     handle ERROR msg => Toplevel.malformed (#1 core_range) msg

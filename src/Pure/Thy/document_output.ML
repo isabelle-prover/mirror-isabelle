@@ -277,16 +277,16 @@ fun close_delim delim e = edge #1 bg_delim e #> delim #> edge #1 en_delim e;
 fun document_tag cmd_pos state state' tagging_stack =
   let
     val ctxt' = Toplevel.presentation_context state';
-    val nesting = Toplevel.level state' - Toplevel.level state;
+    val proof_nesting = Toplevel.proof_level state' - Toplevel.proof_level state;
 
     val (tagging, taggings) = tagging_stack;
     val (tag', tagging') = Document_Source.update_tagging ctxt' tagging;
 
     val tagging_stack' =
-      if nesting = 0 andalso not (Toplevel.is_proof state) then tagging_stack
-      else if nesting >= 0 then (tagging', replicate nesting tagging @ taggings)
+      if proof_nesting = 0 andalso not (Toplevel.is_proof state) then tagging_stack
+      else if proof_nesting >= 0 then (tagging', replicate proof_nesting tagging @ taggings)
       else
-        (case drop (~ nesting - 1) taggings of
+        (case drop (~ proof_nesting - 1) taggings of
           tg :: tgs => (tg, tgs)
         | [] => err_bad_nesting (Position.here cmd_pos));
   in (tag', tagging_stack') end;
@@ -496,7 +496,11 @@ fun present_thy options keywords thy_name (segments: segment list) =
       Toplevel.setmp_thread_position tr (present_span command_tag span st st');
 
     fun present _ [] = I
-      | present st ((span, (tr, st')) :: rest) = present_command tr span st st' #> present st' rest;
+      | present st ((span, (tr, st')) :: rest) =
+          let
+            val skipped = Toplevel.is_skipped st;
+            val skipped' = Toplevel.is_skipped st';
+          in not (skipped andalso skipped') ? present_command tr span st st' #> present st' rest end;
   in
     if length command_results = length spans then
       (([], []), NONE, true, [], (I, I))

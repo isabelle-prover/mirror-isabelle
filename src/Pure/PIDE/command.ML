@@ -9,9 +9,9 @@ sig
   type blob =
     {file_node: string, src_path: Path.T, content: (Message_Digest.T * string list) option}
   val read_thy: Toplevel.state -> theory
-  val read: Keyword.keywords -> theory -> Path.T-> (unit -> theory) ->
+  val read: Keyword.keywords -> theory -> Path.T-> Toplevel.init ->
     blob Exn.result list * int -> Token.T list -> Toplevel.transition
-  val read_span: Keyword.keywords -> Toplevel.state -> Path.T -> (unit -> theory) ->
+  val read_span: Keyword.keywords -> Toplevel.state -> Path.T -> Toplevel.init ->
     Command_Span.span -> Toplevel.transition
   type eval
   val eval_command_id: eval -> Document_ID.command
@@ -21,7 +21,7 @@ sig
   val eval_finished: eval -> bool
   val eval_result_command: eval -> Toplevel.transition
   val eval_result_state: eval -> Toplevel.state
-  val eval: Options.update -> Keyword.keywords -> Path.T -> (unit -> theory) ->
+  val eval: Options.update -> Keyword.keywords -> Path.T -> Toplevel.init ->
     blob Exn.result list * int -> Document_ID.command -> Token.T list -> eval -> eval
   type print
   type print_fn = Toplevel.transition -> Toplevel.state -> unit
@@ -147,7 +147,7 @@ type eval_state = {failed: bool, command: Toplevel.transition, state: Toplevel.s
 fun init_eval_state opt_thy =
  {failed = false,
   command = Toplevel.empty,
-  state = Toplevel.make_state opt_thy};
+  state = Toplevel.make_state (Option.map Context.Theory opt_thy)};
 
 datatype eval =
   Eval of
@@ -168,23 +168,6 @@ val eval_result_command = #command o eval_result;
 val eval_result_state = #state o eval_result;
 
 local
-
-fun reset_state tr st0 = Toplevel.setmp_thread_position tr (fn () =>
-  let
-    val kind = Toplevel.kind_of tr;
-    val res =
-      if Symset.member Keyword.theory_body_kinds kind then Toplevel.reset_theory st0
-      else if Symset.member Keyword.proof_kinds kind then Toplevel.reset_proof st0
-      else if Symset.member Keyword.theory_end_kinds kind then
-        (case Toplevel.reset_notepad st0 of
-          NONE => Toplevel.reset_theory st0
-        | some => some)
-      else NONE;
-  in
-    (case res of
-      NONE => st0
-    | SOME st => (Output.error_message (Toplevel.type_error tr ^ " -- using reset state"); st))
-  end) ();
 
 fun run tr st =
   if Future.proofs_enabled 1 andalso Symset.member Keyword.diag_kinds (Toplevel.kind_of tr) then
@@ -227,7 +210,7 @@ fun eval_state span tr ({state, ...}: eval_state) =
   let
     val _ = Isabelle_Thread.expose_interrupt ();
 
-    val st = reset_state tr state;
+    val st = Toplevel.reset_state tr state;
 
     val _ = report_indent tr st;
     val _ = status tr Markup.running;

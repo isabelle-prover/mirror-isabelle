@@ -92,7 +92,6 @@ keywords
     "prop" "term" "typ" "print_codesetup" "print_context_tracing" "unused_thms" :: diag
   and "print_state" :: diag
   and "welcome" :: diag
-  and "end" :: thy_end
   and "realizers" :: thy_decl
   and "realizability" :: thy_decl
   and "extract_type" "extract" :: thy_decl
@@ -690,12 +689,6 @@ val _ =
       Scan.optional Parse_Spec.includes [] -- Scan.repeat Parse_Spec.context_element
         >> (fn (incls, elems) => Toplevel.begin_nested_target (Target_Context.context_begin_nested_cmd incls elems)))
       --| Parse.begin);
-
-val _ =
-  Outer_Syntax.command \<^command_keyword>\<open>end\<close> "end context"
-    (Scan.succeed
-      (Toplevel.exit o Toplevel.end_main_target o Toplevel.end_nested_target o
-        Toplevel.end_proof Proof.end_notepad));
 
 in end\<close>
 

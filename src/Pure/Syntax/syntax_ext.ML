@@ -137,7 +137,7 @@ fun block_annotation indent notation_markup notation_name =
     val s2 =
       if elem = Markup.notationN then
         [Properties.print_eq (elem, cartouche (implode_space (the_list kind @ the_list name)))]
-      else raise Fail ("Bad markup element for notatio: " ^ quote elem)
+      else raise Fail ("Bad markup element for notation: " ^ quote elem)
   in cartouche (implode_space (s1 @ s2)) end;
 
 fun show_names names =
