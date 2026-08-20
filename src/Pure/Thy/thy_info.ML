@@ -276,10 +276,14 @@ fun eval_thy loading_theory master_dir header text_pos text parents =
 
     val text_id = Position.copy_id text_pos Position.none;
 
-    fun init () = Resources.begin_theory master_dir header parents;
+    val bad_conditions = Thy_Header.bad_conditions options;
+    fun init () =
+     {skipped = not (null bad_conditions),
+      theory = Resources.begin_theory master_dir header parents};
 
     fun excursion () =
       let
+        val _ = Thy_Header.skipping_theory Output.system_message name bad_conditions;
         val _ = Position.setmp_thread_data text_id (fn () => Position.reports command_ranges) ();
 
         fun element_result span_elem (st, _) =

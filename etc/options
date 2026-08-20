@@ -146,7 +146,7 @@ section "Global Session Parameters"
 option context : string = "" for content
   -- "free-form information for session content (to be interpreted in Isabelle/ML)"
 
-option condition : string = "" for content ML_process
+option condition : string = "" for content
   -- "required environment variables for subsequent theories (separated by commas)"
 
 option timeout : real = 0 for build

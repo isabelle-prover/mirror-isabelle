@@ -53,7 +53,7 @@ sig
   val timing: Time.time -> transition -> transition
   val is_theory_begin: transition -> bool
   val init: transition -> transition
-  type init = unit -> theory
+  type init = unit -> {skipped: bool, theory: theory}
   val modify_init: init -> transition -> transition
   val present: presentation -> transition -> transition
   val keep: (state -> unit) -> transition -> transition
@@ -106,14 +106,26 @@ exception UNDEF = Runtime.UNDEF;
 
 (* datatype node *)
 
+type thy = {skipped: bool, level: int, gthy: generic_theory};
+  (*skipped mode, target context level, global or local theory target*)
+
+fun inherit_thy ({skipped, level, ...}: thy) =
+  fn gthy' => {skipped = skipped, level = level, gthy = gthy'};
+
+fun inc_level level = level + 1;
+fun dec_level level = if level <= 0 then raise UNDEF else level - 1;
+
+fun report_skipped () =
+  Position.report_text (Position.thread_data ()) (Markup.bad ()) "Skipped";
+
 datatype node =
   Toplevel
     (*toplevel outside of theory body*) |
-  Theory of generic_theory
-    (*global or local theory*) |
-  Proof of Proof_Node.T * ((Proof.context -> generic_theory) * generic_theory)
+  Theory of thy
+    (*theory target context*) |
+  Proof of Proof_Node.T * ((Proof.context -> thy) * thy)
     (*proof node, finish, original theory*) |
-  Skipped_Proof of int * (generic_theory * generic_theory);
+  Skipped_Proof of int * (thy * thy);
     (*proof depth, resulting theory, original theory*)
 
 val theory_node = fn Theory gthy => SOME gthy | _ => NONE;
@@ -121,9 +133,9 @@ val proof_node = fn Proof (prf, _) => SOME prf | _ => NONE;
 val skipped_proof_node = fn Skipped_Proof _ => true | _ => false;
 
 fun cases_node f _ _ Toplevel = f ()
-  | cases_node _ g _ (Theory gthy) = g gthy
+  | cases_node _ g _ (Theory {gthy, ...}) = g gthy
   | cases_node _ _ h (Proof (prf, _)) = h (Proof_Node.current prf)
-  | cases_node _ g _ (Skipped_Proof (_, (gthy, _))) = g gthy;
+  | cases_node _ g _ (Skipped_Proof (_, ({gthy, ...}, _))) = g gthy;
 
 fun cases_proper_node g h = cases_node (fn () => raise UNDEF) g h;
 
@@ -148,9 +160,16 @@ fun node_of (State ((node, _), _)) = node;
 fun previous_theory_of (State (_, (prev_thy, _))) = prev_thy;
 fun output_of (State (_, (_, output))) = Option.map Future.join output;
 
+fun make_state_node node = State (node_presentation node, (NONE, NONE));
+
 fun make_state opt_gthy =
-  let val node = (case opt_gthy of NONE => Toplevel | SOME gthy => Theory gthy)
-  in State (node_presentation node, (NONE, NONE)) end;
+  let val node =
+    (case opt_gthy of
+      NONE => Toplevel
+    | SOME gthy =>
+        let val level = Context.cases (K 0) Local_Theory.level gthy
+        in Theory {skipped = false, level = level, gthy = gthy} end)
+  in make_state_node node end;
 
 fun proof_level state =
   (case node_of state of
@@ -165,8 +184,9 @@ fun str_of_state state =
       (case previous_theory_of state of
         NONE => "at top level"
       | SOME thy => "at top level, result theory " ^ quote (Context.theory_base_name thy))
-  | Theory (Context.Theory _) => "in theory mode"
-  | Theory (Context.Proof _) => "in local theory mode"
+  | Theory {skipped = true, ...} => "in skipped theory mode"
+  | Theory {gthy = Context.Theory _, ...} => "in theory mode"
+  | Theory {gthy = Context.Proof _, ...} => "in local theory mode"
   | Proof _ => "in proof mode"
   | Skipped_Proof _ => "in skipped proof mode");
 
@@ -183,6 +203,12 @@ fun is_proof state =
 
 fun is_skipped_proof state =
   not (is_toplevel state) andalso skipped_proof_node (node_of state);
+
+fun is_skipped state =
+  (case node_of state of
+    Theory {skipped, ...} => skipped
+  | Skipped_Proof _ => true
+  | _ => false);
 
 fun proper_node_of state = if is_toplevel state then raise UNDEF else node_of state;
 fun proper_node_case f g state = cases_proper_node f g (proper_node_of state);
@@ -232,9 +258,9 @@ fun pretty_context state =
       val gthy =
         (case node_of state of
           Toplevel => raise Match
-        | Theory gthy => gthy
-        | Proof (_, (_, gthy)) => gthy
-        | Skipped_Proof (_, (_, gthy)) => gthy);
+        | Theory {gthy, ...} => gthy
+        | Proof (_, (_, {gthy, ...})) => gthy
+        | Skipped_Proof (_, (_, {gthy, ...})) => gthy);
       val lthy = Context.cases Named_Target.theory_init I gthy;
     in Local_Theory.pretty lthy end;
 
@@ -257,7 +283,7 @@ val _ = ML_system_pp (fn _ => fn _ => Pretty.to_ML o pretty_abstract);
 
 type presentation = state -> Latex.text;
 
-type init = unit -> theory;
+type init = unit -> {skipped: bool, theory: theory};
 
 datatype trans =
   (*init theory*)
@@ -286,7 +312,7 @@ fun no_update f g state =
     (fn () =>
       let
         val prev_thy = previous_theory_of state;
-        val () = f state;
+        val () = if is_skipped state then report_skipped () else f state;
         val node_pr = node_presentation (node_of state);
       in present_state false g node_pr prev_thy end) ()
 
@@ -301,14 +327,19 @@ fun update f g state =
 fun apply_tr trans state =
   (case (trans, node_of state) of
     (Init f, Toplevel) =>
-      Runtime.controlled_execution NONE (fn () => make_state (SOME (Context.Theory (f ())))) ()
-  | (Exit, Theory (Context.Theory thy)) =>
+      Runtime.controlled_execution NONE (fn () =>
+        let
+          val {skipped, theory} = f ();
+          val node = Theory {skipped = skipped, level = 0, gthy = Context.Theory theory};
+        in make_state_node node end) ()
+  | (Exit, Theory {level = 0, gthy = Context.Theory thy, ...}) =>
       let
         val State ((node', pr_ctxt), _) =
           state |> update
             (fn _ =>
               node_presentation
-                (Theory (Context.Theory (tap Thm.expose_theory (Theory.end_theory thy)))))
+                (Theory {skipped = false, level = 0,
+                  gthy = Context.Theory (tap Thm.expose_theory (Theory.end_theory thy))}))
             NONE;
       in State ((Toplevel, pr_ctxt), (get_theory node', NONE)) end
   | (Keep (f, g), _) => no_update (fn x => f x) g state
@@ -453,73 +484,112 @@ fun malformed pos msg =
 (* theory transitions *)
 
 fun generic_theory f = transaction0
-  (fn Theory gthy => Theory (f gthy)
+  (fn node as Theory {skipped, level, gthy} =>
+        if skipped then (report_skipped (); node)
+        else Theory {skipped = skipped, level = level, gthy = f gthy}
     | _ => raise UNDEF);
 
 fun theory' f = present_transaction
-  (fn Theory (Context.Theory thy) =>
-      let val thy' = thy
-        |> Sign.new_group
-        |> f
-        |> Sign.reset_group;
-      in node_presentation (Theory (Context.Theory thy')) end
+  (fn node as Theory {skipped, level, gthy = Context.Theory thy} =>
+        let
+          val node' =
+            if skipped then (report_skipped (); node)
+            else
+              let
+                val thy' = thy
+                  |> Sign.new_group
+                  |> f
+                  |> Sign.reset_group;
+              in Theory {skipped = skipped, level = level, gthy = Context.Theory thy'} end;
+        in node_presentation node' end
     | _ => raise UNDEF);
 
 fun theory_presentation f g = theory' f (SOME g);
 fun theory f = theory' f NONE;
 
 fun begin_main_target begin f = transaction
-  (fn Theory (Context.Theory thy) =>
-        let
-          val lthy = f thy;
-          val gthy =
-            if begin
-            then Context.Proof lthy
-            else Target_Context.end_named_cmd lthy;
-          val _ =
-            (case Local_Theory.pretty lthy of
-              [] => ()
-            | prts => Pretty.writeln (Pretty.chunks prts));
-        in (Theory gthy, lthy) end
+  (fn Theory {skipped, level, gthy = gthy as Context.Theory thy} =>
+        let val level' = level |> begin ? inc_level in
+          if skipped then
+            (report_skipped ();
+             node_presentation (Theory {skipped = skipped, level = level', gthy = gthy}))
+          else
+            let
+              val lthy = f thy;
+              val gthy' =
+                if begin
+                then Context.Proof lthy
+                else Target_Context.end_named_cmd lthy;
+              val _ =
+                (case Local_Theory.pretty lthy of
+                  [] => ()
+                | prts => Pretty.writeln (Pretty.chunks prts));
+            in (Theory {skipped = skipped, level = level', gthy = gthy'}, lthy) end
+        end
     | _ => raise UNDEF);
 
 val end_main_target = transaction
-  (fn Theory (Context.Proof lthy) => (Theory (Target_Context.end_named_cmd lthy), lthy)
+  (fn Theory {skipped, level, gthy} =>
+        let val level' = dec_level level in
+          if skipped then
+            (report_skipped ();
+             node_presentation (Theory {skipped = skipped, level = level', gthy = gthy}))
+          else
+            (case gthy of
+              Context.Proof lthy =>
+                (Theory {skipped = skipped, level = level', gthy = Target_Context.end_named_cmd lthy},
+                  lthy)
+            | _ => raise UNDEF)
+        end
     | _ => raise UNDEF);
 
 fun begin_nested_target f = transaction0
-  (fn Theory gthy =>
+  (fn Theory {skipped, level, gthy} =>
         let
-          val lthy' = f gthy;
-        in Theory (Context.Proof lthy') end
+          val level' = inc_level level;
+          val gthy' = if skipped then (report_skipped (); gthy) else Context.Proof (f gthy);
+        in Theory {skipped = skipped, level = level', gthy = gthy'} end
     | _ => raise UNDEF);
 
 val end_nested_target = transaction
-  (fn Theory (Context.Proof lthy) =>
-        (case try Target_Context.end_nested_cmd lthy of
-          SOME gthy' => (Theory gthy', lthy)
-        | NONE => raise UNDEF)
+  (fn Theory {skipped, level, gthy} =>
+        let val level' = dec_level level in
+          if skipped then
+            (report_skipped ();
+             node_presentation (Theory {skipped = skipped, level = level', gthy = gthy}))
+          else
+            (case gthy of
+              Context.Proof lthy =>
+                (case try Target_Context.end_nested_cmd lthy of
+                  SOME gthy' => (Theory {skipped = skipped, level = level', gthy = gthy'}, lthy)
+                | NONE => raise UNDEF)
+            | _ => raise UNDEF)
+        end
     | _ => raise UNDEF);
 
 fun local_theory' restricted target f = present_transaction
-  (fn Theory gthy =>
-        let
-          val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
-          val lthy' = lthy
-            |> Proof_Context.restricted restricted
-            |> Local_Theory.new_group
-            |> f
-            |> Local_Theory.reset_group;
-        in (Theory (finish lthy'), lthy') end
+  (fn node as Theory {skipped, level, gthy} =>
+        if skipped then (report_skipped (); node_presentation node)
+        else
+          let
+            val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
+            val lthy' = lthy
+              |> Proof_Context.restricted restricted
+              |> Local_Theory.new_group
+              |> f
+              |> Local_Theory.reset_group;
+          in (Theory {skipped = skipped, level = level, gthy = finish lthy'}, lthy') end
     | _ => raise UNDEF);
 
 fun local_theory_presentation restricted target f g = local_theory' restricted target f (SOME g);
 fun local_theory restricted target f = local_theory' restricted target f NONE;
 
 fun present_local_theory target g = present_transaction
-  (fn Theory gthy =>
-        let val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
-        in (Theory (finish lthy), lthy) end
+  (fn node as Theory {skipped, level, gthy} =>
+        if skipped then (report_skipped (); node_presentation node)
+        else
+          let val (finish, lthy) = Target_Context.switch_named_cmd target gthy;
+          in (Theory {skipped = skipped, level = level, gthy = finish lthy}, lthy) end
     | _ => raise UNDEF)
   (SOME g);
 
@@ -532,8 +602,8 @@ fun end_proof f = transaction
           if can (Proof.assert_bottom true) state then
             let
               val ctxt' = f state;
-              val gthy' = finish ctxt';
-            in (Theory gthy', ctxt') end
+              val thy' = finish ctxt';
+            in (Theory thy', ctxt') end
           else raise UNDEF
         end
     | Skipped_Proof (0, (gthy, _)) => node_presentation (Theory gthy)
@@ -542,21 +612,24 @@ fun end_proof f = transaction
 local
 
 fun begin_proof init_proof = transaction0
-  (fn Theory gthy =>
-        let
-          val (finish, prf) = init_proof gthy;
-          val document = Options.default_string "document";
-          val skip = (document = "" orelse document = "false") andalso Goal.skip_proofs_enabled ();
-          val schematic_goal = try Proof.schematic_goal prf;
-          val _ =
-            if skip andalso schematic_goal = SOME true then
-              warning "Cannot skip proof of schematic goal statement"
-            else ();
-        in
-          if skip andalso schematic_goal = SOME false then
-            Skipped_Proof (0, (finish (Interactive.setmp true Proof.global_skip_proof prf), gthy))
-          else Proof (Proof_Node.init prf, (finish, gthy))
-        end
+  (fn Theory (thy as {skipped, gthy, ...}) =>
+        if skipped then (report_skipped (); Skipped_Proof (0, (thy, thy)))
+        else
+          let
+            val (finish_gthy, prf) = init_proof gthy;
+            val finish = finish_gthy #> inherit_thy thy;
+            val document = Options.default_string "document";
+            val skip = (document = "" orelse document = "false") andalso Goal.skip_proofs_enabled ();
+            val schematic_goal = try Proof.schematic_goal prf;
+            val _ =
+              if skip andalso schematic_goal = SOME true then
+                warning "Cannot skip proof of schematic goal statement"
+              else ();
+          in
+            if skip andalso schematic_goal = SOME false then
+              Skipped_Proof (0, (finish (Interactive.setmp true Proof.global_skip_proof prf), thy))
+            else Proof (Proof_Node.init prf, (finish, thy))
+          end
   | _ => raise UNDEF);
 
 in
@@ -581,9 +654,9 @@ fun theory_to_proof f = begin_proof
 end;
 
 val forget_proof = transaction0
-  (fn Proof (prf, (_, orig_gthy)) =>
+  (fn Proof (prf, (_, orig_thy)) =>
         if Proof.is_notepad (Proof_Node.current prf) then raise UNDEF
-        else Theory orig_gthy
+        else Theory orig_thy
     | Skipped_Proof (_, (_, orig_gthy)) => Theory orig_gthy
     | _ => raise UNDEF);
 
@@ -809,15 +882,14 @@ fun element_result (Thy_Element.Element (tr, NONE)) st = atom_result tr st
           let
             val (end_tr1, end_tr2) = fork_presentation end_tr;
 
-            val finish = Context.Theory o Proof_Context.theory_of;
-
             val future_proof =
               Proof.future_proof (fn state =>
                 Execution.fork {name = "Toplevel.future_proof", pos = pos_of head_tr, pri = ~1}
                   (fn () =>
                     let
-                      val State ((Proof (prf, (_, orig_gthy)), _), prev_thy) = st';
-                      val node' = Proof (Proof_Node.apply (K state) prf, (finish, orig_gthy));
+                      val State ((Proof (prf, (_, orig_thy)), _), prev_thy) = st';
+                      val finish = inherit_thy orig_thy o Context.Theory o Proof_Context.theory_of;
+                      val node' = Proof (Proof_Node.apply (K state) prf, (finish, orig_thy));
                       val (results, result_state) =
                         State (node_presentation node', prev_thy)
                         |> fold_map element_result body_elems ||> command_exception end_tr1;

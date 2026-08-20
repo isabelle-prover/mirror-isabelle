@@ -48,18 +48,13 @@ fun build_theories qualifier (options, thys) =
   let
     val _ = ML_Profiling.check_mode (Options.string options "profiling");
     val print_mode = space_explode "," (Options.string options "print_mode") @ print_mode_value ();
-    val bad_conditions = Thy_Header.bad_conditions options;
-    val loaded_theories =
-      if null bad_conditions then
-        (Options.set_process_default (SOME options);
-          Isabelle_Process.init_options ();
-          Future.fork I;
-          (Thy_Info.use_theories qualifier
-            |> Unsynchronized.setmp Print_Mode.print_mode print_mode) thys)
-      else
-        thys |> maps (fn ((name, _), _) =>
-          (Thy_Header.skipping_theory Output.system_message name bad_conditions; []));
-  in loaded_theories end;
+    val _ = Options.set_process_default (SOME options);
+    val _ = Isabelle_Process.init_options ();
+    val _ = Future.fork I;
+  in
+    (Thy_Info.use_theories qualifier
+      |> Unsynchronized.setmp Print_Mode.print_mode print_mode) thys
+  end;
 
 
 (* build session *)
