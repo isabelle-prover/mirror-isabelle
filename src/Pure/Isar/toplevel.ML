@@ -475,7 +475,7 @@ fun is_ignored tr = name_of tr = ignoredN;
 fun is_malformed tr = name_of tr = malformedN;
 
 fun ignored pos =
-  make {name = ignoredN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => ());
+  make {name = ignoredN, kind = "", is_begin = false, pos = pos};
 
 fun malformed pos msg =
   make {name = malformedN, kind = "", is_begin = false, pos = pos} |> keep (fn _ => error msg);
@@ -711,10 +711,9 @@ fun setmp_thread_position (Transition {pos, name, ...}) f x =
 
 local
 
-fun show_state tr (st', opt_err) =
+fun show_state (st', opt_err) =
   let
     val enabled =
-      not (is_ignored tr) andalso
       is_none opt_err andalso
       Options.default_bool \<^system_option>\<open>show_states\<close>;
     val opt_err' =
@@ -725,18 +724,19 @@ fun show_state tr (st', opt_err) =
       else opt_err;
   in (st', opt_err') end;
 
-fun app (tr as Transition {name, markers, trans, ...}) =
+fun app_state (tr as Transition {name, markers, trans, ...}) =
   setmp_thread_position tr
-    ((apply_capture name markers trans
-        |> not (is_ignored tr) ? Timing.command_timing (name_of tr) (pos_of tr))
+    ((apply_capture name markers trans |> Timing.command_timing (name_of tr) (pos_of tr))
       ##> Option.map (fn Runtime.UNDEF => ERROR (type_error tr) | exn => exn)
-      #> show_state tr);
+      #> show_state);
 
 fun command_transition tr st =
   let
     val (st', opt_err) =
-      Context.setmp_generic_context (try (Context.Proof o presentation_context0) st)
-        (fn () => app tr st) ();
+      if is_ignored tr then (st, NONE)
+      else
+        Context.setmp_generic_context (try (Context.Proof o presentation_context0) st)
+          (fn () => app_state tr st) ();
     val opt_err' = opt_err |> Option.map
       (fn Runtime.EXCURSION_FAIL exn_info => exn_info
         | exn => (Runtime.exn_context (try context_of st) exn, at_command tr));
