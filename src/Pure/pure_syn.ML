@@ -47,7 +47,7 @@ val _ =
 
 val _ =
   Outer_Syntax.command (Thy_Header.theoryN, \<^here>) "begin theory"
-    (Thy_Header.args >> (K Toplevel.init));
+    (Thy_Header.args >> (K Toplevel.prepare_init));
 
 val _ =
   Outer_Syntax.command (Thy_Header.endN, \<^here>) "end context"

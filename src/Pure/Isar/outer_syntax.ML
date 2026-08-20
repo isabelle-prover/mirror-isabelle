@@ -262,7 +262,7 @@ fun parse_span thy init span =
       |> Source.exhaust;
   in
     (case parse () of
-      [tr] => Toplevel.modify_init init tr
+      [tr] => Toplevel.provide_init init tr
     | [] => Toplevel.ignored (#1 full_range)
     | _ => Toplevel.malformed (#1 core_range) "Exactly one command expected")
     handle ERROR msg => Toplevel.malformed (#1 core_range) msg

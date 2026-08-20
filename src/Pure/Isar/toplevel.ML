@@ -52,9 +52,9 @@ sig
   val markers: Input.source list -> transition -> transition
   val timing: Time.time -> transition -> transition
   val is_theory_begin: transition -> bool
-  val init: transition -> transition
+  val prepare_init: transition -> transition
   type init = unit -> {skipped: bool, theory: theory}
-  val modify_init: init -> transition -> transition
+  val provide_init: init -> transition -> transition
   val present: presentation -> transition -> transition
   val keep: (state -> unit) -> transition -> transition
   val keep_proof: (state -> unit) -> transition -> transition
@@ -445,12 +445,12 @@ val reset_trans = map_transition (fn (name, kind, is_begin, pos, markers, timing
 
 val is_theory_begin = Symset.member Keyword.theory_begin_kinds o kind_of;
 
-fun init tr =
+fun prepare_init tr =
   if is_theory_begin tr
   then add_trans (Init (fn () => raise Fail "Missing theory initialization")) tr
   else raise Fail ("Bad theory initialization: " ^ quote (name_of tr) ^ Position.here (pos_of tr));
 
-fun modify_init f tr =
+fun provide_init f tr =
   if is_theory_begin tr then add_trans (Init f) (reset_trans tr) else tr;
 
 fun present_transaction f g = add_trans (Transaction (f, g));
