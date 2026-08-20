@@ -447,10 +447,8 @@ val is_theory_begin = Symset.member Keyword.theory_begin_kinds o kind_of;
 
 fun init tr =
   if is_theory_begin tr
-  then add_trans (Init (fn () => error "Missing theory initialization")) tr
-  else
-    raise Fail ("Bad command for theory initialization: " ^
-      quote (name_of tr) ^ Position.here (pos_of tr));
+  then add_trans (Init (fn () => raise Fail "Missing theory initialization")) tr
+  else raise Fail ("Bad theory initialization: " ^ quote (name_of tr) ^ Position.here (pos_of tr));
 
 fun modify_init f tr =
   if is_theory_begin tr then add_trans (Init f) (reset_trans tr) else tr;
