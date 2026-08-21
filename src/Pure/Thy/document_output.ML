@@ -98,7 +98,7 @@ and output_document ctxt {markdown} source =
     and output_blocks blocks =
       separate (XML.Text "\n\n") (map (Latex.block o output_block) blocks);
   in
-    if Toplevel.is_skipped_proof (Toplevel.presentation_state ctxt) then []
+    if Toplevel.is_skipped (Toplevel.presentation_state ctxt) then []
     else if markdown andalso exists (Markdown.is_control o Symbol_Pos.symbol) syms
     then
       let
