@@ -431,18 +431,19 @@ object Command {
   /* blobs: inlined errors and auxiliary files */
 
   def blobs_info(
-    resources: Resources,
+    session: Session,
     syntax: Outer_Syntax,
     get_blob: Document.Node.Name => Option[Document.Blobs.Item],
     can_import: Document.Node.Name => Boolean,
     node_name: Document.Node.Name,
     span: Command_Span.Span
   ): Blobs_Info = {
+    val resources = session.resources
     span.name match {
       // inlined errors
       case Thy_Header.THEORY =>
         val reader = span.content_reader
-        val header = resources.check_thy(node_name, span.content_reader)
+        val header = resources.check_thy(session.session_options, node_name, span.content_reader)
         val imports = header.imports
         val raw_imports =
           try {

@@ -588,6 +588,11 @@ object Sessions {
     def dest: List[(String, Boolean)] = rep.toList
     def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
     def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
+    def bad_message: String =
+      bad match {
+        case Nil => ""
+        case xs => xs.map(x => "undefined " + x).mkString("(", ", ", ")")
+      }
 
     override def toString: String =
       if (rep.isEmpty) "Sessions.Conditions.empty"

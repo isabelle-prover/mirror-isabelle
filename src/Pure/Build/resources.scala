@@ -207,6 +207,7 @@ class Resources(
   }
 
   def check_thy(
+    session_options: Options,
     node_name: Document.Node.Name,
     reader: Reader[Char],
     command: Boolean = true,
@@ -223,11 +224,16 @@ class Resources(
             }
             else (name, pos)
           })
+
+        val conditions_options = Sessions.Conditions.make_options(session_options, header.options)
+        val conditions = Sessions.Conditions.eval(List(conditions_options))
+
         Document.Node.Header(
           imports = imports,
           options = header.options,
           keywords = header.keywords,
-          abbrevs = header.abbrevs)
+          abbrevs = header.abbrevs,
+          condition_bad = conditions.bad_message)
       }
       catch { case exn: Throwable => Document.Node.Header.malformed(Exn.message(exn)) }
     }
@@ -262,10 +268,11 @@ class Resources(
   /* theory and file dependencies */
 
   def dependencies(
+      session_options: Options,
       thys: List[(Document.Node.Name, Position.T)],
       options: Options.Update = Nil,
       progress: Progress = new Progress): Dependencies =
-    Dependencies.empty.require_thys(thys, options = options, progress = progress)
+    Dependencies.empty.require_thys(session_options, thys, options = options, progress = progress)
 
   def session_dependencies(
     info: Sessions.Info,
@@ -273,7 +280,7 @@ class Resources(
   ) : Dependencies = {
     info.theories.foldLeft(Dependencies.empty) {
       case (dependencies, (options, thys)) =>
-        dependencies.require_thys(
+        dependencies.require_thys(info.options,
           for { (thy, pos) <- thys } yield (import_name(info, thy), pos),
           options = options, progress = progress)
     }
@@ -300,6 +307,7 @@ class Resources(
       new Dependencies(entry :: rev_entries, seen)
 
     def require_thy(
+      session_options: Options,
       thy: (Document.Node.Name, Position.T),
       options: Options.Update = Nil,
       initiators: List[Document.Node.Name] = Nil,
@@ -322,11 +330,12 @@ class Resources(
             progress.expose_interrupt()
             val header =
               try {
-                with_thy_reader(name, check_thy(name, _, command = false)).cat_errors(message)
+                with_thy_reader(name,
+                  check_thy(session_options, name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
             val entry = Document.Node.Entry(name, pos, header, options, initiators)
-            dependencies1.require_thys(header.imports, options = options,
+            dependencies1.require_thys(session_options, header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
@@ -339,13 +348,15 @@ class Resources(
     }
 
     def require_thys(
+        session_options: Options,
         thys: List[(Document.Node.Name, Position.T)],
         options: Options.Update = Nil,
         initiators: List[Document.Node.Name] = Nil,
         progress: Progress = new Progress
     ): Dependencies = {
       thys.foldLeft(this)(
-        _.require_thy(_, options = options, initiators = initiators, progress = progress))
+        _.require_thy(session_options, _,
+            options = options, initiators = initiators, progress = progress))
     }
 
     def entries: List[Document.Node.Entry] = rev_entries.reverse
@@ -434,6 +445,7 @@ class Resources(
   /* resolve implicit theory dependencies */
 
   def resolve_dependencies(
+    session_options: Options,
     models: Iterable[Document.Model],
     theories: List[Document.Node.Name]
   ): List[Document.Node.Name] = {
@@ -442,7 +454,7 @@ class Resources(
         yield (model.node_name, Position.none)).toList
 
     val thy_files1 =
-      dependencies(model_theories ::: theories.map((_, Position.none))).theories
+      dependencies(session_options, model_theories ::: theories.map((_, Position.none))).theories
 
     val thy_files2 =
       (for {

@@ -306,7 +306,8 @@ object Headless {
         val import_names =
           theories.map(thy =>
             resources.import_name(qualifier, master_directory(master_dir), thy) -> Position.none)
-        resources.dependencies(import_names, options = options, progress = progress).check_errors
+        resources.dependencies(session_options, import_names,
+          options = options, progress = progress).check_errors
       }
       val dep_theories = dependencies.theories
       val dep_theories_set = dep_theories.toSet
@@ -658,7 +659,8 @@ object Headless {
 
           progress.expose_interrupt()
           val text = Symbol.output(unicode_symbols, File.read(path))
-          val node_header = resources.check_thy(node_name, Scan.char_reader(text))
+          val node_header =
+            resources.check_thy(session.session_options, node_name, Scan.char_reader(text))
           new Resources.Theory(node_name, node_header, text, true)
         }
 

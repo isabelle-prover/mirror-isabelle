@@ -98,6 +98,7 @@ object Document {
       options: Options.Update = Nil,
       keywords: Thy_Header.Keywords = Nil,
       abbrevs: Thy_Header.Abbrevs = Nil,
+      condition_bad: String = "",
       errors: List[String] = Nil
     ) {
       val imports_no_pos: List[Name] = imports.map(_._1)
@@ -107,6 +108,7 @@ object Document {
         options == other.options &&
         keywords == other.keywords &&
         abbrevs == other.abbrevs &&
+        condition_bad == other.condition_bad &&
         errors == other.errors
 
       def append_errors(msgs: List[String]): Node.Header =

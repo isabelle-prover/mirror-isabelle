@@ -93,7 +93,7 @@ sealed case class VSCode_Model(
 
   def node_header: Document.Node.Header =
     session.resources.special_header(node_name) getOrElse
-      session.resources.check_thy(node_name, Scan.char_reader(content.text))
+      session.resources.check_thy(session.session_options, node_name, Scan.char_reader(content.text))
 
 
   /* perspective */
