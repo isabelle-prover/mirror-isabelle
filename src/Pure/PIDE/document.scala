@@ -161,17 +161,6 @@ object Document {
         JSON.Object("node_name" -> node, "theory_name" -> theory)
     }
 
-    sealed case class Entry(
-      name: Node.Name,
-      pos: Position.T,
-      header: Node.Header,
-      more_options: Options.Update,
-      initiators: List[Node.Name]
-    ) {
-      override def toString: String = name.toString
-      def options: Options.Update = header.options ::: more_options
-    }
-
 
     /* node overlays */
 

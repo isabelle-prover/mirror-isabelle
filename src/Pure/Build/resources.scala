@@ -14,6 +14,17 @@ import java.io.{File => JFile}
 
 
 object Resources {
+  sealed case class Thy(
+    name: Document.Node.Name,
+    pos: Position.T,
+    header: Document.Node.Header,
+    more_options: Options.Update,
+    initiators: List[Document.Node.Name]
+  ) {
+    override def toString: String = name.toString
+    def options: Options.Update = header.options ::: more_options
+  }
+
   def bootstrap: Resources =
     new Resources(Sessions.Background(base = Sessions.Base.bootstrap), Logger.none)
 
@@ -300,10 +311,10 @@ class Resources(
   }
 
   final class Dependencies private(
-    rev_entries: List[Document.Node.Entry],
+    rev_entries: List[Resources.Thy],
     seen: Set[Document.Node.Name]
   ) {
-    private def cons(entry: Document.Node.Entry): Dependencies =
+    private def cons(entry: Resources.Thy): Dependencies =
       new Dependencies(entry :: rev_entries, seen)
 
     def require_thy(
@@ -334,14 +345,14 @@ class Resources(
                   check_thy(session_options, name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = Document.Node.Entry(name, pos, header, options, initiators)
+            val entry = Resources.Thy(name, pos, header, options, initiators)
             dependencies1.require_thys(session_options, header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
             case e: Throwable =>
               val header = Document.Node.Header.malformed(Exn.message(e))
-              dependencies1.cons(Document.Node.Entry(name, pos, header, options, initiators))
+              dependencies1.cons(Resources.Thy(name, pos, header, options, initiators))
           }
         }
       }
@@ -359,7 +370,7 @@ class Resources(
             options = options, initiators = initiators, progress = progress))
     }
 
-    def entries: List[Document.Node.Entry] = rev_entries.reverse
+    def entries: List[Resources.Thy] = rev_entries.reverse
     def theories: List[Document.Node.Name] = entries.map(_.name)
 
     def errors: List[String] = entries.flatMap(_.header.errors)

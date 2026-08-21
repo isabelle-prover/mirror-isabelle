@@ -102,9 +102,9 @@ object Sessions {
     proper_session_theories: List[Document.Node.Name] = Nil,
     document_theories: List[Document.Node.Name] = Nil,
     loaded_theories: Graph[String, Outer_Syntax] = Graph.string,  // cumulative imports
-    used_theories: List[Document.Node.Entry] = Nil,  // new imports
+    used_theories: List[Resources.Thy] = Nil,  // new imports
     theory_load_commands: Map[String, List[(Command_Span.Span, Symbol.Offset)]] = Map.empty,
-    known_theories: Map[String, Document.Node.Entry] = Map.empty,
+    known_theories: Map[String, Resources.Thy] = Map.empty,
     known_loaded_files: Map[String, List[Path]] = Map.empty,
     overall_syntax: Outer_Syntax = Outer_Syntax.empty,
     imported_sources: List[(Path, Message_Digest.T)] = Nil,
