@@ -97,22 +97,22 @@ object Document {
     ) {
       val imports_no_pos: List[Name] = imports.map(_._1)
 
-      def eq_no_pos(other: Header): Boolean =
+      def eq_no_pos(other: Node.Header): Boolean =
         imports_no_pos == other.imports_no_pos &&
         options == other.options &&
         keywords == other.keywords &&
         abbrevs == other.abbrevs &&
         errors == other.errors
 
-      def append_errors(msgs: List[String]): Header =
+      def append_errors(msgs: List[String]): Node.Header =
         copy(errors = errors ::: msgs)
 
-      def cat_errors(msg2: String): Header =
+      def cat_errors(msg2: String): Node.Header =
         copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
     }
 
-    val no_header: Header = Header()
-    def bad_header(msg: String): Header = Header(errors = List(msg))
+    val no_header: Node.Header = Node.Header()
+    def bad_header(msg: String): Node.Header = Node.Header(errors = List(msg))
 
     object Name {
       def apply(node: String, theory: String = ""): Name = new Name(node, theory)
@@ -206,7 +206,7 @@ object Document {
     case class Blob[A, B](blob: Blobs.Item) extends Edit[A, B]
 
     case class Edits[A, B](edits: List[A]) extends Edit[A, B]
-    case class Deps[A, B](header: Header) extends Edit[A, B]
+    case class Deps[A, B](header: Node.Header) extends Edit[A, B]
     case class Perspective[A, B](required: Boolean, visible: B, overlays: Overlays) extends Edit[A, B]
 
 
