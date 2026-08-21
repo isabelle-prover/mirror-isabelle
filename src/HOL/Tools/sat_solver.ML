@@ -313,7 +313,7 @@ struct
           []      => [xs1]
         | (0::[]) => [xs1]
         | (0::tl) => xs1 :: clauses tl
-        | _       => raise Fail "SAT_Solver.clauses"
+        | _       => raise Fail \<^unchecked_name>\<open>SAT_Solver.clauses\<close>
       end
     fun literal_from_int i =
       (i<>0 orelse error "variable index in DIMACS CNF file is 0";

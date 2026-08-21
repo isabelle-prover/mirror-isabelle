@@ -1894,7 +1894,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
             rpair NONE (Timeout.apply time_limit (fn () => fst (Limited_Sequence.yieldn k
               (Code_Runtime.dynamic_value_strict
                 (get_dseq_random_result, put_dseq_random_result,
-                  "Predicate_Compile_Core.put_dseq_random_result")
+                  \<^unchecked_name>\<open>Predicate_Compile_Core.put_dseq_random_result\<close>)
                   ctxt NONE
                   (fn proc => fn g => fn nrandom => fn size => fn s =>
                     g nrandom size s |>> Limited_Sequence.map proc)
@@ -1905,7 +1905,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
       | DSeq =>
           rpair NONE (Timeout.apply time_limit (fn () => fst (Limited_Sequence.yieldn k
             (Code_Runtime.dynamic_value_strict
-              (get_dseq_result, put_dseq_result, "Predicate_Compile_Core.put_dseq_result")
+              (get_dseq_result, put_dseq_result, \<^unchecked_name>\<open>Predicate_Compile_Core.put_dseq_result\<close>)
               ctxt NONE Limited_Sequence.map t' [])
             (Code_Numeral.natural_of_integer (the_single arguments)) true)) ())
       | Pos_Generator_DSeq =>
@@ -1915,7 +1915,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
             rpair NONE (Timeout.apply time_limit (fn () => fst (Lazy_Sequence.yieldn k
               (Code_Runtime.dynamic_value_strict
                 (get_new_dseq_result, put_new_dseq_result,
-                  "Predicate_Compile_Core.put_new_dseq_result")
+                  \<^unchecked_name>\<open>Predicate_Compile_Core.put_new_dseq_result\<close>)
                 ctxt NONE (fn proc => fn g => fn depth => g depth |> Lazy_Sequence.map proc)
                 t' [] depth))) ())
           end
@@ -1930,7 +1930,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
               (fn () => fst (Lazy_Sequence.yieldn k
                 (Code_Runtime.dynamic_value_strict
                   (get_lseq_random_stats_result, put_lseq_random_stats_result,
-                    "Predicate_Compile_Core.put_lseq_random_stats_result")
+                    \<^unchecked_name>\<open>Predicate_Compile_Core.put_lseq_random_stats_result\<close>)
                   ctxt NONE
                   (fn proc => fn g => fn nrandom => fn size => fn s => fn depth =>
                     g nrandom size s depth
@@ -1940,7 +1940,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
               (Timeout.apply time_limit (fn () => fst (Lazy_Sequence.yieldn k
                 (Code_Runtime.dynamic_value_strict
                   (get_lseq_random_result, put_lseq_random_result,
-                    "Predicate_Compile_Core.put_lseq_random_result")
+                    \<^unchecked_name>\<open>Predicate_Compile_Core.put_lseq_random_result\<close>)
                     ctxt NONE
                     (fn proc => fn g => fn nrandom => fn size => fn s => fn depth =>
                       g nrandom size s depth
@@ -1950,7 +1950,7 @@ fun eval ctxt stats param_user_modes (options as (compilation, arguments)) k t_c
       | _ =>
           rpair NONE (Timeout.apply time_limit (fn () => fst (Predicate.yieldn k
             (Code_Runtime.dynamic_value_strict
-              (get_pred_result, put_pred_result, "Predicate_Compile_Core.put_pred_result")
+              (get_pred_result, put_pred_result, \<^unchecked_name>\<open>Predicate_Compile_Core.put_pred_result\<close>)
               ctxt NONE Predicate.map t' []))) ()))
      handle Timeout.TIMEOUT _ => error "Reached timeout during execution of values"
   in ((T, ts), statistics) end;
