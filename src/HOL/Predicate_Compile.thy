@@ -31,44 +31,49 @@ text \<open>
   fine-grained control in code equations. 
 \<close>
 
-definition contains :: "'a set \<Rightarrow> 'a \<Rightarrow> bool"
+context
+begin
+
+qualified definition contains :: "'a set \<Rightarrow> 'a \<Rightarrow> bool"
 where "contains A x \<longleftrightarrow> x \<in> A"
 
-definition contains_pred :: "'a set \<Rightarrow> 'a \<Rightarrow> unit Predicate.pred"
+qualified definition contains_pred :: "'a set \<Rightarrow> 'a \<Rightarrow> unit Predicate.pred"
 where "contains_pred A x = (if x \<in> A then Predicate.single () else bot)"
 
-lemma pred_of_setE:
+qualified lemma pred_of_setE:
   assumes "Predicate.eval (pred_of_set A) x"
   obtains "contains A x"
 using assms by(simp add: contains_def)
 
-lemma pred_of_setI: "contains A x \<Longrightarrow> Predicate.eval (pred_of_set A) x"
+qualified lemma pred_of_setI: "contains A x \<Longrightarrow> Predicate.eval (pred_of_set A) x"
 by(simp add: contains_def)
 
-lemma pred_of_set_eq: "pred_of_set \<equiv> \<lambda>A. Predicate.Pred (contains A)"
+qualified lemma pred_of_set_eq: "pred_of_set \<equiv> \<lambda>A. Predicate.Pred (contains A)"
 by(simp add: contains_def[abs_def] pred_of_set_def o_def)
 
-lemma containsI: "x \<in> A \<Longrightarrow> contains A x" 
+qualified lemma containsI: "x \<in> A \<Longrightarrow> contains A x" 
 by(simp add: contains_def)
 
-lemma containsE: assumes "contains A x"
+qualified lemma containsE: assumes "contains A x"
   obtains A' x' where "A = A'" "x = x'" "x \<in> A"
 using assms by(simp add: contains_def)
 
-lemma contains_predI: "contains A x \<Longrightarrow> Predicate.eval (contains_pred A x) ()"
+qualified lemma contains_predI: "contains A x \<Longrightarrow> Predicate.eval (contains_pred A x) ()"
 by(simp add: contains_pred_def contains_def)
 
-lemma contains_predE: 
+qualified lemma contains_predE: 
   assumes "Predicate.eval (contains_pred A x) y"
   obtains "contains A x"
 using assms by(simp add: contains_pred_def contains_def split: if_split_asm)
 
-lemma contains_pred_eq: "contains_pred \<equiv> \<lambda>A x. Predicate.Pred (\<lambda>y. contains A x)"
+qualified lemma contains_pred_eq: "contains_pred \<equiv> \<lambda>A x. Predicate.Pred (\<lambda>y. contains A x)"
 by(rule eq_reflection)(auto simp add: contains_pred_def fun_eq_iff contains_def intro: pred_eqI)
 
-lemma contains_pred_notI:
+qualified lemma contains_pred_notI:
    "\<not> contains A x \<Longrightarrow> Predicate.eval (Predicate.not_pred (contains_pred A x)) ()"
 by(simp add: contains_pred_def contains_def not_pred_eq)
+
+end
 
 setup \<open>
 let
@@ -80,29 +85,29 @@ let
   val ii = Fun (Input, Fun (Input, Bool))
 in
   Core_Data.PredData.map (Graph.new_node 
-    (\<^const_name>\<open>contains\<close>, 
+    (\<^const_name>\<open>Predicate_Compile.contains\<close>, 
      Core_Data.PredData {
        pos = Position.thread_data (),
-       intros = [(NONE, @{thm containsI})], 
-       elim = SOME @{thm containsE}, 
+       intros = [(NONE, @{thm Predicate_Compile.containsI})], 
+       elim = SOME @{thm Predicate_Compile.containsE}, 
        preprocessed = true,
        function_names = [(Predicate_Compile_Aux.Pred, 
-         [(io, \<^const_name>\<open>pred_of_set\<close>), (ii, \<^const_name>\<open>contains_pred\<close>)])], 
+         [(io, \<^const_name>\<open>pred_of_set\<close>), (ii, \<^const_name>\<open>Predicate_Compile.contains_pred\<close>)])], 
        predfun_data = [
          (io, Core_Data.PredfunData {
-            elim = @{thm pred_of_setE}, intro = @{thm pred_of_setI},
-            neg_intro = NONE, definition = @{thm pred_of_set_eq}
+            elim = @{thm Predicate_Compile.pred_of_setE},
+            intro = @{thm Predicate_Compile.pred_of_setI},
+            neg_intro = NONE,
+            definition = @{thm Predicate_Compile.pred_of_set_eq}
           }),
          (ii, Core_Data.PredfunData {
-            elim = @{thm contains_predE}, intro = @{thm contains_predI}, 
-            neg_intro = SOME @{thm contains_pred_notI}, definition = @{thm contains_pred_eq}
+            elim = @{thm Predicate_Compile.contains_predE},
+            intro = @{thm Predicate_Compile.contains_predI}, 
+            neg_intro = SOME @{thm Predicate_Compile.contains_pred_notI},
+            definition = @{thm Predicate_Compile.contains_pred_eq}
           })],
        needs_random = []}))
 end
 \<close>
-
-hide_const (open) contains contains_pred
-hide_fact (open) pred_of_setE pred_of_setI pred_of_set_eq 
-  containsI containsE contains_predI contains_predE contains_pred_eq contains_pred_notI
 
 end
