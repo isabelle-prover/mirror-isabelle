@@ -120,8 +120,7 @@ fun set_header master header errors =
       keywords, perspective, entries, result, consolidated));
 
 fun get_header (Node {header, ...}) = header;
-
-val header_options = Options.update_no_pos o #options o #header o get_header;
+val get_header_options = Options.update_no_pos o #options o #header o get_header;
 
 fun set_keywords keywords =
   map_node (fn (header, _, perspective, entries, result, consolidated) =>
@@ -699,7 +698,7 @@ fun last_common the_command_name_kind node_required node0 node =
                   val visible = command_visible node command_id;
                   val overlays = command_overlays node command_id;
                   val {name = command_name, kind = command_kind} = the_command_name_kind command_id;
-                  val opts = header_options node;
+                  val opts = get_header_options node;
                 in
                   (case Command.print opts visible overlays command_name command_kind eval prints of
                     SOME prints' => assign_update_new (command_id, SOME (eval, prints'))
@@ -731,7 +730,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
       val span = Lazy.force span0;
 
       val is_theory_begin = Symset.member Keyword.theory_begin_kinds command_kind;
-      val opts = header_options node;
+      val opts = get_header_options node;
       val eval' =
         Command.eval
           (if is_theory_begin then [] else opts)
