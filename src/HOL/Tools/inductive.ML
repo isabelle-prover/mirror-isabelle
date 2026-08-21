@@ -875,7 +875,7 @@ fun prove_coindrule quiet_mode preds cs argTs bs xs params intr_ts mono
         funpow n (fn thm => thm RS @{thm meta_fun_cong}) thm RS @{thm Pure.symmetric})
       ns rec_preds_defs;
     val simps = simp_thms3 @ pred_defs_sym;
-    val simproc = Simplifier.the_simproc ctxt "HOL.defined_All";
+    val simproc = \<^simproc>\<open>HOL.defined_All\<close>;
     val simplify =
       asm_full_simplify (Ctr_Sugar_Util.ss_only simps ctxt |> Simplifier.add_proc simproc);
     val coind = (mono RS (fp_def RS @{thm def_coinduct}))
