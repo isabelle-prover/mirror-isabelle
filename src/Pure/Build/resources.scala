@@ -325,14 +325,14 @@ class Resources(
                 with_thy_reader(name, check_thy(name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = Document.Node.Entry(name, pos, header, options)
+            val entry = Document.Node.Entry(name, pos, header, options, initiators)
             dependencies1.require_thys(header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
             case e: Throwable =>
               val header = Document.Node.Header.malformed(Exn.message(e))
-              dependencies1.cons(Document.Node.Entry(name, pos, header, options))
+              dependencies1.cons(Document.Node.Entry(name, pos, header, options, initiators))
           }
         }
       }
