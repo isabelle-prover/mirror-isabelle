@@ -31,10 +31,10 @@ text \<open>
   fine-grained control in code equations. 
 \<close>
 
-definition contains :: "'a set => 'a => bool"
+definition contains :: "'a set \<Rightarrow> 'a \<Rightarrow> bool"
 where "contains A x \<longleftrightarrow> x \<in> A"
 
-definition contains_pred :: "'a set => 'a => unit Predicate.pred"
+definition contains_pred :: "'a set \<Rightarrow> 'a \<Rightarrow> unit Predicate.pred"
 where "contains_pred A x = (if x \<in> A then Predicate.single () else bot)"
 
 lemma pred_of_setE:
@@ -42,20 +42,20 @@ lemma pred_of_setE:
   obtains "contains A x"
 using assms by(simp add: contains_def)
 
-lemma pred_of_setI: "contains A x ==> Predicate.eval (pred_of_set A) x"
+lemma pred_of_setI: "contains A x \<Longrightarrow> Predicate.eval (pred_of_set A) x"
 by(simp add: contains_def)
 
 lemma pred_of_set_eq: "pred_of_set \<equiv> \<lambda>A. Predicate.Pred (contains A)"
 by(simp add: contains_def[abs_def] pred_of_set_def o_def)
 
-lemma containsI: "x \<in> A ==> contains A x" 
+lemma containsI: "x \<in> A \<Longrightarrow> contains A x" 
 by(simp add: contains_def)
 
 lemma containsE: assumes "contains A x"
   obtains A' x' where "A = A'" "x = x'" "x \<in> A"
 using assms by(simp add: contains_def)
 
-lemma contains_predI: "contains A x ==> Predicate.eval (contains_pred A x) ()"
+lemma contains_predI: "contains A x \<Longrightarrow> Predicate.eval (contains_pred A x) ()"
 by(simp add: contains_pred_def contains_def)
 
 lemma contains_predE: 
@@ -67,7 +67,7 @@ lemma contains_pred_eq: "contains_pred \<equiv> \<lambda>A x. Predicate.Pred (\<
 by(rule eq_reflection)(auto simp add: contains_pred_def fun_eq_iff contains_def intro: pred_eqI)
 
 lemma contains_pred_notI:
-   "\<not> contains A x ==> Predicate.eval (Predicate.not_pred (contains_pred A x)) ()"
+   "\<not> contains A x \<Longrightarrow> Predicate.eval (Predicate.not_pred (contains_pred A x)) ()"
 by(simp add: contains_pred_def contains_def not_pred_eq)
 
 setup \<open>
