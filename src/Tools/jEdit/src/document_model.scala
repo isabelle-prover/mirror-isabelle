@@ -473,7 +473,7 @@ case class File_Model(
           (node_required || !Document.Node.Perspective_Text.is_empty(last_perspective))) None
     else {
       val text_edits = List(Text.Edit.remove(0, content.text))
-      Some(node_edits(Document.Node.no_header, text_edits, Document.Node.Perspective_Text.empty))
+      Some(node_edits(Document.Node.Header.none, text_edits, Document.Node.Perspective_Text.empty))
     }
 
   def is_stable: Boolean = pending_edits.isEmpty

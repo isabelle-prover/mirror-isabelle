@@ -229,9 +229,9 @@ class Resources(
           keywords = header.keywords,
           abbrevs = header.abbrevs)
       }
-      catch { case exn: Throwable => Document.Node.bad_header(Exn.message(exn)) }
+      catch { case exn: Throwable => Document.Node.Header.malformed(Exn.message(exn)) }
     }
-    else Document.Node.no_header
+    else Document.Node.Header.none
   }
 
 
@@ -331,7 +331,7 @@ class Resources(
           }
           catch {
             case e: Throwable =>
-              val header = Document.Node.bad_header(Exn.message(e))
+              val header = Document.Node.Header.malformed(Exn.message(e))
               dependencies1.cons(Document.Node.Entry(name, pos, header, options))
           }
         }

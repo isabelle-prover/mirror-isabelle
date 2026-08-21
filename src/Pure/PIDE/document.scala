@@ -88,6 +88,11 @@ object Document {
   object Node {
     /* header and name */
 
+    object Header {
+      val none: Node.Header = Node.Header()
+      def malformed(msg: String): Node.Header = Node.Header(errors = List(msg))
+    }
+
     sealed case class Header(
       imports: List[(Name, Position.T)] = Nil,
       options: Options.Update = Nil,
@@ -110,9 +115,6 @@ object Document {
       def cat_errors(msg2: String): Node.Header =
         copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
     }
-
-    val no_header: Node.Header = Node.Header()
-    def bad_header(msg: String): Node.Header = Node.Header(errors = List(msg))
 
     object Name {
       def apply(node: String, theory: String = ""): Name = new Name(node, theory)
@@ -312,7 +314,7 @@ object Document {
 
   final class Node private(
     val get_blob: Option[Blobs.Item] = None,
-    val header: Node.Header = Node.no_header,
+    val header: Node.Header = Node.Header.none,
     val syntax: Option[Outer_Syntax] = None,
     val text_perspective: Text.Perspective = Text.Perspective.empty,
     val perspective: Node.Perspective_Command.T = Node.Perspective_Command.empty,
@@ -320,12 +322,12 @@ object Document {
   ) {
     def is_empty: Boolean =
       get_blob.isEmpty &&
-      header == Node.no_header &&
+      header == Node.Header.none &&
       text_perspective.is_empty &&
       Node.Perspective_Command.is_empty(perspective) &&
       commands.isEmpty
 
-    def has_header: Boolean = header != Node.no_header
+    def has_header: Boolean = header != Node.Header.none
 
     override def toString: String =
       if (is_empty) "empty"
