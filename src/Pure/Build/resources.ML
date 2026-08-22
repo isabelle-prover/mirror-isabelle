@@ -28,7 +28,6 @@ sig
   val master_directory: theory -> Path.T
   val imports_of: theory -> (string * Position.T) list
   val begin_theory: Path.T -> Thy_Header.header -> theory list -> theory
-  val thy_path: Path.T -> Path.T
   val theory_qualifier: string -> string
   val find_theory_file: string -> Path.T option
   val import_name: string -> Path.T -> string ->
@@ -244,8 +243,6 @@ fun begin_theory master_dir ({name, imports, keywords, ...}: Thy_Header.header) 
 
 (* theory files *)
 
-val thy_path = Path.ext "thy";
-
 fun theory_qualifier theory =
   (case global_theory theory of
     SOME qualifier => qualifier
@@ -260,7 +257,7 @@ fun theory_name qualifier theory =
 
 fun find_theory_file thy_name =
   let
-    val thy_file = thy_path (Path.basic (Long_Name.base_name thy_name));
+    val thy_file = Path.thy (Path.basic (Long_Name.base_name thy_name));
     val session = theory_qualifier thy_name;
     val dirs = Symtab.lookup_list (get_session_base1 #session_directories) session;
   in
@@ -292,7 +289,7 @@ fun import_name qualifier dir s =
       | NONE =>
           if Thy_Header.is_base_name s andalso Long_Name.is_qualified s
           then loaded_theory_node theory
-          else theory_node (File.full_path dir (thy_path (Path.expand (Path.explode s)))))
+          else theory_node (File.full_path dir (Path.thy (Path.expand (Path.explode s)))))
   end;
 
 fun check_file dir file = File.check_file (File.full_path dir file);
@@ -303,7 +300,7 @@ fun check_thy dir thy_name =
     val thy_path =
       (case find_theory_file thy_name of
         SOME path => check_file Path.current path
-      | NONE => check_file dir (thy_path (Path.basic thy_base_name)));
+      | NONE => check_file dir (Path.thy (Path.basic thy_base_name)));
     val text = File.read thy_path;
 
     val {name = (name, pos), imports, options, keywords} =
