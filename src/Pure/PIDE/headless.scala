@@ -485,7 +485,8 @@ object Headless {
         Document.Node.Perspective(node_required, Text.Perspective.empty, Document.Node.Overlays.empty)
 
       def make_edits(text_edits: List[Text.Edit]): List[Document.Edit_Text] =
-        List(node_name -> Document.Node.Deps(node_header),
+        List(
+          node_name -> Document.Node.Deps(node_header),
           node_name -> Document.Node.Edits(text_edits),
           node_name -> node_perspective)
 
