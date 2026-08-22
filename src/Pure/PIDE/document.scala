@@ -90,7 +90,7 @@ object Document {
 
     object Header {
       val none: Node.Header = Node.Header()
-      def malformed(msg: String): Node.Header = Node.Header(errors = List(msg))
+      def exn(e: Throwable): Node.Header = Node.Header(errors = List(Exn.message(e)))
     }
 
     sealed case class Header(

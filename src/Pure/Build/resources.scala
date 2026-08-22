@@ -246,7 +246,7 @@ class Resources(
           abbrevs = header.abbrevs,
           condition_bad = conditions.bad_message)
       }
-      catch { case exn: Throwable => Document.Node.Header.malformed(Exn.message(exn)) }
+      catch { case e: Throwable => Document.Node.Header.exn(e) }
     }
     else Document.Node.Header.none
   }
@@ -351,7 +351,7 @@ class Resources(
           }
           catch {
             case e: Throwable =>
-              val header = Document.Node.Header.malformed(Exn.message(e))
+              val header = Document.Node.Header.exn(e)
               dependencies1.cons(Resources.Thy(name, pos, header, options, initiators))
           }
         }
