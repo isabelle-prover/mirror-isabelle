@@ -614,10 +614,13 @@ fun assign_update_result (tab: assign_update) =
 
 local
 
-fun init_theory deps node span =
+fun init_theory deps node_name node span =
   let
     val master_dir = master_directory node;
     val header = read_header node span;
+    val thy =
+      Resources.make_thy
+        {node = node_name, master_dir = master_dir, header = header, initiators = []};
 
     fun maybe_eval_result eval = Command.eval_result_state eval
       handle Fail _ => Toplevel.make_state NONE;
@@ -626,7 +629,7 @@ fun init_theory deps node span =
       handle ERROR msg => (Output.error_message msg; NONE);
 
     val parents_reports =
-      #imports header |> map_filter (fn (import, pos) =>
+      #imports thy |> map_filter (fn (import, pos) =>
         (case Thy_Info.lookup_theory import of
           NONE =>
             maybe_end_theory pos
@@ -640,7 +643,7 @@ fun init_theory deps node span =
       if null parents_reports then [Theory.get_pure ()] else map #1 parents_reports;
     val _ = List.app (fn (thy, r) => Context_Position.reports_global thy [r]) parents_reports;
 
-    val theory = Resources.begin_theory master_dir header parents;
+    val theory = Resources.begin_theory thy parents;
     val ctxt = Proof_Context.init_global theory;
 
     val default = Options.the_process_default ();
@@ -648,24 +651,27 @@ fun init_theory deps node span =
       #options header |> List.app (fn spec =>
         ignore (Completion.check_option_value ctxt spec default));
     val bad_conditions =
-      Thy_Header.bad_conditions (fold (Options.update o Options.spec_no_pos) (#options header) default);
+      Thy_Header.bad_conditions (fold Options.update (#options thy) default);
 
     val _ = Output.status [YXML.output_markup_only Markup.initialized];
-    val skipped = Thy_Header.skipping_theory warning (#1 (#name header)) bad_conditions;
+    val skipped = Thy_Header.skipping_theory warning (#theory (#name thy)) bad_conditions;
   in {skipped = skipped, theory = theory} end;
 
-fun get_special_parent node =
+fun get_special_parent node_name node =
   let
     val master_dir = master_directory node;
     val header = #header (get_header node);
-    val name = #1 (#name header);
+    val thy =
+      Resources.make_thy
+        {node = node_name, master_dir = master_dir, header = header, initiators = []};
+    val name = #theory (#name thy);
     val parent =
       if name = Sessions.root_name then
         SOME (Thy_Info.get_theory Sessions.theory_name)
       else if member (op =) Thy_Header.ml_roots name then
         SOME (Thy_Info.get_theory Thy_Header.ml_bootstrapN)
       else NONE;
-  in parent |> Option.map (fn thy => Resources.begin_theory master_dir header [thy]) end;
+  in parent |> Option.map (Resources.begin_theory thy o single) end;
 
 fun check_theory full name node =
   Thy_Info.defined_theory name orelse
@@ -860,7 +866,7 @@ fun update old_version_id new_version_id edits consolidate state =
               timeit ("Document.update " ^ name) (fn () =>
                 Runtime.exn_trace_system_message (fn () =>
                   let
-                    val special_parent = get_special_parent node;
+                    val special_parent = get_special_parent name node;
                     val keywords = node_keywords name node;
 
                     val maybe_consolidate = consolidate name andalso could_consolidate node;
@@ -874,7 +880,7 @@ fun update old_version_id new_version_id edits consolidate state =
                     then
                       let
                         val node0 = node_of old_version name;
-                        val init = init_theory imports node;
+                        val init = init_theory imports name node;
                         val proper_init =
                           is_some special_parent orelse
                             check_theory false name node andalso

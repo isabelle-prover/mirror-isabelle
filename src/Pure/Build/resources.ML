@@ -27,7 +27,18 @@ sig
   val check_scala_function: Proof.context -> string * Position.T -> string * scala_fun
   val master_directory: theory -> Path.T
   val imports_of: theory -> (string * Position.T) list
-  val begin_theory: Path.T -> Thy_Header.header -> theory list -> theory
+  type node_name = {node: string, master_dir: Path.T, theory: string}
+  type thy =
+   {name: node_name,
+    pos: Position.T,
+    imports: (string * Position.T) list,
+    options: Options.update,
+    keywords: Thy_Header.keywords,
+    initiators: string list}
+  val make_thy:
+    {node: string, master_dir: Path.T, header: Thy_Header.header, initiators: string list} -> thy
+  val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
+  val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
   val find_theory_file: string -> Path.T option
   val import_name: string -> Path.T -> string ->
@@ -211,7 +222,7 @@ val _ = Theory.setup
       in ML_Syntax.atomic (func ^ " " ^ ML_Syntax.print_string name) end)));
 
 
-(* theory resources *)
+(* theory resources and entries *)
 
 type data =
  {master_dir: Path.T,  (*master directory of theory source*)
@@ -230,11 +241,39 @@ structure Data = Theory_Data
 val master_directory = #master_dir o Data.get;
 val imports_of = #imports o Data.get;
 
-fun begin_theory master_dir ({name, imports, keywords, ...}: Thy_Header.header) parents =
+type node_name = {node: string, master_dir: Path.T, theory: string};
+
+type thy =
+ {name: node_name,
+  pos: Position.T,
+  imports: (string * Position.T) list,
+  options: Options.update,
+  keywords: Thy_Header.keywords,
+  initiators: string list};
+
+fun make_thy {node, master_dir, header: Thy_Header.header, initiators} : thy =
   let
+    val (theory, pos) = #name header;
+    val name = {node = node, master_dir = master_dir, theory = theory};
+  in
+   {name = name,
+    pos = pos,
+    imports = #imports header,
+    options = Options.update_no_pos (#options header),
+    keywords = #keywords header,
+    initiators = initiators}
+  end;
+
+fun map_thy_pos f ({name, pos, imports, options, keywords, initiators}: thy) : thy =
+ {name = name, pos = f pos, imports = map (apsnd f) imports, options = options,
+  keywords = keywords, initiators = initiators};
+
+fun begin_theory ({name, pos, imports, keywords, ...}: thy) parents =
+  let
+    val master_dir = Path.explode (File.symbolic_path (#master_dir name));
     val thy =
-      Theory.begin_theory name parents
-      |> Data.put {master_dir = Path.explode (File.symbolic_path master_dir), imports = imports}
+      Theory.begin_theory (#theory name, pos) parents
+      |> Data.put {master_dir = master_dir, imports = imports}
       |> Thy_Header.add_keywords keywords;
     val ctxt = Proof_Context.init_global thy;
     val _ = List.app (ignore o check_load_command ctxt o #load_command o #2) keywords;

@@ -253,14 +253,14 @@ end;
 
 (* eval theory *)
 
-fun eval_thy loading_theory master_dir header text_pos text parents =
+fun eval_thy loading_theory (thy: Resources.thy) text_pos text parents =
   let
     val options = Options.default [];
 
-    val (name, _) = #name header;
+    val {master_dir, theory = name, ...} = #name thy;
     val keywords =
       fold (curry Keyword.merge_keywords o Thy_Header.get_keywords) parents
-        (Keyword.add_keywords (#keywords header) Keyword.empty_keywords);
+        (Keyword.add_keywords (#keywords thy) Keyword.empty_keywords);
     val command_kind = Keyword.command_kind keywords;
 
     val spans = Outer_Syntax.parse_spans command_kind (Token.explode keywords text_pos text);
@@ -277,7 +277,7 @@ fun eval_thy loading_theory master_dir header text_pos text parents =
     val bad_conditions = Thy_Header.bad_conditions options;
     fun init () =
      {skipped = not (null bad_conditions),
-      theory = Resources.begin_theory master_dir header parents};
+      theory = Resources.begin_theory thy parents};
 
     fun excursion () =
       let
@@ -322,10 +322,8 @@ local
 fun required_by _ [] = ""
   | required_by s initiators = s ^ "(required by " ^ show_path (rev initiators) ^ ")";
 
-fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keywords parents =
+fun load_thy (thy0: Resources.thy) text parents =
   let
-    val dir = Path.dir thy_path;
-
     val exec_id = Document_ID.make ();
     val id = Document_ID.print exec_id;
     val put_id = Position.put_id id;
@@ -333,31 +331,33 @@ fun load_thy initiators (thy_path, text) ((name, header_pos), opts) imports keyw
       Execution.running Document_ID.none exec_id [] orelse
         raise Fail ("Failed to register execution: " ^ id);
 
-    val text_pos = put_id (Position.file (File.symbolic_path thy_path));
+    val thy = Resources.map_thy_pos put_id thy0;
+    val name = #theory (#name thy);
+
+    val text_pos = put_id (Position.file (#node (#name thy)));
     val text_props = Position.properties_of text_pos;
 
     fun loading_theory commands =
       let
-        val _ = writeln ("Loading theory " ^ quote name ^ required_by " " initiators);
+        val _ = writeln ("Loading theory " ^ quote name ^ required_by " " (#initiators thy));
         val _ =
           Output.try_protocol_message
             (Markup.loading_theory {name = name, commands = commands} @ text_props)
             [XML.blob [text]];
         val _ =
           Position.setmp_thread_data (Position.id_only id) (fn () =>
-            (parents, map #2 imports) |> ListPair.app (fn (thy, pos) =>
-              Context_Position.reports_global thy [(put_id pos, Theory.get_markup thy)])) ();
+            (parents, map #2 (#imports thy)) |> ListPair.app (fn (thy, pos) =>
+              Context_Position.reports_global thy [(pos, Theory.get_markup thy)])) ();
       in () end;
 
-    val header = Thy_Header.make (name, put_id header_pos) imports [] keywords;
     val (theory, present) =
-      Options.strict_thread_update opts (fn () =>
-        eval_thy loading_theory dir header text_pos text
+      Options.strict_thread_update (#options thy) (fn () =>
+        eval_thy loading_theory thy text_pos text
           (if name = Context.PureN then [Context.the_global_context ()] else parents)) ();
 
     fun commit segments =
       let
-        val options = Options.default opts;
+        val options = Options.default (#options thy);
         val record_theories = Options.bool options \<^system_option>\<open>record_theories\<close>;
       in commit_thy (theory, if record_theories then segments else []) end;
   in Result {theory = theory, exec_id = exec_id, present = SOME o present, commit = commit} end;
@@ -410,9 +410,15 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
             if all_current then Finished (get_theory theory_name)
             else
               let
+                val (thy_path, text) = the load;
+                val node = File.symbolic_path thy_path;
+                val master_dir = Path.dir (Path.explode node);
                 val opts = Options.update_no_pos header_options @ theory_opts;
-                val thy = ((theory_name, theory_pos), opts);
-              in Task (parents, load_thy initiators (the load) thy imports keywords) end;
+                val thy: Resources.thy =
+                 {name = {node = node, master_dir = master_dir, theory = theory_name},
+                  pos = theory_pos, imports = imports, options = opts, keywords = keywords,
+                  initiators = initiators};
+              in Task (parents, load_thy thy text) end;
 
           val tasks'' = new_entry theory_name parents task tasks';
         in (all_current, tasks'') end)
