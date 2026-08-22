@@ -333,6 +333,7 @@ fun load_thy (thy0: Resources.thy) text parents =
 
     val thy = Resources.map_thy_pos put_id thy0;
     val name = #theory (#name thy);
+    val thy_options = Options.update_no_pos (#options thy);
 
     val text_pos = put_id (Position.file (#node (#name thy)));
     val text_props = Position.properties_of text_pos;
@@ -351,13 +352,13 @@ fun load_thy (thy0: Resources.thy) text parents =
       in () end;
 
     val (theory, present) =
-      Options.strict_thread_update (#options thy) (fn () =>
+      Options.strict_thread_update thy_options (fn () =>
         eval_thy loading_theory thy text_pos text
           (if name = Context.PureN then [Context.the_global_context ()] else parents)) ();
 
     fun commit segments =
       let
-        val options = Options.default (#options thy);
+        val options = Options.default thy_options;
         val record_theories = Options.bool options \<^system_option>\<open>record_theories\<close>;
       in commit_thy (theory, if record_theories then segments else []) end;
   in Result {theory = theory, exec_id = exec_id, present = SOME o present, commit = commit} end;
@@ -413,7 +414,7 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
                 val (thy_path, text) = the load;
                 val node = File.symbolic_path thy_path;
                 val master_dir = Path.dir (Path.explode node);
-                val opts = Options.update_no_pos header_options @ theory_opts;
+                val opts = header_options @ Options.update_pos_none theory_opts;
                 val thy: Resources.thy =
                  {name = {node = node, master_dir = master_dir, theory = theory_name},
                   pos = theory_pos, imports = imports, options = opts, keywords = keywords,

@@ -32,7 +32,7 @@ sig
    {name: node_name,
     pos: Position.T,
     imports: (string * Position.T) list,
-    options: Options.update,
+    options: Options.update_pos,
     keywords: Thy_Header.keywords,
     initiators: string list}
   val make_thy:
@@ -247,7 +247,7 @@ type thy =
  {name: node_name,
   pos: Position.T,
   imports: (string * Position.T) list,
-  options: Options.update,
+  options: Options.update_pos,
   keywords: Thy_Header.keywords,
   initiators: string list};
 
@@ -259,13 +259,14 @@ fun make_thy {node, master_dir, header: Thy_Header.header, initiators} : thy =
    {name = name,
     pos = pos,
     imports = #imports header,
-    options = Options.update_no_pos (#options header),
+    options = #options header,
     keywords = #keywords header,
     initiators = initiators}
   end;
 
 fun map_thy_pos f ({name, pos, imports, options, keywords, initiators}: thy) : thy =
- {name = name, pos = f pos, imports = map (apsnd f) imports, options = options,
+ {name = name, pos = f pos, imports = map (apsnd f) imports,
+  options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
   keywords = keywords, initiators = initiators};
 
 fun begin_theory ({name, pos, imports, keywords, ...}: thy) parents =
