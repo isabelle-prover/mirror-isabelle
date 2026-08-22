@@ -120,8 +120,8 @@ val _ =
                      [fn ([], a) => Document.Edits (list (pair (option int) (option int)) a),
                       fn ([], a) =>
                         let
-                          val (master, (name, (imports, (options, (keywords, errors))))) =
-                            pair string (pair string (pair (list string)
+                          val (master_dir, (name, (imports, (options, (keywords, errors))))) =
+                            pair (Path.explode o string) (pair string (pair (list string)
                               (pair (list (pair string (option string)))
                               ((pair (list (pair string (pair string (list string))))
                                 (list YXML.string_of_body)))))) a;
@@ -131,7 +131,9 @@ val _ =
                             map (fn (x, y) => ((x, Position.none), Keyword.command_spec y)) keywords;
                           val header =
                             Thy_Header.make (name, Position.none) imports' options' keywords';
-                        in Document.Deps {master = master, header = header, errors = errors} end,
+                        in
+                          Document.Deps {master_dir = master_dir, header = header, errors = errors}
+                        end,
                       fn (a :: b, c) =>
                         Document.Perspective (bool_atom a, map int_atom b,
                           list (pair int (pair string (list string))) c)])

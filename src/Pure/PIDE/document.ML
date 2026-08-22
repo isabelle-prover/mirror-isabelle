@@ -8,7 +8,7 @@ list of commands, associated with asynchronous execution process.
 signature DOCUMENT =
 sig
   val timing: bool Unsynchronized.ref
-  type node_header = {master: string, header: Thy_Header.header, errors: string list}
+  type node_header = {master_dir: Path.T, header: Thy_Header.header, errors: string list}
   type overlay = Document_ID.command * (string * string list)
   datatype node_edit =
     Edits of (Document_ID.command option * Document_ID.command option) list |
@@ -51,7 +51,7 @@ fun err_dup kind id = error ("Duplicate " ^ kind ^ ": " ^ Document_ID.print id);
 fun err_undef kind id = error ("Undefined " ^ kind ^ ": " ^ Document_ID.print id);
 
 type node_header =
-  {master: string, header: Thy_Header.header, errors: string list};
+  {master_dir: Path.T, header: Thy_Header.header, errors: string list};
 
 type perspective =
  {required: bool,  (*required node*)
@@ -85,7 +85,7 @@ fun make_perspective (required, command_ids, overlays) : perspective =
   overlays = Inttab.make_list overlays};
 
 val no_header: node_header =
-  {master = "", header = Thy_Header.make ("", Position.none) [] [] [], errors = []};
+  {master_dir = Path.current, header = Thy_Header.make ("", Position.none) [] [] [], errors = []};
 
 val empty_perspective = make_perspective (false, [], []);
 
@@ -109,14 +109,9 @@ fun is_empty_node (Node {header, keywords, perspective, entries, result, consoli
 
 (* basic components *)
 
-fun master_directory (Node {header = {master, ...}, ...}) =
-  (case try Url.explode master of
-    SOME (Url.File path) => path
-  | _ => Path.current);
-
-fun set_header master header errors =
+fun set_header master_dir header errors =
   map_node (fn (_, keywords, perspective, entries, result, consolidated) =>
-    ({master = master, header = header, errors = errors},
+    ({master_dir = master_dir, header = header, errors = errors},
       keywords, perspective, entries, result, consolidated));
 
 fun get_header (Node {header, ...}) = header;
@@ -128,10 +123,9 @@ fun set_keywords keywords =
 
 fun read_thy_header node_name node span =
   let
-    val master_dir = master_directory node;
-    val (name, imports0) =
+    val (master_dir, name, imports0) =
       (case get_header node of
-        {errors = [], header, ...} => (#1 (#name header), #imports header)
+        {errors = [], master_dir, header, ...} => (master_dir, #1 (#name header), #imports header)
       | {errors, ...} =>
           cat_lines errors |>
           (case Position.id_of (Position.thread_data ()) of
@@ -274,7 +268,7 @@ fun edit_nodes (name, node_edit) (Version nodes) =
   Version
     (case node_edit of
       Edits edits => update_node name (edit_node edits) nodes
-    | Deps {master, header, errors} =>
+    | Deps {master_dir, header, errors} =>
         let
           val imports = map fst (#imports header);
           val nodes1 = nodes
@@ -286,7 +280,7 @@ fun edit_nodes (name, node_edit) (Version nodes) =
           val (nodes3, errors1) =
             (String_Graph.add_deps_acyclic (name, imports) nodes2, errors)
               handle String_Graph.CYCLES cs => (nodes2, errors @ map cycle_msg cs);
-        in String_Graph.map_node name (set_header master header errors1) nodes3 end
+        in String_Graph.map_node name (set_header master_dir header errors1) nodes3 end
     | Perspective perspective => update_node name (set_perspective perspective) nodes);
 
 fun update_keywords name nodes =
@@ -294,7 +288,7 @@ fun update_keywords name nodes =
     if is_empty_node node then node
     else
       let
-        val {master, header, errors} = get_header node;
+        val {master_dir, header, errors} = get_header node;
         val imports_keywords = #imports header
           |> map (fn (import, _) => node_keywords import (get_node nodes import));
         val keywords = Library.foldl Keyword.merge_keywords (pure_keywords (), imports_keywords);
@@ -304,7 +298,7 @@ fun update_keywords name nodes =
               (keywords, if member (op =) errors msg then errors else errors @ [msg]);
       in
         node
-        |> set_header master header errors'
+        |> set_header master_dir header errors'
         |> set_keywords (SOME keywords')
       end);
 
@@ -659,8 +653,7 @@ fun init_theory deps node_name node span =
 
 fun get_special_parent node_name node =
   let
-    val master_dir = master_directory node;
-    val header = #header (get_header node);
+    val {master_dir, header, ...} = get_header node;
     val thy =
       Resources.make_thy
         {node = node_name, master_dir = master_dir, header = header, initiators = []};
@@ -744,7 +737,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
         Command.eval
           (if is_theory_begin then [] else opts)
           keywords
-          (master_directory node)
+          (#master_dir (get_header node))
           (fn () => the_default illegal_init init span)
           (blobs, blobs_index) command_id' span (#1 (#2 command_exec));
       val prints' = perhaps (Command.print opts visible overlays command_name command_kind eval') [];
