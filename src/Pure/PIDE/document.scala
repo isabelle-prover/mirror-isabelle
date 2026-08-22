@@ -114,8 +114,12 @@ object Document {
       def append_errors(msgs: List[String]): Node.Header =
         copy(errors = errors ::: msgs)
 
-      def cat_errors(msg2: String): Node.Header =
-        copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
+      def cat_errors(make_msg2: => String): Node.Header =
+        if (errors.isEmpty) this
+        else {
+          val msg2 = make_msg2
+          copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
+        }
     }
 
     object Name {
