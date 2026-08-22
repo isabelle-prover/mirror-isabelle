@@ -131,7 +131,7 @@ fun read_thy_header node_name node span =
     val master_dir = master_directory node;
     val (name, imports0) =
       (case get_header node of
-        {errors = [], header = {name = (name, _), imports, ...}, ...} => (name, imports)
+        {errors = [], header, ...} => (#1 (#name header), #imports header)
       | {errors, ...} =>
           cat_lines errors |>
           (case Position.id_of (Position.thread_data ()) of
