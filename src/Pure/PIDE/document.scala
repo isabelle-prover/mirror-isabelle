@@ -112,7 +112,8 @@ object Document {
         errors == other.errors
 
       def append_errors(msgs: List[String]): Node.Header =
-        copy(errors = errors ::: msgs)
+        if (msgs.isEmpty) this
+        else copy(errors = errors ::: msgs)
 
       def cat_errors(make_msg2: => String): Node.Header =
         if (errors.isEmpty) this
@@ -925,13 +926,13 @@ object Document {
       val edits: List[Node.Edit[Text.Edit, Text.Perspective]] =
         get_blob match {
           case None =>
+            val errors =
+              if (session.resources.loaded_theory(node_name)) {
+                List("Cannot update finished theory " + quote(node_name.theory))
+              }
+              else Nil
             List(
-              Node.Deps(
-                if (session.resources.loaded_theory(node_name)) {
-                  node_header.append_errors(
-                    List("Cannot update finished theory " + quote(node_name.theory)))
-                }
-                else node_header),
+              Node.Deps(node_header.append_errors(errors)),
               Node.Edits(text_edits), perspective)
           case Some(blob) => List(Node.Blob(blob), Node.Edits(text_edits))
         }
