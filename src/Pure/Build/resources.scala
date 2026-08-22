@@ -14,15 +14,36 @@ import java.io.{File => JFile}
 
 
 object Resources {
+  object Thy {
+    def make(
+      thy: (Document.Node.Name, Position.T),
+      header: Document.Node.Header,
+      options: Options.Update = Nil,
+      initiators: List[Document.Node.Name] = Nil
+    ): Thy = {
+      Thy(name = thy._1, pos = thy._2,
+        imports = header.imports_no_pos,
+        options = header.options ::: options,
+        keywords = header.keywords,
+        abbrevs = header.abbrevs,
+        condition_bad = header.condition_bad,
+        errors = header.errors,
+        initiators = initiators)
+    }
+  }
+
   sealed case class Thy(
-    name: Document.Node.Name,
-    pos: Position.T,
-    header: Document.Node.Header,
-    more_options: Options.Update,
-    initiators: List[Document.Node.Name]
+    name: Document.Node.Name = Document.Node.Name.empty,
+    pos: Position.T = Position.none,
+    imports: List[Document.Node.Name] = Nil,
+    options: Options.Update = Nil,
+    keywords: Thy_Header.Keywords = Nil,
+    abbrevs: Thy_Header.Abbrevs = Nil,
+    condition_bad: String = "",
+    errors: List[String] = Nil,
+    initiators: List[Document.Node.Name] = Nil
   ) {
     override def toString: String = name.toString
-    def options: Options.Update = header.options ::: more_options
   }
 
   def bootstrap: Resources =
@@ -345,14 +366,15 @@ class Resources(
                   check_thy(session_options, name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = Resources.Thy(name, pos, header, options, initiators)
+            val entry = Resources.Thy.make(thy, header, options = options, initiators = initiators)
             dependencies1.require_thys(session_options, header.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
             case e: Throwable =>
               val header = Document.Node.Header.exn(e)
-              dependencies1.cons(Resources.Thy(name, pos, header, options, initiators))
+              val entry = Resources.Thy.make(thy, header, options = options, initiators = initiators)
+              dependencies1.cons(entry)
           }
         }
       }
@@ -373,7 +395,7 @@ class Resources(
     def entries: List[Resources.Thy] = rev_entries.reverse
     def theories: List[Document.Node.Name] = entries.map(_.name)
 
-    def errors: List[String] = entries.flatMap(_.header.errors)
+    def errors: List[String] = entries.flatMap(_.errors)
 
     def check_errors: Dependencies =
       errors match {
@@ -386,20 +408,20 @@ class Resources(
       val irregular =
         (for {
           entry <- entries.iterator
-          (imp, _) <- entry.header.imports
+          imp <- entry.imports
           if !regular(imp)
         } yield imp).toSet
 
       Document.Node.Name.make_graph(
         irregular.toList.map(name => ((name, ()), Nil)) :::
-        entries.map(entry => ((entry.name, ()), entry.header.imports_no_pos)))
+        entries.map(entry => ((entry.name, ()), entry.imports)))
     }
 
     lazy val loaded_theories: Graph[String, Outer_Syntax] =
       entries.foldLeft(session_base.loaded_theories) {
         case (graph, entry) =>
           val name = entry.name.theory
-          val imports = entry.header.imports.map({ case (name, _) => name.theory })
+          val imports = entry.imports.map(_.theory)
 
           val graph1 = (name :: imports).foldLeft(graph)(_.default_node(_, Outer_Syntax.empty))
           val graph2 = imports.foldLeft(graph1)(_.add_edge(_, name))
@@ -408,8 +430,8 @@ class Resources(
           val syntax1 = (name :: graph2.imm_preds(name).toList).map(graph2.get_node)
           val syntax =
             Outer_Syntax.merge(syntax0 ::: syntax1)
-              .add_keywords(entry.header.keywords)
-              .add_abbrevs(entry.header.abbrevs)
+              .add_keywords(entry.keywords)
+              .add_abbrevs(entry.abbrevs)
 
           graph2.map_node(name, _ => syntax)
       }
