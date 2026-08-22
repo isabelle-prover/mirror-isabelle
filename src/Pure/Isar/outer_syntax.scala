@@ -113,9 +113,6 @@ final class Outer_Syntax private(
 
   /* build */
 
-  def + (header: Document.Node.Header): Outer_Syntax =
-    add_keywords(header.keywords).add_abbrevs(header.abbrevs)
-
   def ++ (other: Outer_Syntax): Outer_Syntax =
     if (this eq other) this
     else if (this eq Outer_Syntax.empty) other

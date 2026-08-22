@@ -406,7 +406,10 @@ class Resources(
 
           val syntax0 = if (Sessions.is_Pure(name)) List(Thy_Header.bootstrap_syntax) else Nil
           val syntax1 = (name :: graph2.imm_preds(name).toList).map(graph2.get_node)
-          val syntax = Outer_Syntax.merge(syntax0 ::: syntax1) + entry.header
+          val syntax =
+            Outer_Syntax.merge(syntax0 ::: syntax1)
+              .add_keywords(entry.header.keywords)
+              .add_abbrevs(entry.header.abbrevs)
 
           graph2.map_node(name, _ => syntax)
       }

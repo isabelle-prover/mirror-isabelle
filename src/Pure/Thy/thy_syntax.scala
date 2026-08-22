@@ -102,7 +102,7 @@ object Thy_Syntax {
               Outer_Syntax.merge(header.imports_no_pos.map(resources.session_base.node_syntax(nodes, _)))
             }
             else resources.session_base.overall_syntax
-          Some(imports_syntax + header)
+          Some(imports_syntax.add_keywords(header.keywords).add_abbrevs(header.abbrevs))
         }
       nodes += (name -> node.update_syntax(syntax))
     }
