@@ -617,7 +617,7 @@ local
 fun init_theory deps node span =
   let
     val master_dir = master_directory node;
-    val header as {imports, options, ...} = read_header node span;
+    val header = read_header node span;
 
     fun maybe_eval_result eval = Command.eval_result_state eval
       handle Fail _ => Toplevel.make_state NONE;
@@ -626,7 +626,7 @@ fun init_theory deps node span =
       handle ERROR msg => (Output.error_message msg; NONE);
 
     val parents_reports =
-      imports |> map_filter (fn (import, pos) =>
+      #imports header |> map_filter (fn (import, pos) =>
         (case Thy_Info.lookup_theory import of
           NONE =>
             maybe_end_theory pos
@@ -640,22 +640,25 @@ fun init_theory deps node span =
       if null parents_reports then [Theory.get_pure ()] else map #1 parents_reports;
     val _ = List.app (fn (thy, r) => Context_Position.reports_global thy [r]) parents_reports;
 
-    val thy = Resources.begin_theory master_dir header parents;
-    val ctxt = Proof_Context.init_global thy;
+    val theory = Resources.begin_theory master_dir header parents;
+    val ctxt = Proof_Context.init_global theory;
 
     val default = Options.the_process_default ();
-    val _ = List.app (fn spec => ignore (Completion.check_option_value ctxt spec default)) options;
+    val _ =
+      #options header |> List.app (fn spec =>
+        ignore (Completion.check_option_value ctxt spec default));
     val bad_conditions =
-      Thy_Header.bad_conditions (fold (Options.update o Options.spec_no_pos) options default);
+      Thy_Header.bad_conditions (fold (Options.update o Options.spec_no_pos) (#options header) default);
 
     val _ = Output.status [YXML.output_markup_only Markup.initialized];
     val skipped = Thy_Header.skipping_theory warning (#1 (#name header)) bad_conditions;
-  in {skipped = skipped, theory = thy} end;
+  in {skipped = skipped, theory = theory} end;
 
 fun get_special_parent node =
   let
     val master_dir = master_directory node;
-    val header as {name = (name, _), ...} = #header (get_header node);
+    val header = #header (get_header node);
+    val name = #1 (#name header);
     val parent =
       if name = Sessions.root_name then
         SOME (Thy_Info.get_theory Sessions.theory_name)
