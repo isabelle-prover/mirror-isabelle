@@ -126,8 +126,9 @@ fun set_keywords keywords =
   map_node (fn (header, _, perspective, entries, result, consolidated) =>
     (header, keywords, perspective, entries, result, consolidated));
 
-fun read_header node span =
+fun read_thy_header node_name node span =
   let
+    val master_dir = master_directory node;
     val (name, imports0) =
       (case get_header node of
         {errors = [], header = {name = (name, _), imports, ...}, ...} => (name, imports)
@@ -140,7 +141,10 @@ fun read_header node span =
     val {name = (_, pos), imports = imports1, options, keywords} =
       Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
-  in Thy_Header.make (name, pos) imports options keywords end;
+    val header = Thy_Header.make (name, pos) imports options keywords;
+  in
+    Resources.make_thy {node = node_name, master_dir = master_dir, header = header, initiators = []}
+  end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;
 
@@ -616,11 +620,7 @@ local
 
 fun init_theory deps node_name node span =
   let
-    val master_dir = master_directory node;
-    val header = read_header node span;
-    val thy =
-      Resources.make_thy
-        {node = node_name, master_dir = master_dir, header = header, initiators = []};
+    val thy = read_thy_header node_name node span;
 
     fun maybe_eval_result eval = Command.eval_result_state eval
       handle Fail _ => Toplevel.make_state NONE;
@@ -648,7 +648,7 @@ fun init_theory deps node_name node span =
 
     val default = Options.the_process_default ();
     val _ =
-      #options header |> List.app (fn spec =>
+      #options thy |> List.app (fn spec =>
         ignore (Completion.check_option_value ctxt spec default));
     val bad_conditions =
       Thy_Header.bad_conditions (fold (Options.update o Options.spec_no_pos) (#options thy) default);
