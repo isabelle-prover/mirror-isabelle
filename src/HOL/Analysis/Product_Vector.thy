@@ -254,6 +254,12 @@ lemma filterlim_fst: "filterlim fst F (F \<times>\<^sub>F G)"
 lemma filterlim_snd: "filterlim snd G (F \<times>\<^sub>F G)"
   by (simp add: filterlim_def filtermap_snd_prod_filter)
 
+lemma filterlim_map_prod:
+  assumes "filterlim f F F'" "filterlim g G G'"
+  shows   "filterlim (map_prod f g) (F \<times>\<^sub>F G) (F' \<times>\<^sub>F G')"
+  unfolding map_prod_def case_prod_unfold
+  by (intro filterlim_Pair filterlim_compose[OF _ filterlim_fst] filterlim_compose[OF _ filterlim_snd] assms)
+
 class uniform_topological_group_add = topological_group_add + uniform_topological_monoid_add +
   assumes uniformly_continuous_uminus': "filterlim (\<lambda>(a, b). (-a, -b)) uniformity uniformity"
 begin

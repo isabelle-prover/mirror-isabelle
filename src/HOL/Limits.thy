@@ -1220,7 +1220,7 @@ lemma continuous_on_inverse[continuous_intros]:
   using assms unfolding continuous_on_def by (blast intro: tendsto_inverse)
 
 lemma tendsto_divide [tendsto_intros]:
-  fixes a b :: "'a::real_normed_field"
+  fixes a b :: "'a::real_normed_div_algebra"
   shows "(f \<longlongrightarrow> a) F \<Longrightarrow> (g \<longlongrightarrow> b) F \<Longrightarrow> b \<noteq> 0 \<Longrightarrow> ((\<lambda>x. f x / g x) \<longlongrightarrow> a / b) F"
   by (simp add: tendsto_mult tendsto_inverse divide_inverse)
 

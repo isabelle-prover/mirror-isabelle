@@ -405,7 +405,7 @@ proof (induction A rule: infinite_finite_induct)
 qed simp_all
 
 lemma norm_prod_minus1_le_prod_minus1:
-  fixes f :: "nat \<Rightarrow> 'a :: {real_normed_div_algebra,comm_ring_1}"  
+  fixes f :: "'i \<Rightarrow> 'a :: {real_normed_div_algebra,comm_ring_1}"  
   shows "norm (prod (\<lambda>n. 1 + f n) A - 1) \<le> prod (\<lambda>n. 1 + norm (f n)) A - 1"
 proof (induction A rule: infinite_finite_induct)
   case (insert x A)
