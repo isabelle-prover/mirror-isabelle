@@ -263,15 +263,13 @@ determinant of a linear function from a finite-dimensional vector space
 into itself, generalising (but not replacing) the earlier
 "Determinants.det", which operates on matrices. The related "abs_det"
 gives the absolute value of the determinant of a multiset of vectors.
-
-* Session "HOL-Complex_Analysis": Theory "Infinite_Product" treats
-infinite products on sets, generalising the existing treatment of
-infinite products on series.
-
 The interpretation for Euclidean spaces, "eucl.det", is now the default
 meaning of "det", and the previous "Determinants.det" is available with
 the abbreviation "matrix_det". INCOMPATIBILITY
 
+* Session "HOL-Complex_Analysis": Theory "Infinite_Product" treats
+infinite products on sets, generalising the existing treatment of
+infinite products on series.
 
 *** ML ***
 
