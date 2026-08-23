@@ -3880,11 +3880,7 @@ proof (intro allI impI)
   qed
 
   have mult_y: "(\<lambda>x. 1 + f x y) multipliable_on A" if "y \<in> B" for y
-  proof -
-    from summ_y[OF that] have "(\<lambda>x. 1 + f x y) abs_multipliable_on A"
-      unfolding abs_multipliable_on_iff_summable_on by simp
-    thus ?thesis by (rule abs_multipliable_multipliable)
-  qed
+    by (simp add: abs_multipliable_multipliable abs_multipliable_on_iff_summable_on summ_y that)
 
   \<comment> \<open>The infprod is well-defined and is the pointwise limit\<close>
   have prod_tendsto: "(prod (\<lambda>x. 1 + f x y) \<longlongrightarrow> infprod (\<lambda>x. 1 + f x y) A) (finite_subsets_at_top A)" 
@@ -4030,11 +4026,7 @@ lemma uniform_limit_prodinf':
 proof -
   have "uniform_limit B (\<lambda>X y. \<Prod>x\<in>X. 1 + (f x y - 1)) (\<lambda>y. \<Prod>\<^sub>\<infinity>x\<in>A. 1 + (f x y - 1)) (finite_subsets_at_top A)"
     by (rule uniform_limit_prodinf[where L = L and C = C]) (use assms in auto)
-  moreover have "(\<lambda>X y. \<Prod>x\<in>X. 1 + (f x y - 1)) = (\<lambda>X y. \<Prod>x\<in>X. f x y)"
-    by simp
-  moreover have "(\<lambda>y. \<Prod>\<^sub>\<infinity>x\<in>A. 1 + (f x y - 1)) = (\<lambda>y. \<Prod>\<^sub>\<infinity>x\<in>A. f x y)"
-    by simp
-  ultimately show ?thesis
+  then show ?thesis
     by simp
 qed
 
@@ -4067,16 +4059,9 @@ proof (rule uniform_limit_prodinf'[where L = "\<lambda>y. \<Sum>\<^sub>\<infinit
       by (rule M)
   qed
   show "(\<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A. M k)" if y: "y \<in> B" for y
-  proof (rule infsum_mono)
+  proof (intro M infsum_mono)
     show "(\<lambda>k. norm (f k y - 1)) summable_on A"
-    proof (rule summable_on_comparison_test[OF M])
-      show "\<And>k. k \<in> A \<Longrightarrow> norm (f k y - 1) \<le> M k"
-        using le y by blast
-      show "\<And>k. k \<in> A \<Longrightarrow> 0 \<le> norm (f k y - 1)"
-        by simp
-    qed
-    show "M summable_on A"
-      by (rule M)
+      using M le summable_on_comparison_test y by fastforce
     show "\<And>k. k \<in> A \<Longrightarrow> norm (f k y - 1) \<le> M k"
       using le y by blast
   qed
@@ -4091,23 +4076,11 @@ text \<open>
   \<open>logderiv_infprod_uniform_limit\<close> above directly, both being stated along
   \<^term>\<open>finite_subsets_at_top A\<close>.
 \<close>
-lemma uniform_limit_compose_filterlim:
-  assumes ul: "uniform_limit B g P F" and fl: "filterlim \<phi> F F'"
-  shows "uniform_limit B (\<lambda>n. g (\<phi> n)) P F'"
-  unfolding uniform_limit_iff
-proof (intro allI impI)
-  fix e :: real assume "e > 0"
-  with ul have "\<forall>\<^sub>F X in F. \<forall>x\<in>B. dist (g X x) (P x) < e"
-    unfolding uniform_limit_iff by blast
-  from this fl show "\<forall>\<^sub>F n in F'. \<forall>x\<in>B. dist (g (\<phi> n) x) (P x) < e"
-    by (rule eventually_compose_filterlim)
-qed
-
 corollary uniform_limit_prod_lessThan:
   fixes f :: "nat \<Rightarrow> 'a \<Rightarrow> 'b :: {metric_space, comm_monoid_mult}"
   assumes "uniform_limit B (\<lambda>X y. \<Prod>x\<in>X. f x y) P (finite_subsets_at_top UNIV)"
   shows   "uniform_limit B (\<lambda>n y. \<Prod>k<n. f k y) P sequentially"
-  using assms filterlim_lessThan_at_top by (rule uniform_limit_compose_filterlim)
+  using assms filterlim_lessThan_at_top by (rule filterlim_compose)
 
 
 subsection \<open>Real numbers\<close>
@@ -4169,13 +4142,10 @@ proof -
     using D by (auto simp: P_def)
   have e1: "(\<Sum>x\<in>P. \<bar>g x\<bar>) = sum g P"
     by (intro sum.cong refl) (auto simp: P_def)
-  have e2: "(\<Sum>x\<in>D-P. \<bar>g x\<bar>) = - sum g (D - P)"
-  proof -
-    have "(\<Sum>x\<in>D-P. \<bar>g x\<bar>) = (\<Sum>x\<in>D-P. - g x)"
-      by (intro sum.cong refl) (auto simp: P_def)
-    thus ?thesis
-      by (simp add: sum_negf)
-  qed
+  have "(\<Sum>x\<in>D-P. \<bar>g x\<bar>) = (\<Sum>x\<in>D-P. - g x)"
+    by (intro sum.cong refl) (auto simp: P_def)
+  then have e2: "(\<Sum>x\<in>D-P. \<bar>g x\<bar>) = - sum g (D - P)"
+    by (simp add: sum_negf)
   have DPA: "D - P \<subseteq> A" and PA: "P \<subseteq> A"
     using D(2) PD by auto
   have f1: "finite (D - P)"
@@ -4201,11 +4171,8 @@ proof (rule nonneg_bdd_above_summable_on)
   show "\<And>x. x \<in> A \<Longrightarrow> 0 \<le> norm (g x)"
     by simp
   show "bdd_above (sum (\<lambda>x. norm (g x)) ` {D. D \<subseteq> A \<and> finite D})"
-  proof (rule bdd_aboveI2)
-    fix D assume "D \<in> {D. D \<subseteq> A \<and> finite D}"
-    then show "(\<Sum>x\<in>D. norm (g x)) \<le> 2 * C"
-      using sum_abs_le_of_bdd_partial_sums[OF bdd] by simp
-  qed
+    using sum_abs_le_of_bdd_partial_sums[OF bdd]
+    by fastforce
 qed
 
 lemma abs_summable_on_of_bdd_partial_sums:
@@ -4373,14 +4340,7 @@ proof -
   have sum: "((\<lambda>x. Ln (f x)) has_sum Ln Q) (A - F)"
     by (rule has_sum_Ln_of_prods_near_1[OF Q(1)]) (use near in \<open>simp add: dist_norm\<close>)
   show ?thesis
-  proof (intro exI[of _ F] conjI)
-    show "finite F"
-      by (rule F(1))
-    show "F \<subseteq> A"
-      by (rule F(2))
-    show "((\<lambda>x. Ln (f x)) has_sum Ln (\<Prod>\<^sub>\<infinity>x\<in>A-F. f x)) (A - F)"
-      unfolding Qeq by (rule sum)
-  qed
+    using F Qeq sum by blast
 qed
 text \<open>
   The complex analogue of \<open>strongly_multipliable_on_iff_abs_multipliable_on_real\<close>.  The
@@ -4461,29 +4421,13 @@ proof -
   have P: "(f has_setprod infprod f A) A"
     using mult by (rule has_setprod_infprod)
   have nzf: "f x \<noteq> 0" if "x \<in> A" for x
-  proof
-    assume "f x = 0"
-    with that have "(f has_setprod 0) A"
-      by (intro zero_imp_has_setprod_0)
-    with P have "infprod f A = 0"
-      by (rule has_setprod_unique)
-    with nz show False
-      by simp
-  qed
+    using nz that by (meson infprodI zero_imp_has_setprod_0)
   have empty: "{x \<in> A. f x = 0} = {}"
     using nzf by blast
   have all: "{x \<in> A. f x \<noteq> 0} = A"
     using nzf by blast
   have "f strongly_multipliable_on A"
-    unfolding strongly_multipliable_on_def
-  proof (intro conjI exI)
-    show "finite {x \<in> A. f x = 0}"
-      by (simp add: empty)
-    show "(f has_setprod infprod f A) {x \<in> A. f x \<noteq> 0}"
-      using P by (simp add: all)
-    show "infprod f A \<noteq> 0"
-      by (rule nz)
-  qed
+    using P nz nzf strongly_multipliable_on_nonzero_iff by blast
   thus ?thesis
     by (simp add: strongly_multipliable_on_iff_abs_multipliable_on_complex)
 qed
@@ -4496,29 +4440,13 @@ proof -
   have P: "(f has_setprod infprod f A) A"
     using mult by (rule has_setprod_infprod)
   have nzf: "f x \<noteq> 0" if "x \<in> A" for x
-  proof
-    assume "f x = 0"
-    with that have "(f has_setprod 0) A"
-      by (intro zero_imp_has_setprod_0)
-    with P have "infprod f A = 0"
-      by (rule has_setprod_unique)
-    with nz show False
-      by simp
-  qed
+    using nz that by (meson infprodI zero_imp_has_setprod_0)
   have empty: "{x \<in> A. f x = 0} = {}"
     using nzf by blast
   have all: "{x \<in> A. f x \<noteq> 0} = A"
     using nzf by blast
   have "f strongly_multipliable_on A"
-    unfolding strongly_multipliable_on_def
-  proof (intro conjI exI)
-    show "finite {x \<in> A. f x = 0}"
-      by (simp add: empty)
-    show "(f has_setprod infprod f A) {x \<in> A. f x \<noteq> 0}"
-      using P by (simp add: all)
-    show "infprod f A \<noteq> 0"
-      by (rule nz)
-  qed
+    using P nz nzf strongly_multipliable_on_nonzero_iff by blast
   thus ?thesis
     by (simp add: strongly_multipliable_on_iff_abs_multipliable_on_real)
 qed
@@ -4541,12 +4469,9 @@ lemma has_setprod_Re:
   shows "((\<lambda>x. Re (f x)) has_setprod Re a) M"
 proof -
   have eq: "\<forall>\<^sub>F X in finite_subsets_at_top M. prod (\<lambda>x. Re (f x)) X = Re (prod f X)"
-    by (rule eventually_finite_subsets_at_top_weakI)
-       (metis Re_prod_Reals real subset_iff)
-  from assms(1) have "(prod f \<longlongrightarrow> a) (finite_subsets_at_top M)"
-    by (simp add: has_setprod_def)
-  then have "((\<lambda>X. Re (prod f X)) \<longlongrightarrow> Re a) (finite_subsets_at_top M)"
-    by (rule tendsto_Re)
+    by (simp add: Re_prod_Reals eventually_finite_subsets_at_top_weakI real subsetD)
+  from assms(1) have "((\<lambda>X. Re (prod f X)) \<longlongrightarrow> Re a) (finite_subsets_at_top M)"
+    by (simp add: has_setprodD tendsto_Re)
   then show ?thesis
     using eq unfolding has_setprod_def by (simp add: filterlim_cong)
 qed
@@ -4568,7 +4493,7 @@ proof -
   from \<open>M \<noteq> {}\<close> obtain m where "m \<in> M" by blast
   have eq: "\<forall>\<^sub>F X in finite_subsets_at_top M. prod (\<lambda>x. Im (f x)) X = Im (prod f X)"
     unfolding eventually_finite_subsets_at_top
-  proof (intro exI[of _ "{m}"] conjI allI impI)
+  proof (intro exI conjI allI impI)
     show "finite {m}" "{m} \<subseteq> M" using \<open>m \<in> M\<close> by auto
   next
     fix X assume "finite X \<and> {m} \<subseteq> X \<and> X \<subseteq> M"
@@ -4653,13 +4578,8 @@ next
   case (Suc n)
   have pos: "real n + 1 \<noteq> 0" "real n + 2 \<noteq> 0" "(real n + 2) ^ 2 \<noteq> 0"
     by auto
-  have factor: "1 - 1 / (real n + 2) ^ 2 = ((real n + 1) * (real n + 3)) / (real n + 2) ^ 2"
-  proof -
-    have "(real n + 2) ^ 2 - 1 = (real n + 1) * (real n + 3)"
-      by (simp add: power2_eq_square algebra_simps)
-    thus ?thesis
-      using pos(3) by (simp add: field_simps)
-  qed
+  then have factor: "1 - 1 / (real n + 2) ^ 2 = ((real n + 1) * (real n + 3)) / (real n + 2) ^ 2"
+    by (simp add: power2_eq_square field_simps)
   have "(\<Prod>k<Suc n. 1 - 1 / (real k + 2) ^ 2)
           = ((real n + 2) / (2 * (real n + 1))) * (1 - 1 / (real n + 2) ^ 2)"
     using Suc by simp
@@ -4703,12 +4623,7 @@ proof -
     unfolding f_def by (rule prod_lessThan_telescope)
   \<comment> \<open>convergence: the deviations from \<open>1\<close> are summable\<close>
   have "(\<lambda>n. norm (f n - 1)) summable_on UNIV"
-  proof -
-    have "(\<lambda>n. norm (f n - 1)) = (\<lambda>n. 1 / (real n + 2) ^ 2)"
-      by (rule ext) (simp add: f_def)
-    thus ?thesis
-      using summable_on_inverse_squares_shifted by simp
-  qed
+    by (simp add: f_def summable_on_inverse_squares_shifted)
   hence "f abs_multipliable_on UNIV"
     by (subst abs_multipliable_on_iff_summable_on) auto
   hence "f multipliable_on UNIV"
@@ -4739,8 +4654,7 @@ subsection \<open>Why strong multipliability is a different notion\<close>
 text \<open>
   A constant family below \<open>1\<close>: the partial products shrink to \<open>0\<close>, so the product converges
   \<^emph>\<open>unordered\<close> with value \<open>0\<close> although no factor vanishes.  By \<open>infprod_eq_0_iff\<close> it is therefore
-  not strongly multipliable.  This is the counterexample behind several hypotheses in this theory --
-  in particular it is why \<open>multipliable_on_subset_aux\<close> had to go.
+  not strongly multipliable.  This is the counterexample behind several hypotheses in this theory.
 \<close>
 lemma pow_half_small: "e > 0 \<Longrightarrow> \<exists>N. (1/2::real) ^ N < e"
   using arch_pow_inv[of e "1/2"] by auto
@@ -4753,7 +4667,7 @@ proof (rule tendstoI)
     using pow_half_small[OF e] by blast
   show "\<forall>\<^sub>F X in finite_subsets_at_top UNIV. dist (prod (\<lambda>_::nat. 1/2::real) X) 0 < e"
     unfolding eventually_finite_subsets_at_top
-  proof (intro exI[of _ "{..<N}"] conjI allI impI)
+  proof (intro exI conjI allI impI)
     show "finite {..<N}" "{..<N} \<subseteq> UNIV"
       by auto
     fix Y assume Y: "finite Y \<and> {..<N} \<subseteq> Y \<and> Y \<subseteq> UNIV"
@@ -4772,15 +4686,7 @@ qed
 
 corollary not_strongly_multipliable_const_half:
   "\<not> (\<lambda>_::nat. 1/2::real) strongly_multipliable_on UNIV"
-proof
-  assume *: "(\<lambda>_::nat. 1/2::real) strongly_multipliable_on UNIV"
-  have "infprod (\<lambda>_::nat. 1/2::real) UNIV = 0"
-    by (rule infprodI[OF has_setprod_const_half])
-  hence "\<exists>x\<in>(UNIV::nat set). (1/2::real) = 0"
-    by (rule iffD1[OF infprod_eq_0_iff[OF *]])
-  thus False
-    by simp
-qed
+  using has_setprod_const_half has_setprod_eq_0_iff by fastforce
 
 
 subsection \<open>Uniform convergence from the \<open>M\<close>-test\<close>
