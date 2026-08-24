@@ -162,7 +162,7 @@ fun present_theory (Exn.Exn exn) = SOME (Exn.Exn exn)
 
 in
 
-val schedule_theories = Thread_Attributes.uninterruptible (fn _ => fn tasks =>
+fun schedule_theories tasks =
   let
     fun join_parents deps name parents =
       (case map #1 (filter (not o can Future.join o #2) deps) of
@@ -197,7 +197,7 @@ val schedule_theories = Thread_Attributes.uninterruptible (fn _ => fn tasks =>
     val results4 = map Exn.Exn (maps Task_Queue.group_status (Execution.reset ()));
 
     val _ = Par_Exn.release_all (results1 @ results2 @ results3 @ results4);
-  in Par_Exn.release_all present_results end);
+  in Par_Exn.release_all present_results end;
 
 end;
 
