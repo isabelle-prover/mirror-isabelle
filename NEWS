@@ -267,9 +267,9 @@ The interpretation for Euclidean spaces, "eucl.det", is now the default
 meaning of "det", and the previous "Determinants.det" is available with
 the abbreviation "matrix_det". INCOMPATIBILITY
 
-* Session "HOL-Complex_Analysis": Theory "Infinite_Product" treats
-infinite products on sets, generalising the existing treatment of
-infinite products on series.
+* Session "HOL-Analysis": Theory "Infinite_Product" treats products
+indexed by arbitrary sets, generalising the existing treatment of
+the product of a sequence.
 
 *** ML ***
 
