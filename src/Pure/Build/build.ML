@@ -320,7 +320,7 @@ fun require_thys initiators qualifier dir imports tasks =
       fold (require_thy initiators qualifier dir) imports tasks
 and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
   let
-    val {master_dir, theory_name, ...} = Resources.import_name qualifier dir s;
+    val {master_dir = theory_dir, theory_name, ...} = Resources.import_name qualifier dir s;
   in
     if String_Graph.defined tasks theory_name then tasks
     else
@@ -330,7 +330,7 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
       | NONE =>
           let
             val {thy_path, text, theory_pos, imports, options = header_options, keywords} =
-              Resources.check_thy master_dir theory_name handle ERROR msg =>
+              Resources.check_thy theory_dir theory_name handle ERROR msg =>
                 cat_error msg
                   ("The error(s) above occurred for theory " ^ quote theory_name ^
                     Position.here require_pos ^ required_by "\n" initiators);
