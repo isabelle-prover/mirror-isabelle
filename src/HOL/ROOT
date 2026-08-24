@@ -129,6 +129,7 @@ session "HOL-Analysis-ex" in "Analysis/ex" = "HOL-Analysis" +
   theories
     Approximations
     Metric_Arith_Examples
+    Infinite_Product_Examples
 
 session "HOL-Homology" (timing) in Homology = "HOL-Analysis" +
   options [document_tags = "theorem%important,corollary%important,proposition%important,class%important,instantiation%important,subsubsection%unimportant,%unimportant",

@@ -3,7 +3,6 @@ theory Complex_Analysis
   Riemann_Mapping
   Residue_Theorem
   Weierstrass_Factorization
-  Infinite_Product
 begin
 
 end

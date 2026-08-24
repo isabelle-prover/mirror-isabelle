@@ -44,7 +44,7 @@ theory Analysis
   Abstract_Topology
   Product_Topology
   Lindelof_Spaces
-  Infinite_Products
+  Infinite_Product
   Infinite_Sum
   Infinite_Set_Sum
   Polytope
