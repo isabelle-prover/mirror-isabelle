@@ -326,6 +326,7 @@ ML_file "Build/resources.ML";
 ML_file "General/message_digest.ML";
 ML_file "PIDE/command.ML";
 ML_file "PIDE/query_operation.ML";
+ML_file "Thy/thy_presentation.ML";
 ML_file "Thy/thy_info.ML";
 ML_file "thm_deps.ML";
 ML_file "Build/export_theory.ML";

@@ -7,12 +7,6 @@ file dependencies, and presentation of theory documents.
 
 signature THY_INFO =
 sig
-  type presentation_context =
-    {options: Options.T, file_pos: Position.T, adjust_pos: Position.T -> Position.T,
-      segments: Document_Output.segment list}
-  val adjust_pos_properties: presentation_context -> Position.T -> Properties.T
-  val apply_presentation: presentation_context -> theory -> unit
-  val add_presentation: (presentation_context -> theory -> unit) -> theory -> theory
   val get_names: unit -> string list
   val lookup_theory: string -> theory option
   val defined_theory: string -> bool
@@ -26,48 +20,6 @@ end;
 
 structure Thy_Info: THY_INFO =
 struct
-
-(** theory presentation **)
-
-(* hook for consolidated theory *)
-
-type presentation_context =
-  {options: Options.T, file_pos: Position.T, adjust_pos: Position.T -> Position.T,
-    segments: Document_Output.segment list};
-
-fun adjust_pos_properties (context: presentation_context) pos =
-  let
-    val props = Position.properties_of pos;
-    val props' = Position.properties_of (#adjust_pos context pos);
-  in
-    filter (fn (a, _) => a = Markup.offsetN orelse a = Markup.end_offsetN) props' @
-    filter (fn (a, _) => a = Markup.labelN orelse a = Markup.fileN orelse a = Markup.idN) props
-  end;
-
-structure Presentation = Theory_Data
-(
-  type T = ((presentation_context -> theory -> unit) * stamp) list;
-  val empty = [];
-  fun merge data : T = Library.merge (eq_snd op =) data;
-);
-
-fun apply_presentation (context: presentation_context) thy =
-  ignore (Par_List.map (fn (f, _) => f context thy) (Presentation.get thy));
-
-fun add_presentation f = Presentation.map (cons (f, stamp ()));
-
-val _ =
-  Theory.setup (add_presentation (fn {options, segments, ...} => fn thy =>
-    let
-      val keywords = Thy_Header.get_keywords thy;
-      val thy_name = Context.theory_base_name thy;
-      val latex = Document_Output.present_thy options keywords thy_name segments;
-    in
-      if Options.string options "document" = "false" then ()
-      else Export.export thy \<^path_binding>\<open>document/latex\<close> latex
-    end));
-
-
 
 (** thy database **)
 
@@ -177,7 +129,7 @@ datatype result =
   Result of
    {theory: theory,
     exec_id: Document_ID.exec,
-    present: unit -> presentation_context option,
+    present: unit -> Thy_Presentation.context option,
     commit: Document_Output.segment list -> unit};
 
 fun theory_result theory =
@@ -207,7 +159,7 @@ fun consolidate_theory (Exn.Exn exn) = [Exn.Exn exn]
 fun present_theory (Exn.Exn exn) = SOME (Exn.Exn exn)
   | present_theory (Exn.Res (Result {theory, present, ...})) =
       present () |> Option.map (fn context as {segments, ...} =>
-        Exn.capture_body (fn () => (apply_presentation context theory; (theory, segments))));
+        Exn.capture_body (fn () => (Thy_Presentation.apply_hooks context theory; (theory, segments))));
 
 in
 
@@ -305,7 +257,7 @@ fun eval_thy loading_theory (thy: Resources.thy) text_pos text parents =
 
     val (results, thy) = cond_timeit true ("theory " ^ quote name) excursion;
 
-    fun present () : presentation_context =
+    fun present () : Thy_Presentation.context =
       let
         val segments =
           (spans ~~ maps Toplevel.join_results results) |> map (fn (span, (st, tr, st')) =>

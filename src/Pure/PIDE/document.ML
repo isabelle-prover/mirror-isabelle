@@ -761,7 +761,7 @@ fun finished_eval node =
           | SOME (eval, _) => SOME (not (null (Execution.snapshot [Command.eval_exec_id eval])))));
   in not active end;
 
-fun presentation_context options the_command_span node_name node : Thy_Info.presentation_context =
+fun presentation_context options the_command_span node_name node : Thy_Presentation.context =
   let
     val (_, offsets, rev_segments) =
       (node, (0, Inttab.empty, [])) |-> iterate_entries
@@ -812,7 +812,7 @@ fun print_consolidation options the_command_span node_name (assign_update, node)
               Command.print0 {pri = Task_Queue.urgent_pri + 1, print_fn = fn _ => fn _ =>
                 let
                   val _ = Output.status [YXML.output_markup_only Markup.consolidating];
-                  val result = Exn.capture (Thy_Info.apply_presentation context) thy;
+                  val result = Exn.capture (Thy_Presentation.apply_hooks context) thy;
                   val _ = Lazy.force (get_consolidated node);
                   val _ = Output.status [YXML.output_markup_only Markup.consolidated];
                 in Exn.release result end};

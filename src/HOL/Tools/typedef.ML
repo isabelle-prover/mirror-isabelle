@@ -346,7 +346,7 @@ val overloaded = typedef_overloaded;
 (** theory export **)
 
 val _ =
-  (Theory.setup o Thy_Info.add_presentation) (fn context => fn thy =>
+  (Theory.setup o Thy_Presentation.add_hook) (fn context => fn thy =>
     if Export_Theory.export_enabled context then
       let
         val parent_spaces = map Sign.type_space (Theory.parents_of thy);
