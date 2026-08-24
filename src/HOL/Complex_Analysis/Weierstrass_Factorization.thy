@@ -40,7 +40,7 @@ proof (rule zorder_eqI)
   show "(\<lambda>z. -exp (\<Sum>k=1..n. z ^ k / of_nat k)) holomorphic_on UNIV"
     by (intro holomorphic_intros) auto
 qed (auto simp: weierstrass_factor_def algebra_simps)  
-Ï
+
 lemma weierstrass_factor_bound:
   assumes "norm z \<le> 1 / 2"
   shows   "norm (weierstrass_factor n z - 1) \<le> 3 * norm z ^ Suc n"
