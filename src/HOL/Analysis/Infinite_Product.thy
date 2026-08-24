@@ -1,5 +1,5 @@
 theory Infinite_Product
-  imports Weierstrass_Factorization
+  imports Infinite_Products 
  
 
 begin
@@ -9,8 +9,6 @@ text \<open>The recurring theme of the whole development: the sum theory works b
   under translation by any constant).  Multiplication is not, so the sum proofs
   cannot be ported verbatim.  It is, however, uniformly continuous away from 0,
   and in a product with a non-zero value almost all subproducts lie near 1.\<close>
-
-no_notation Infinite_Set_Sum.abs_summable_on (infix \<open>abs'_summable'_on\<close> 50)
 
 section \<open>Unordered infinite products\<close>
 
@@ -840,17 +838,11 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
     using abs_conv convergent_prod_has_prod prodinf_nonzero by blast
   have g_ge1: \<open>g n \<ge> 1\<close> for n unfolding g_def by auto
   have g_ge0: \<open>g n \<ge> 0\<close> for n using g_ge1[of n] by linarith
-
-  \<comment> \<open>Sequential partial products of g converge to L_abs\<close>
   from L_abs have g_seq: \<open>(\<lambda>n. prod g {..n}) \<longlonglongrightarrow> L_abs\<close>
     by (rule has_prod_imp_tendsto)
-
-  \<comment> \<open>Bound: for any finite S, norm(prod f S - 1) \<le> prod g S - 1\<close>
   have norm_bound: \<open>norm ((\<Prod>n\<in>S. f n) - 1) \<le> (\<Prod>n\<in>S. g n) - 1\<close>
     if \<open>finite S\<close> for S :: \<open>nat set\<close>
     using norm_prod_minus1_le_prod_minus1[of \<open>\<lambda>n. f n - 1\<close> S] by (simp add: g_def)
-
-  \<comment> \<open>Bound: for any finite S, norm(prod f S) \<le> prod g S\<close>
   have norm_prod_bound: \<open>norm (prod f S) \<le> prod g S\<close>
     if \<open>finite S\<close> for S :: \<open>nat set\<close>
     using that
@@ -863,11 +855,7 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
       by (metis (no_types, lifting) prod_norm g_def prod_mono norm_ge_zero norm_one norm_triangle_sub)
   qed
 
-  \<comment> \<open>For finite S \<subseteq> {N+1,...}, prod g S \<le> prod g {..Max S} / prod g {..N}\<close>
-  \<comment> \<open>which is bounded by L_abs / prod g {..N}\<close>
-  \<comment> \<open>and prod g {..N} \<rightarrow> L_abs, so the tail \<rightarrow> 1\<close>
-
-  \<comment> \<open>Partial products of g are bounded by L_abs (monotone increasing \<rightarrow> limit)\<close>
+  \<comment> \<open>Partial products of g are bounded\<close>
   have g_partial_le: \<open>prod g {..n} \<le> L_abs\<close> for n
   proof (rule ccontr)
     assume \<open>\<not> prod g {..n} \<le> L_abs\<close>
@@ -888,16 +876,14 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
 
   show \<open>\<forall>\<^sub>F x in finite_subsets_at_top (UNIV :: nat set). dist (prod f x) P < e\<close>
   proof -
-    \<comment> \<open>Choose N so that sequential partial products are within e/2 of P\<close>
     from seq_lim[unfolded tendsto_iff, rule_format, OF half_gt_zero[OF \<open>e > 0\<close>]]
     obtain N1 where N1: \<open>\<And>n. n \<ge> N1 \<Longrightarrow> dist (prod f {..n}) P < e/2\<close>
       by (auto simp: eventually_at_top_linorder)
-    \<comment> \<open>Choose N so that the absolute product tail is within e/2 of L_abs\<close>
     from g_seq[unfolded tendsto_iff, rule_format, OF half_gt_zero[OF \<open>e > 0\<close>]]
     obtain N2 where N2: \<open>\<And>n. n \<ge> N2 \<Longrightarrow> dist (prod g {..n}) L_abs < e/2\<close>
       by (auto simp: eventually_at_top_linorder)
     define N where \<open>N = max N1 N2\<close>
-    \<comment> \<open>The witness set is {..N}\<close>
+    \<comment> \<open>The witness set is @term\<open>{..N}\<close>\<close>
     show ?thesis
       unfolding eventually_finite_subsets_at_top
     proof (intro exI conjI allI impI)
@@ -912,12 +898,10 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
       then have MMax: \<open>M = Max Y\<close> and MY: \<open>Y \<subseteq> {..M}\<close> and MN: \<open>M \<ge> N\<close>
         using finY NY by (auto simp: M_def intro: Max_ge subset_iff[THEN iffD2])
       have finM: \<open>finite {..M}\<close> by simp
-      \<comment> \<open>Factoring: prod f {..M} = prod f ({..M} - Y) * prod f Y\<close>
       have factor_f: \<open>prod f {..M} = prod f ({..M} - Y) * prod f Y\<close>
         using prod.subset_diff[OF MY finM, of f] .
       have factor_g: \<open>prod g {..M} = prod g ({..M} - Y) * prod g Y\<close>
         using prod.subset_diff[OF MY finM, of g] .
-      \<comment> \<open>Key bound: dist(prod f Y, prod f {..M}) \<le> L_abs - prod g {..N}\<close>
       have dist_bound: \<open>dist (prod f Y) (prod f {..M}) \<le> L_abs - prod g {..N}\<close>
       proof -
         have \<open>dist (prod f Y) (prod f {..M}) = norm (prod f Y - prod f {..M})\<close>
@@ -952,7 +936,6 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
           using g_partial_le by force
         finally show ?thesis .
       qed
-      \<comment> \<open>The absolute product tail bound is < e/2\<close>
       have tail_bound: \<open>L_abs - prod g {..N} < e/2\<close>
       proof -
         have \<open>dist (prod g {..N}) L_abs < e/2\<close>
@@ -961,7 +944,6 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
           using g_partial_le .
         ultimately show ?thesis by (simp add: dist_real_def)
       qed
-      \<comment> \<open>Sequential bound: dist(prod f {..M}, P) < e/2\<close>
       have seq_bound: \<open>dist (prod f {..M}) P < e/2\<close>
         using N1[of M] MN by (auto simp: N_def)
       \<comment> \<open>Combine\<close>
@@ -993,10 +975,10 @@ subsection \<open>Subsets\<close>
 text \<open>
   For sums, unordered summability on \<^term>\<open>A\<close> passes to every subset of \<^term>\<open>A\<close>
   (\<open>summable_on_subset_banach\<close>).  For products the corresponding statement with only the side
-  condition \<open>f x \<noteq> 0\<close> for \<open>x \<in> A - B\<close> is \<^emph>\<open>false\<close>, and no strengthening of the type class
+  condition @{term\<open>f x \<noteq> 0\<close>} for @{term\<open>x \<in> A - B\<close>} is \<^emph>\<open>false\<close>, and no strengthening of the type class
   helps.  A counterexample already exists over \<^typ>\<open>real\<close>: take the index type
   \<^typ>\<open>bool \<times> nat\<close>, let \<^term>\<open>A = UNIV\<close> and let \<open>B\<close> be the \<open>True\<close> half, and put
-  \<open>f p = (if fst p then -1 else 1/2)\<close>.  The factors \<open>1/2\<close> force the partial products over
+  @{term\<open>f p = (if fst p then -1 else 1/2)\<close>}.  The factors \<open>1/2\<close> force the partial products over
   \<^term>\<open>A\<close> to tend to \<open>0\<close>, so \<open>f\<close> is multipliable on \<^term>\<open>A\<close>, and \<open>f\<close> is non-zero
   everywhere; but over \<open>B\<close> the partial products are \<open>1\<close> and \<open>-1\<close> alternately, so \<open>f\<close> is not
   multipliable on \<open>B\<close>.
@@ -1382,7 +1364,7 @@ lemma has_setprod_comm_multiplicative_general:
 proof -
   from infprod have lim_g: \<open>(prod g \<longlongrightarrow> x) (finite_subsets_at_top S)\<close>
     by (simp add: has_setprod_def)
-  \<comment> \<open>Compose f with the limit: since isCont f x and prod g \<rightarrow> x, we get f \<circ> prod g \<rightarrow> f x\<close>
+  \<comment> \<open>Compose f with the limit\<close>
   have \<open>((f \<circ> prod g) \<longlongrightarrow> f x) (finite_subsets_at_top S)\<close>
   proof (rule topological_tendstoI)
     fix U assume \<open>open U\<close> \<open>f x \<in> U\<close>
@@ -1646,9 +1628,7 @@ proof -
       define FMB where \<open>FMB = finite_subsets_at_top (Sigma M B)\<close>
       have \<open>eventually (\<lambda>H. D (\<Prod>a\<in>M. b a, \<Prod>(a,b)\<in>H. f (a,b))) FMB\<close>
       proof -
-        \<comment> \<open>Metric replacement for the (false in general) prod_uniformity step: \<open>D\<close> contains a
-            metric ball of radius \<open>eD\<close>; choose \<open>C\<close> bounding all \<open>b a\<close> (a \<in> M) and \<open>\<delta> \<le> 1\<close> from
-            \<open>prod_close_of_factors_close\<close> so that \<open>\<delta>\<close>-close, \<open>C\<close>-bounded factors give \<open>D\<close>-close products.\<close>
+        \<comment> \<open>Metric replacement for the (false in general) prod-uniformity step.\<close>
         from D_uni obtain eD where eD0: \<open>eD > 0\<close>
           and eD_D: \<open>\<And>x y::'c. dist x y < eD \<Longrightarrow> D (x, y)\<close>
           by (auto simp: eventually_uniformity_metric)
@@ -2297,7 +2277,7 @@ proof -
     show \<open>filterlim (\<lambda>n. {..n}) (finite_subsets_at_top UNIV) sequentially\<close>
       using filterlim_atMost_at_top by auto
   qed
-  \<comment> \<open>Since S \<noteq> 0, eventually partial products are nonzero\<close>
+  \<comment> \<open>Since S is nonzero, eventually partial products are nonzero\<close>
   from seq_lim assms(2)[folded S_def] have \<open>\<forall>\<^sub>F n in sequentially. prod f {..n} \<noteq> 0\<close>
     by (intro tendsto_imp_eventually_ne) auto
   then obtain N where N: \<open>\<And>n. n \<ge> N \<Longrightarrow> prod f {..n} \<noteq> 0\<close>
@@ -2577,7 +2557,7 @@ proof -
     unfolding summable_on_def by blast
   hence tend: "((\<lambda>U. sum f U) \<longlongrightarrow> S) (finite_subsets_at_top M)"
     by (auto simp: has_sum_def)
-  \<comment> \<open>Find open W around S such that a - b \<in> X whenever a, b \<in> W\<close>
+  \<comment> \<open>Find open W around S such that $a - b \<in> X$ whenever $a$, $b \<in> W$\<close>
   have "continuous_on UNIV (\<lambda>(a::'b, b). a - b)"
     by (auto intro!: continuous_intros simp: case_prod_unfold)
   hence cont: "isCont (\<lambda>(a::'b, b). a - b) (S, S)"
@@ -2973,7 +2953,7 @@ lemma abs_multipliable_on_comparison_test:
   assumes \<open>\<And>x. x \<in> A \<Longrightarrow> norm (f x - 1) \<le> norm (g x - 1)\<close>
   shows   \<open>f abs_multipliable_on A\<close>
 proof -
-  \<comment> \<open>Step 1: From g abs_multipliable, get that partial sums of norm(g x - 1) are bounded\<close>
+  \<comment> \<open>Step 1: From g abs_multipliable, get that partial sums of @{term\<open>norm(g x - 1)\<close>} are bounded\<close>
   define gn where \<open>gn x = norm (g x - 1)\<close> for x
   define fn where \<open>fn x = norm (f x - 1)\<close> for x
   have gn_nn: \<open>gn x \<ge> 0\<close> for x unfolding gn_def by simp
@@ -3064,8 +3044,6 @@ proof -
   \<comment> \<open>Their pointwise product is multipliable\<close>
   have prod_mult: "(\<lambda>i. (1 + xn i) * (1 + yn i)) multipliable_on A"
     by (rule multipliable_on_mult[OF xn_mult yn_mult])
-
-  \<comment> \<open>By comparison, (1 + norm(xy - 1)) is multipliable\<close>
   show "(\<lambda>i. x i * y i) abs_multipliable_on A"
     unfolding abs_multipliable_on_def
   proof (rule multipliable_on_comparison_test[OF prod_mult])
@@ -3085,14 +3063,10 @@ lemma abs_multipliable_on_inverse:
 proof -
   have norm_sum: "(\<lambda>x. norm (f x - 1)) summable_on A"
     using assms(1) by (subst (asm) abs_multipliable_on_iff_summable_on)
-
-  \<comment> \<open>Get a finite set F outside which norm(f x - 1) < 1/2\<close>
   from summable_on_imp_nhds_0[OF norm_sum, of "ball 0 (1/2 :: real)"]
   obtain F where F_fin: "finite F" and F_sub: "F \<subseteq> A" 
     and F_small: "\<And>x. x \<in> A - F \<Longrightarrow> norm (f x - 1) \<in> ball 0 (1/2)"
     by auto
-
-  \<comment> \<open>On A - F, norm(inverse(f x) - 1) \<le> 2 * norm(f x - 1)\<close>
   have inv_bound: "norm (inverse (f x) - 1) \<le> 2 * norm (f x - 1)" if xSF: "x \<in> A - F" for x
   proof -
     have fx_nz: "f x \<noteq> 0" using xSF nz by auto
@@ -3115,7 +3089,6 @@ proof -
     ultimately show ?thesis
       by (simp add: mult_right_mono)
   qed
-  \<comment> \<open>norm(inverse(f x) - 1) is summable on A - F\<close>
   have "(\<lambda>x. norm (inverse (f x) - 1)) summable_on (A - F)"
   proof (rule summable_on_comparison_test)
     show "(\<lambda>x. 2 * norm (f x - 1)) summable_on (A - F)"
@@ -3139,7 +3112,6 @@ text \<open>The types @{typ ennreal}, @{typ ereal}, and @{typ enat} cannot be us
   because it requires @{class semidom}, which demands additive cancellation.
   These types fail cancellation: e.g.\ @{term \<open>(\<infinity>::ennreal) + 1 = \<infinity> + 2\<close>} but @{term \<open>(1::ennreal) \<noteq> 2\<close>}.
   Supporting them would require weakening the type class constraints on the framework definitions.\<close>
-
 
 
 (* The correct statement for products requires a nonzero limit (i.e. strongly_multipliable_on),
@@ -3665,9 +3637,7 @@ lemma abs_multipliable_on_Sigma_iff:
            ((\<lambda>x. \<Sum>\<^sub>\<infinity>y\<in>B x. norm (f (x, y) - 1)) summable_on A)"
   \<comment> \<open>\<^bold>\<open>NB\<close> \<open>summable_on_iff_abs_summable_on_real\<close> must never be given to the simplifier: it
       rewrites \<open>f summable_on A\<close> to \<open>(\<lambda>x. norm (f x)) summable_on A\<close>, which matches itself again.
-      Hence the explicit calculation below.  The name \<open>abs_summable_on_Sigma_iff\<close> also needs
-      qualifying, since \<^theory>\<open>HOL-Analysis.Infinite_Set_Sum\<close> has one of its own, about a
-      different \<open>abs_summable_on\<close> and with countability hypotheses.\<close>
+      Hence the explicit calculation below.\<close>
 proof -
   define g where "g = (\<lambda>p. norm (f p - 1))"
   have nn: "g p \<ge> 0" for p
@@ -3978,25 +3948,14 @@ proof (intro allI impI)
       qed
       have dist_le_C: "dist (prod g X) (prod g X2) \<le> exp (L y + 1) * (exp (r/2) - 1)"
         if X2: "finite X2" "X \<subseteq> X2" "X2 \<subseteq> A" for X2
-      proof -
-        have "dist (prod g X) (prod g X2) \<le> exp (L y + 1) * (exp (\<Sum>x\<in>X2 - X. norm (f x y)) - 1)"
-          using step_bound[OF X2] .
-        also have "\<dots> \<le> exp (L y + 1) * (exp (r/2) - 1)"
-          using tail_bound[OF X2] by (intro mult_left_mono diff_right_mono) auto
-        finally show ?thesis .
-      qed
+        using step_bound tail_bound that
+        by (smt (verit, best) exp_ge_zero exp_mono mult_left_mono)
       \<comment> \<open>Pass to the limit \<open>X2 \<rightarrow> A\<close> using that the closed ball is closed.\<close>
       have "infprod g A \<in> cball (prod g X) (exp (L y + 1) * (exp (r/2) - 1))"
       proof (rule Lim_in_closed_set[OF closed_cball _ _ limg])
         show "\<forall>\<^sub>F X2 in finite_subsets_at_top A. prod g X2 \<in> cball (prod g X) (exp (L y + 1) * (exp (r/2) - 1))"
           unfolding eventually_finite_subsets_at_top
-        proof (intro exI conjI allI impI)
-          show "finite X" by (rule X_fin)
-          show "X \<subseteq> A" by (rule X_sub)
-          fix X2 assume "finite X2 \<and> X \<subseteq> X2 \<and> X2 \<subseteq> A"
-          thus "prod g X2 \<in> cball (prod g X) (exp (L y + 1) * (exp (r/2) - 1))"
-            using dist_le_C by (auto simp: dist_commute mem_cball)
-        qed
+          using X_props dist_le_C by auto
       qed auto
       hence lim_le_C: "dist (prod g X) (infprod g A) \<le> exp (L y + 1) * (exp (r/2) - 1)"
         by (simp add: dist_commute mem_cball)
@@ -4070,8 +4029,7 @@ qed
 text \<open>
   The bridge to the sequential theory.  A uniform limit along
   \<^term>\<open>finite_subsets_at_top (UNIV :: nat set)\<close> specialises to a uniform limit over the initial
-  segments, which is the shape required by the sequential results of
-  \<^theory>\<open>HOL-Complex_Analysis.Cauchy_Integral_Formula\<close>.  For the logarithmic derivative of a
+  segments.  For the logarithmic derivative of a
   Weierstrass product the detour is no longer needed: \<open>uniform_limit_prodinf'\<close> feeds
   \<open>logderiv_infprod_uniform_limit\<close> above directly, both being stated along
   \<^term>\<open>finite_subsets_at_top A\<close>.
@@ -4519,7 +4477,6 @@ proof -
     unfolding has_setprod_def using eq tendsto_cong by fastforce
 qed
 
-
 lemma infprod_Im:
   assumes "f multipliable_on M" and "\<And>x. x \<in> M \<Longrightarrow> f x \<in> \<real>" and "M \<noteq> {}"
   shows "infprod (\<lambda>x. Im (f x)) M = Im (infprod f M)"
@@ -4529,193 +4486,5 @@ lemma multipliable_on_Im:
   assumes "f multipliable_on M" and "\<And>x. x \<in> M \<Longrightarrow> f x \<in> \<real>" and "M \<noteq> {}"
   shows "(\<lambda>x. Im (f x)) multipliable_on M"
   by (metis assms has_setprod_Im multipliable_on_def)
-
-
-section \<open>Worked instances\<close>
-
-text \<open>
-  Four small examples.  They are here to exercise the interface rather than for their own sake: a
-  product whose value comes for free from the sum theory, one computed by telescoping, one showing
-  why \<open>strongly_multipliable_on\<close> exists at all, and one uniform convergence statement obtained
-  from the \<open>M\<close>-test.
-\<close>
-
-subsection \<open>A product read off from a sum\<close>
-
-text \<open>
-  \<open>has_sum_imp_has_setprod_exp\<close> turns any convergent sum into a convergent product; with the
-  geometric series that gives an exact value in one step, over the index set \<^term>\<open>{1..}\<close> rather
-  than all of \<^typ>\<open>nat\<close>.
-\<close>
-lemma has_setprod_exp_geometric:
-  fixes z :: complex
-  assumes "norm z < 1"
-  shows "((\<lambda>n. exp (z ^ n)) has_setprod exp (z / (1 - z))) {1..}"
-  using has_sum_geometric_from_1[OF assms] by (rule has_sum_imp_has_setprod_exp)
-
-
-subsection \<open>A product computed by telescoping\<close>
-
-text \<open>
-  \<^term>\<open>\<Prod>\<^sub>\<infinity>n. 1 - 1 / (real n + 2) ^ 2\<close> is \<open>1/2\<close>.  Convergence is absolute, because the
-  deviations from \<open>1\<close> are the terms of a \<open>p\<close>-series; the value then follows from the initial
-  segments alone, since \<open>filterlim_lessThan_at_top\<close> makes them cofinal in
-  \<^term>\<open>finite_subsets_at_top UNIV\<close>.  That is the standard division of labour for an unordered
-  product: convergence unordered, value ordered.
-\<close>
-lemma quotient_cancel_aux:
-  fixes a b c :: real
-  assumes "a \<noteq> 0" "b \<noteq> 0"
-  shows "(a / (2 * b)) * ((b * c) / a ^ 2) = c / (2 * a)"
-  using assms by (simp add: power2_eq_square field_simps)
-
-lemma prod_lessThan_telescope:
-  "(\<Prod>k<n. 1 - 1 / (real k + 2) ^ 2) = (real n + 2) / (2 * (real n + 1))"
-proof (induction n)
-  case 0
-  show ?case by simp
-next
-  case (Suc n)
-  have pos: "real n + 1 \<noteq> 0" "real n + 2 \<noteq> 0" "(real n + 2) ^ 2 \<noteq> 0"
-    by auto
-  then have factor: "1 - 1 / (real n + 2) ^ 2 = ((real n + 1) * (real n + 3)) / (real n + 2) ^ 2"
-    by (simp add: power2_eq_square field_simps)
-  have "(\<Prod>k<Suc n. 1 - 1 / (real k + 2) ^ 2)
-          = ((real n + 2) / (2 * (real n + 1))) * (1 - 1 / (real n + 2) ^ 2)"
-    using Suc by simp
-  also have "\<dots> = ((real n + 2) / (2 * (real n + 1)))
-                    * (((real n + 1) * (real n + 3)) / (real n + 2) ^ 2)"
-    by (simp only: factor)
-  also have "\<dots> = (real n + 3) / (2 * (real n + 2))"
-    by (rule quotient_cancel_aux[OF pos(2) pos(1)])
-  also have "\<dots> = (real (Suc n) + 2) / (2 * (real (Suc n) + 1))"
-    by (simp add: field_simps)
-  finally show ?case .
-qed
-
-lemma telescope_limit:
-  "(\<lambda>n. (real n + 2) / (2 * (real n + 1))) \<longlonglongrightarrow> 1/2"
-proof -
-  have "(\<lambda>n. 1/2 + inverse (real (Suc n)) * (1/2)) \<longlonglongrightarrow> 1/2 + 0 * (1/2)"
-    by (intro tendsto_intros LIMSEQ_inverse_real_of_nat)
-  moreover have "1/2 + inverse (real (Suc n)) * (1/2) = (real n + 2) / (2 * (real n + 1))" for n
-    by (simp add: field_simps)
-  ultimately show ?thesis
-    by simp
-qed
-
-lemma summable_on_inverse_squares_shifted:
-  "(\<lambda>n. 1 / (real n + 2) ^ 2) summable_on UNIV"
-proof (rule summable_nonneg_imp_summable_on)
-  have "summable (\<lambda>n. inverse (real n ^ 2))"
-    by (rule inverse_power_summable) simp
-  hence "summable (\<lambda>n. inverse (real (n + 2) ^ 2))"
-    by (rule summable_ignore_initial_segment)
-  thus "summable (\<lambda>n. 1 / (real n + 2) ^ 2)"
-    by (simp add: inverse_eq_divide add.commute)
-qed auto
-
-lemma has_setprod_telescope:
-  "((\<lambda>n. 1 - 1 / (real n + 2) ^ 2) has_setprod 1/2) UNIV"
-proof -
-  define f where "f = (\<lambda>n. 1 - 1 / (real n + 2) ^ 2)"
-  have pf: "prod f {..<n} = (real n + 2) / (2 * (real n + 1))" for n
-    unfolding f_def by (rule prod_lessThan_telescope)
-  \<comment> \<open>convergence: the deviations from \<open>1\<close> are summable\<close>
-  have "(\<lambda>n. norm (f n - 1)) summable_on UNIV"
-    by (simp add: f_def summable_on_inverse_squares_shifted)
-  hence "f abs_multipliable_on UNIV"
-    by (subst abs_multipliable_on_iff_summable_on) auto
-  hence "f multipliable_on UNIV"
-    by (blast intro: strongly_multipliable_imp_multipliable
-                     abs_multipliable_on_imp_strongly_multipliable_on)
-  then obtain P where P: "(f has_setprod P) UNIV"
-    by (auto simp: multipliable_on_def)
-  \<comment> \<open>the value: the initial segments are cofinal, so they already determine the limit\<close>
-  have "(prod f \<longlongrightarrow> P) (finite_subsets_at_top UNIV)"
-    using P by (simp add: has_setprod_def)
-  from filterlim_compose[OF this filterlim_lessThan_at_top]
-  have seq: "(\<lambda>n. prod f {..<n}) \<longlonglongrightarrow> P"
-    by simp
-  have "(\<lambda>n. prod f {..<n}) \<longlonglongrightarrow> 1/2"
-    using telescope_limit by (simp add: pf)
-  with seq have "P = 1/2"
-    by (rule LIMSEQ_unique)
-  with P show ?thesis
-    by (simp add: f_def)
-qed
-
-corollary infprod_telescope: "(\<Prod>\<^sub>\<infinity>n. 1 - 1 / (real n + 2) ^ 2) = 1/2"
-  by (rule infprodI[OF has_setprod_telescope])
-
-
-subsection \<open>Why strong multipliability is a different notion\<close>
-
-text \<open>
-  A constant family below \<open>1\<close>: the partial products shrink to \<open>0\<close>, so the product converges
-  \<^emph>\<open>unordered\<close> with value \<open>0\<close> although no factor vanishes.  By \<open>infprod_eq_0_iff\<close> it is therefore
-  not strongly multipliable.  This is the counterexample behind several hypotheses in this theory.
-\<close>
-lemma pow_half_small: "e > 0 \<Longrightarrow> \<exists>N. (1/2::real) ^ N < e"
-  using arch_pow_inv[of e "1/2"] by auto
-
-lemma has_setprod_const_half: "((\<lambda>_::nat. 1/2::real) has_setprod 0) UNIV"
-  unfolding has_setprod_def
-proof (rule tendstoI)
-  fix e :: real assume e: "e > 0"
-  obtain N where N: "(1/2::real) ^ N < e"
-    using pow_half_small[OF e] by blast
-  show "\<forall>\<^sub>F X in finite_subsets_at_top UNIV. dist (prod (\<lambda>_::nat. 1/2::real) X) 0 < e"
-    unfolding eventually_finite_subsets_at_top
-  proof (intro exI conjI allI impI)
-    show "finite {..<N}" "{..<N} \<subseteq> UNIV"
-      by auto
-    fix Y assume Y: "finite Y \<and> {..<N} \<subseteq> Y \<and> Y \<subseteq> UNIV"
-    hence card: "card Y \<ge> N"
-      by (metis card_lessThan card_mono)
-    have "prod (\<lambda>_::nat. 1/2::real) Y = (1/2) ^ card Y"
-      by simp
-    also have "\<dots> \<le> (1/2) ^ N"
-      using card by (intro power_decreasing) auto
-    also have "\<dots> < e"
-      by (rule N)
-    finally show "dist (prod (\<lambda>_::nat. 1/2::real) Y) 0 < e"
-      by (simp add: dist_real_def)
-  qed
-qed
-
-corollary not_strongly_multipliable_const_half:
-  "\<not> (\<lambda>_::nat. 1/2::real) strongly_multipliable_on UNIV"
-  using has_setprod_const_half has_setprod_eq_0_iff by fastforce
-
-
-subsection \<open>Uniform convergence from the \<open>M\<close>-test\<close>
-
-text \<open>
-  The shape a Weierstrass product comes in: on a bounded set the deviations from \<open>1\<close> are dominated
-  by a summable sequence and \<open>uniform_limit_infprod_M_test\<close> does the rest.  Nothing about the
-  factors beyond that bound is needed -- no continuity, no compactness.
-\<close>
-lemma uniform_limit_prod_one_plus_halves:
-  fixes r :: real
-  shows "uniform_limit (cball (0::complex) r) (\<lambda>X z. \<Prod>k\<in>X. 1 + z / 2 ^ k)
-                       (\<lambda>z. \<Prod>\<^sub>\<infinity>k. 1 + z / 2 ^ k) (finite_subsets_at_top UNIV)"
-proof (rule uniform_limit_infprod_M_test[where M = "\<lambda>k. r / 2 ^ k"])
-  show "norm ((1 + z / 2 ^ k) - 1) \<le> r / 2 ^ k" if "z \<in> cball (0::complex) r" for k z
-  proof -
-    have "norm ((1 + z / 2 ^ k) - 1) = norm z / 2 ^ k"
-      by (simp add: norm_divide norm_power)
-    also have "\<dots> \<le> r / 2 ^ k"
-      using that by (intro divide_right_mono) auto
-    finally show ?thesis .
-  qed
-  show "(\<lambda>k. r / 2 ^ k) summable_on UNIV"
-  proof (rule norm_summable_imp_summable_on)
-    have "summable (\<lambda>k. \<bar>r\<bar> * (1/2::real) ^ k)"
-      by (intro summable_mult summable_geometric) auto
-    thus "summable (\<lambda>k. norm (r / 2 ^ k))"
-      by (simp add: power_one_over abs_divide)
-  qed
-qed
 
 end

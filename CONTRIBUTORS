@@ -19,6 +19,9 @@ Contributions to Isabelle2026
   "'a :: euclidean_space". Used to prove change of variables for arbitrary
   euclidean spaces.
 
+* August 2026: Manuel Eberl and Larry Paulson
+  HOL-Analysis: Theory of infinite products on sets
+
 
 Contributions to Isabelle2025-1
 -------------------------------
