@@ -210,7 +210,7 @@ val pure_keywords = Thy_Header.get_keywords o Theory.get_pure;
 
 fun node_keywords name node =
   let
-    val keywords1 = Option.map Thy_Header.get_keywords (Thy_Info.lookup_theory name);
+    val keywords1 = Option.map Thy_Header.get_keywords (Build.lookup_theory name);
     val keywords2 = (case node of Node {keywords, ...} => keywords);
   in
     join_options Keyword.merge_keywords (keywords1, keywords2)
@@ -443,7 +443,7 @@ fun define_command {command_id, name, kind, parents, blobs_digests, blobs_index,
                   if length parents = length imports then
                     (parents, imports) |> ListPair.app (fn (parent, (_, pos)) =>
                       let val markup =
-                        (case Thy_Info.lookup_theory parent of
+                        (case Build.lookup_theory parent of
                           SOME thy => Theory.get_markup thy
                         | NONE =>
                             (case try Url.explode parent of
@@ -546,7 +546,7 @@ fun start_execution state = state |> map_state (fn (versions, blobs, commands, e
         |> map_filter (Command.exec_parallel_prints execution_id [delay]);
 
       fun finished_import (name, (node, _)) =
-        finished_result node orelse Thy_Info.defined_theory name;
+        finished_result node orelse Build.defined_theory name;
 
       val nodes = nodes_of (the_version state version_id);
       val required = make_required nodes;
@@ -624,7 +624,7 @@ fun init_theory deps node_name node span =
 
     val parents_reports =
       #imports thy |> map_filter (fn (import, pos) =>
-        (case Thy_Info.lookup_theory import of
+        (case Build.lookup_theory import of
           NONE =>
             maybe_end_theory pos
               (case get_result (snd (the (AList.lookup (op =) deps import))) of
@@ -660,14 +660,14 @@ fun get_special_parent node_name node =
     val name = #theory (#name thy);
     val parent =
       if name = Sessions.root_name then
-        SOME (Thy_Info.get_theory Sessions.theory_name)
+        SOME (Build.get_theory Sessions.theory_name)
       else if member (op =) Thy_Header.ml_roots name then
-        SOME (Thy_Info.get_theory Thy_Header.ml_bootstrapN)
+        SOME (Build.get_theory Thy_Header.ml_bootstrapN)
       else NONE;
   in parent |> Option.map (Resources.begin_theory thy o single) end;
 
 fun check_theory full name node =
-  Thy_Info.defined_theory name orelse
+  Build.defined_theory name orelse
   null (#errors (get_header node)) andalso (not full orelse is_some (get_result node));
 
 fun last_common the_command_name_kind node_required node0 node =

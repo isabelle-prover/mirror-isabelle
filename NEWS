@@ -305,9 +305,11 @@ access files from Isar commands, without updating the theory context.
 * Options.update_default allows to update the thread-local default for
 system options, without affecting the underlying ML process default.
 
-* Obsolete Thy_Info.use_thy_legacy has been removed. Rare
-INCOMPATIBILITY: need to use formal PIDE session to load theories, e.g.
-via "isabelle build" or "isabelle process_theories".
+* Structure Thy_Info has been dismantled: most of its operations moved
+to structure Thy_Presentation and structure Build. Some historic
+operations habe been removed, notable Thy_Info.use_thy_legacy. Rare
+INCOMPATIBILITY: theories need to be loaded into a formal PIDE session,
+e.g. via "isabelle build" or "isabelle process_theories".
 
 * More operations for structure Time, notably Time.seconds and
 Time.sleep.
