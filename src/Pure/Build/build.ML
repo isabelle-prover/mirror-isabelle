@@ -314,66 +314,42 @@ fun load_thy (thy0: Resources.thy) text parents =
       in commit_thy (theory, if record_theories then segments else []) end;
   in Result {theory = theory, exec_id = exec_id, present = SOME o present, commit = commit} end;
 
-fun check_thy_deps dir name =
-  (case lookup_theory name of
-    SOME thy => (NONE, Position.none, Resources.imports_of thy, [], [])
-  | NONE =>
-      let
-        val {thy_path, text, theory_pos, imports, options, keywords} =
-          Resources.check_thy dir name;
-      in (SOME (thy_path, text), theory_pos, imports, options, keywords) end);
-
-fun task_finished (Task _) = false
-  | task_finished (Finished _) = true;
-
 in
 
 fun require_thys initiators qualifier dir imports tasks =
-      fold_map (require_thy initiators qualifier dir) imports tasks |>> forall I
+      fold (require_thy initiators qualifier dir) imports tasks
 and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
   let
     val {master_dir, theory_name, ...} = Resources.import_name qualifier dir s;
   in
-    (case try (String_Graph.get_node tasks) theory_name of
-      SOME task => (task_finished task, tasks)
-    | NONE =>
-        let
-          val _ = member (op =) initiators theory_name andalso error (cycle_msg initiators);
+    if String_Graph.defined tasks theory_name then tasks
+    else
+      (member (op =) initiators theory_name andalso error (cycle_msg initiators);
+       case lookup_theory theory_name of
+        SOME theory => new_entry theory_name [] (Finished theory) tasks
+      | NONE =>
+          let
+            val {thy_path, text, theory_pos, imports, options = header_options, keywords} =
+              Resources.check_thy master_dir theory_name handle ERROR msg =>
+                cat_error msg
+                  ("The error(s) above occurred for theory " ^ quote theory_name ^
+                    Position.here require_pos ^ required_by "\n" initiators);
 
-          val (load, theory_pos, imports, header_options, keywords) =
-            check_thy_deps master_dir theory_name handle ERROR msg =>
-              cat_error msg
-                ("The error(s) above occurred for theory " ^ quote theory_name ^
-                  Position.here require_pos ^ required_by "\n" initiators);
+            val qualifier' = Resources.theory_qualifier theory_name;
+            val dir' = dir + Path.dir thy_path;
+            val imports' = map (rpair theory_opts) imports;
 
-          val qualifier' = Resources.theory_qualifier theory_name;
-          val dir' =
-            (case load of
-              NONE => dir
-            | SOME (thy_path, _) => dir + Path.dir thy_path);
-          val imports' = map (rpair theory_opts) imports;
+            val parents = map (#theory_name o Resources.import_name qualifier' dir' o #1) imports;
+            val tasks' = require_thys (theory_name :: initiators) qualifier' dir' imports' tasks;
 
-          val parents = map (#theory_name o Resources.import_name qualifier' dir' o #1) imports;
-          val (parents_current, tasks') =
-            require_thys (theory_name :: initiators) qualifier' dir' imports' tasks;
-
-          val all_current = is_none load andalso parents_current;
-          val task =
-            if all_current then Finished (get_theory theory_name)
-            else
-              let
-                val (thy_path, text) = the load;
-                val node = File.symbolic_path thy_path;
-                val master_dir = Path.dir (Path.explode node);
-                val opts = header_options @ Options.update_pos_none theory_opts;
-                val thy: Resources.thy =
-                 {name = {node = node, master_dir = master_dir, theory = theory_name},
-                  pos = theory_pos, imports = imports, options = opts, keywords = keywords,
-                  initiators = initiators};
-              in Task (parents, load_thy thy text) end;
-
-          val tasks'' = new_entry theory_name parents task tasks';
-        in (all_current, tasks'') end)
+            val node = File.symbolic_path thy_path;
+            val master_dir = Path.dir (Path.explode node);
+            val opts = header_options @ Options.update_pos_none theory_opts;
+            val thy: Resources.thy =
+             {name = {node = node, master_dir = master_dir, theory = theory_name},
+              pos = theory_pos, imports = imports, options = opts, keywords = keywords,
+              initiators = initiators};
+          in new_entry theory_name parents (Task (parents, load_thy thy text)) tasks' end)
   end;
 
 end;
@@ -382,7 +358,7 @@ end;
 (* use theories *)
 
 fun use_theories qualifier imports =
-  schedule_theories (#2 (require_thys [] qualifier Path.current imports String_Graph.empty));
+  schedule_theories (require_thys [] qualifier Path.current imports String_Graph.empty);
 
 
 
