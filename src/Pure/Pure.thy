@@ -1328,7 +1328,7 @@ val _ =
           else
             let
               val ctxt = Toplevel.context_of st;
-              val insert = Symset.insert o Context.theory_long_name o Thy_Info.check_theory ctxt;
+              val insert = Symset.insert o Context.theory_long_name o Build.check_theory ctxt;
               val names = Symset.build (fold insert raw_names);
             in Symset.member names o Context.theory_long_name o Context.theory_of end;
       in Session.print_context_tracing pred end)));

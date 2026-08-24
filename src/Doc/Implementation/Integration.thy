@@ -136,26 +136,4 @@ text %mlex \<open>
   syntax keywords.
 \<close>
 
-
-section \<open>Theory loader database\<close>
-
-text \<open>
-  In batch mode and within dumped logic images, the theory database maintains
-  a collection of theories as a directed acyclic graph. A theory may refer to
-  other theories as @{keyword "imports"}, or to auxiliary files via special
-  \<^emph>\<open>load commands\<close> (e.g.\ @{command ML_file}). For each theory, the base
-  directory of its own theory file is called \<^emph>\<open>master directory\<close>: this is used
-  as the relative location to refer to other files from that theory.
-\<close>
-
-text %mlref \<open>
-  \begin{mldecls}
-  @{define_ML Thy_Info.get_theory: "string -> theory"} \\
-  \end{mldecls}
-
-  \<^descr> \<^ML>\<open>Thy_Info.get_theory\<close>~\<open>A\<close> retrieves the theory value presently
-  associated with name \<open>A\<close>. Note that the result might be outdated wrt.\ the
-  file-system content.
-\<close>
-
 end

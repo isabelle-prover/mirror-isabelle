@@ -373,7 +373,7 @@ subsubsection \<open>Examples\<close>
 text \<open>
   The subsequent example retrieves the \<^verbatim>\<open>Main\<close> theory value from the theory
   loader within ML:
-  @{verbatim [display] \<open>isabelle ML_process -e 'Thy_Info.get_theory "Main"'\<close>}
+  @{verbatim [display] \<open>isabelle ML_process -e 'Build.get_theory "Main"'\<close>}
 
   Observe the delicate quoting rules for the GNU bash shell vs.\ ML. The
   Isabelle/ML and Scala libraries provide functions for that, but here we need

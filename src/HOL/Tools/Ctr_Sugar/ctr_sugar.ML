@@ -1240,7 +1240,7 @@ end;
 (* theory export *)
 
 val _ =
-  (Theory.setup o Thy_Info.add_presentation) (fn context => fn thy =>
+  (Theory.setup o Thy_Presentation.add_hook) (fn context => fn thy =>
     if Export_Theory.export_enabled context then
       let
         val parents = map (Data.get o Context.Theory) (Theory.parents_of thy);
@@ -1250,7 +1250,7 @@ val _ =
               if kind = Record orelse exists (fn tab => Symtab.defined tab name) parents then I
               else
                 let
-                  val pos_properties = Thy_Info.adjust_pos_properties context pos;
+                  val pos_properties = Thy_Presentation.adjust_pos_properties context pos;
                   val typ = Logic.unvarifyT_global T;
                   val constrs = map Logic.unvarify_global ctrs;
                   val typargs = rev (fold Term.add_tfrees (Logic.mk_type typ :: constrs) []);

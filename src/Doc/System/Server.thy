@@ -16,9 +16,7 @@ text \<open>
 
   In contrast, the Isabelle server exposes Isabelle/Scala as a
   ``terminate-stay-resident'' application that manages multiple logic
-  \<^emph>\<open>sessions\<close> and concurrent tasks to use \<^emph>\<open>theories\<close>. This is analogous to
-  \<^ML>\<open>Thy_Info.use_theories\<close> in Isabelle/ML, with proper support for
-  concurrent invocations.
+  \<^emph>\<open>sessions\<close> and concurrent tasks to use \<^emph>\<open>theories\<close>.
 
   The client/server arrangement via TCP sockets also opens possibilities for
   remote Isabelle services that are accessed by local applications, e.g.\ via

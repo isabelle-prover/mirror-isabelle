@@ -117,7 +117,7 @@ fun session_statistics theories : session_statistics =
       #contexts (Context.finish_tracing ())
       |> map_filter (fn (Context.Theory thy, _) => SOME thy | _ => NONE);
 
-    val loader_thys = map Thy_Info.get_theory (Thy_Info.get_names ());
+    val loader_thys = map Build.get_theory (Build.all_theories ());
     val loaded_thys = filter theories_member loader_thys;
     val loaded_context_thys = filter theories_member context_thys;
 
