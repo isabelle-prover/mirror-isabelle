@@ -124,16 +124,16 @@ lemma filterlim_Un_finite_subsets_at_top:
   assumes "finite Y"
   shows   "filterlim (\<lambda>X. X \<union> Y) (finite_subsets_at_top (X \<union> Y)) (finite_subsets_at_top X)"
   unfolding filterlim_def le_filter_def eventually_filtermap
-proof safe
+proof (intro allI impI)
   fix P :: "'a set \<Rightarrow> bool"
   assume "\<forall>\<^sub>F A in finite_subsets_at_top (X \<union> Y). P A"
   then obtain A where A: "finite A" "A \<subseteq> X \<union> Y" "\<And>Z. finite Z \<Longrightarrow> A \<subseteq> Z \<Longrightarrow> Z \<subseteq> X \<union> Y \<Longrightarrow> P Z"
     unfolding eventually_finite_subsets_at_top by metis
   show "\<forall>\<^sub>F A in finite_subsets_at_top X. P (A \<union> Y)"
     unfolding eventually_finite_subsets_at_top
-  proof (rule exI[of _ "A - Y"], intro allI conjI impI)
+  proof (intro exI allI conjI impI)
     show "finite (A - Y)" and "A - Y \<subseteq> X"
-      using assms A(1,2) by auto
+      using assms A by auto
   next
     fix Z assume Z: "finite Z \<and> A - Y \<subseteq> Z \<and> Z \<subseteq> X"
     show "P (Z \<union> Y)"
@@ -304,7 +304,7 @@ proof -
     unfolding has_setprod_def .
   have filt: \<open>filterlim (\<lambda>X. X \<union> G) (finite_subsets_at_top A) (finite_subsets_at_top (A - F))\<close>
     unfolding filterlim_def le_filter_def eventually_filtermap
-  proof safe
+  proof (intro allI impI)
     fix P assume \<open>\<forall>\<^sub>F X in finite_subsets_at_top A. P X\<close>
     then obtain X0 where X0: \<open>finite X0\<close> \<open>X0 \<subseteq> A\<close>
         and X0_P: \<open>\<And>X. finite X \<Longrightarrow> X0 \<subseteq> X \<Longrightarrow> X \<subseteq> A \<Longrightarrow> P X\<close>
@@ -326,7 +326,7 @@ proof -
   qed
   have ev_eq: \<open>\<forall>\<^sub>F X in finite_subsets_at_top (A - F). prod f (X \<union> G) = prod f X * prod f G\<close>
     unfolding eventually_finite_subsets_at_top
-  proof (rule exI[of _ \<open>{}\<close>], intro allI conjI impI)
+  proof (intro exI allI conjI impI)
     fix X assume X: \<open>finite X \<and> {} \<subseteq> X \<and> X \<subseteq> A - F\<close>
     then have \<open>X \<inter> G = {}\<close> unfolding G_def by blast
     then show \<open>prod f (X \<union> G) = prod f X * prod f G\<close>
@@ -335,7 +335,7 @@ proof -
   have \<open>(prod f \<longlongrightarrow> p) (filtermap (\<lambda>X. X \<union> G) (finite_subsets_at_top (A - F)))\<close>
     using lim filt by (metis filterlim_def tendsto_mono)
   then have comp: \<open>((\<lambda>X. prod f (X \<union> G)) \<longlongrightarrow> p) (finite_subsets_at_top (A - F))\<close>
-    by (subst (asm) tendsto_compose_filtermap[symmetric]) (simp add: o_def)
+    by (metis filterlim_filtermap)
   have \<open>((\<lambda>X. prod f X * prod f G) \<longlongrightarrow> p) (finite_subsets_at_top (A - F))\<close>
     using comp ev_eq by (rule Lim_transform_eventually)
   then have \<open>((\<lambda>X. prod f X * prod f G) \<longlongrightarrow> (p / prod f G) * prod f G) (finite_subsets_at_top (A - F))\<close>
@@ -384,26 +384,17 @@ proof -
   qed
   have finite_subsets2: 
     "filtermap (\<lambda>F. F \<inter> A) (finite_subsets_at_top B) \<le> finite_subsets_at_top A"
-    apply (rule filter_leI)
-      using assms unfolding eventually_filtermap eventually_finite_subsets_at_top
+      using assms unfolding le_filter_def eventually_filtermap eventually_finite_subsets_at_top
       by (metis Int_subset_iff finite_Int inf_le2 subset_trans)
 
-  from assms(1) have limB: "(prod f \<longlongrightarrow> b) (finite_subsets_at_top B)"
-    using has_setprod_def by auto
-  from assms(2) have limA: "(prod f \<longlongrightarrow> a) (finite_subsets_at_top A)"
-    using has_setprod_def by blast
-  have "((\<lambda>F. prod f (F\<inter>A)) \<longlongrightarrow> a) (finite_subsets_at_top B)"
+  have *: "((\<lambda>F. prod f (F\<inter>A)) \<longlongrightarrow> a) (finite_subsets_at_top B)"
   proof (subst asm_rl [of "(\<lambda>F. prod f (F\<inter>A)) = prod f \<circ> (\<lambda>F. F\<inter>A)"])
     show "(\<lambda>F. prod f (F \<inter> A)) = prod f \<circ> (\<lambda>F. F \<inter> A)"
       unfolding o_def by auto
-    show "((prod f \<circ> (\<lambda>F. F \<inter> A)) \<longlongrightarrow> a) (finite_subsets_at_top B)"
-      unfolding o_def 
-      using tendsto_compose_filtermap finite_subsets2 limA tendsto_mono
-        \<open>(\<lambda>F. prod f (F \<inter> A)) = prod f \<circ> (\<lambda>F. F \<inter> A)\<close> by fastforce
+    then show "((prod f \<circ> (\<lambda>F. F \<inter> A)) \<longlongrightarrow> a) (finite_subsets_at_top B)"
+      using tendsto_compose_filtermap finite_subsets2 tendsto_mono assms(2) 
+      by (fastforce simp: has_setprod_def)
   qed
-
-  with limB have "((\<lambda>F. prod f F / prod f (F\<inter>A)) \<longlongrightarrow> b / a) (finite_subsets_at_top B)"
-    by (intro tendsto_divide) auto
   have "prod f X / prod f (X \<inter> A) = prod f (X - A)" 
     if "finite X" and "X \<subseteq> B" for X :: "'b set"
   proof (subst prod.Int_Diff[of _ _ A])
@@ -415,8 +406,8 @@ proof -
   hence "\<forall>\<^sub>F x in finite_subsets_at_top B. prod f x / prod f (x \<inter> A) = prod f (x - A)"
     by (rule eventually_finite_subsets_at_top_weakI)  
   hence "((\<lambda>F. prod f (F-A)) \<longlongrightarrow> b / a) (finite_subsets_at_top B)"
-    using tendsto_cong [THEN iffD1 , rotated]
-      \<open>((\<lambda>F. prod f F / prod f (F \<inter> A)) \<longlongrightarrow> b / a) (finite_subsets_at_top B)\<close> by fastforce
+    using * assms tendsto_divide
+    by (fastforce simp: has_setprod_def cong: tendsto_cong)
   hence "(prod f \<longlongrightarrow> b / a) (filtermap (\<lambda>F. F-A) (finite_subsets_at_top B))"
     by (subst tendsto_compose_filtermap[symmetric], simp add: o_def)
   thus ?thesis
@@ -455,12 +446,7 @@ lemma infprod_finite_approximation:
   fixes f :: "'a \<Rightarrow> 'b::{semidom,topological_semigroup_mult,metric_space}"
   assumes "f multipliable_on A" and "\<epsilon> > 0"
   shows "\<exists>F. finite F \<and> F \<subseteq> A \<and> dist (prod f F) (infprod f A) \<le> \<epsilon>"
-proof -
-  from assms have "(f has_setprod (infprod f A)) A"
-    by (simp add: multipliable_iff_has_setprod_infprod)
-  from this and \<open>\<epsilon> > 0\<close> show ?thesis
-    by (rule has_setprod_finite_approximation)
-qed
+  by (simp add: assms has_setprod_finite_approximation)
 
 lemma abs_multipliable_multipliable:
   fixes f :: \<open>'a \<Rightarrow> 'b :: {banach, real_normed_div_algebra, semidom}\<close>
@@ -488,10 +474,8 @@ proof -
       using prod.subset_diff[OF F12(1,2)] by (simp add: mult.commute)
     hence eq1: "prod f F1 - prod f F2 = (prod f (F1 - F2) - 1) * prod f F2"
       by (simp add: algebra_simps)
-    have "prod g F1 = prod g (F1 - F2) * prod g F2"
+    have \<section>: "prod g F1 = prod g (F1 - F2) * prod g F2"
       using prod.subset_diff[OF F12(1,2)] by (simp add: mult.commute)
-    hence eq2: "prod g F1 - prod g F2 = (prod g (F1 - F2) - 1) * prod g F2"
-      by (simp add: algebra_simps)
     have key1: "norm (prod f (F1 - F2) - 1) \<le> prod g (F1 - F2) - 1"
     proof -
       have aux: "norm ((\<Prod>x\<in>S. f x) - 1) \<le> (\<Prod>x\<in>S. g x) - 1" if "finite S" for S
@@ -535,7 +519,7 @@ proof -
     also have "\<dots> \<le> (prod g (F1 - F2) - 1) * prod g F2"
       by (intro mult_mono key1 key2 norm_ge_zero) (use g_diff_ge1 in linarith)
     also have "\<dots> = prod g F1 - prod g F2"
-      using eq2 by simp
+      using \<section> by argo
     also have "\<dots> \<le> \<bar>prod g F1 - prod g F2\<bar>"
       by linarith
     also have "\<dots> = dist (prod g F1) (prod g F2)"
@@ -712,7 +696,7 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
   next
     case (insert n S)
     then show ?case
-      by (metis (no_types, lifting) prod_norm g_def prod_mono norm_ge_zero norm_one norm_triangle_sub)
+      using norm_bound by (smt (verit) finite_insert norm_one norm_triangle_sub)
   qed
 
   \<comment> \<open>Partial products of g are bounded\<close>
@@ -722,9 +706,8 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
     then have gt: \<open>prod g {..n} > L_abs\<close> by simp
     define e' where \<open>e' = prod g {..n} - L_abs\<close>
     have \<open>e' > 0\<close> using gt by (simp add: e'_def)
-    from g_seq[unfolded tendsto_iff, rule_format, OF this]
     obtain N' where N': \<open>\<And>m. m \<ge> N' \<Longrightarrow> dist (prod g {..m}) L_abs < e'\<close>
-      by (auto simp: eventually_at_top_linorder)
+      using \<open>0 < e'\<close> g_seq by (metis LIMSEQ_def)
     have \<open>prod g {..n} \<le> prod g {..max n N'}\<close>
       by (intro prod_mono2) (use g_ge1 g_ge0 in auto)
     hence \<open>dist (prod g {..max n N'}) L_abs \<ge> e'\<close>
@@ -736,9 +719,8 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
 
   show \<open>\<forall>\<^sub>F x in finite_subsets_at_top (UNIV :: nat set). dist (prod f x) P < e\<close>
   proof -
-    from seq_lim[unfolded tendsto_iff, rule_format, OF half_gt_zero[OF \<open>e > 0\<close>]]
     obtain N1 where N1: \<open>\<And>n. n \<ge> N1 \<Longrightarrow> dist (prod f {..n}) P < e/2\<close>
-      by (auto simp: eventually_at_top_linorder)
+      using \<open>0 < e\<close> seq_lim by (meson half_gt_zero lim_sequentially)
     from g_seq[unfolded tendsto_iff, rule_format, OF half_gt_zero[OF \<open>e > 0\<close>]]
     obtain N2 where N2: \<open>\<And>n. n \<ge> N2 \<Longrightarrow> dist (prod g {..n}) L_abs < e/2\<close>
       by (auto simp: eventually_at_top_linorder)
@@ -750,7 +732,7 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
       show \<open>finite {..N}\<close> by simp
       show \<open>{..N} \<subseteq> (UNIV :: nat set)\<close> by simp
     next
-      fix Y :: \<open>nat set\<close>
+      fix Y
       assume Y: \<open>finite Y \<and> {..N} \<subseteq> Y \<and> Y \<subseteq> UNIV\<close>
       then have finY: \<open>finite Y\<close> and NY: \<open>{..N} \<subseteq> Y\<close> by auto
       define M where \<open>M = Max Y\<close>
@@ -775,15 +757,7 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
         also have \<open>\<dots> = norm (prod f Y) * norm (prod f ({..M} - Y) - 1)\<close>
           by (metis norm_minus_commute)
         also have \<open>\<dots> \<le> prod g Y * (prod g ({..M} - Y) - 1)\<close>
-        proof (intro mult_mono)
-          show \<open>norm (prod f Y) \<le> prod g Y\<close>
-            using norm_prod_bound[OF finY] .
-          show \<open>norm (prod f ({..M} - Y) - 1) \<le> prod g ({..M} - Y) - 1\<close>
-            using norm_bound[of \<open>{..M} - Y\<close>] finM finite_Diff by blast
-          show \<open>0 \<le> norm (prod f ({..M} - Y) - 1)\<close> by simp
-          show \<open>0 \<le> prod g Y\<close>
-            by (intro prod_nonneg) (use g_ge0 in auto)
-        qed
+          by (simp add: finY mult_mono' norm_bound norm_prod_bound)
         also have \<open>\<dots> = prod g {..M} - prod g Y\<close>
           using factor_g by (simp add: algebra_simps)
         also have \<open>\<dots> \<le> prod g {..M} - prod g {..N}\<close>
@@ -807,8 +781,8 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
         by (rule dist_triangle)
       also have \<open>\<dots> < (L_abs - prod g {..N}) + e/2\<close>
         using dist_bound seq_bound by linarith
-      also have \<open>\<dots> < e/2 + e/2\<close> using tail_bound by linarith
-      also have \<open>\<dots> = e\<close> by simp
+      also have \<open>\<dots> < e\<close>
+        using tail_bound by auto
       finally show \<open>dist (prod f Y) P < e\<close> .
     qed
   qed
@@ -945,10 +919,8 @@ proof -
       using norm_triangle_sub[of "prod f (X \<union> F)" L] by (simp add: dist_norm)
     have "norm (prod f X) * m \<le> norm (prod f X) * norm (prod f (F - X))"
       by (intro mult_left_mono m_le) auto
-    also have "\<dots> = norm (prod f (X \<union> F))"
-      by (simp add: eq norm_mult)
     also have "\<dots> < norm L + 1"
-      by (rule lt)
+      using eq lt by (metis norm_mult)
     finally have "norm (prod f X) * m \<le> norm L + 1"
       by simp
     with m0 show ?thesis
@@ -1028,7 +1000,7 @@ proof -
     have "norm (prod f X) = norm c * norm (prod f (X - F1))"
       using split[OF X] by (simp add: norm_mult)
     thus "norm (prod f X) \<le> 3/2 * norm c" and "norm (prod f X) \<ge> norm c / 2"
-      using tail[OF X(1) X(3)] tail'[OF X(1) X(3)] c0 by (simp_all add: mult_left_mono)
+      using tail tail' X c0 by (simp_all add: mult_left_mono)
   qed
   \<comment> \<open>The partial products over \<^term>\<open>B\<close> form a Cauchy net.\<close>
   have "cauchy_filter (filtermap (prod f) (finite_subsets_at_top B))"
@@ -1215,9 +1187,9 @@ proof -
   have \<open>((f \<circ> prod g) \<longlongrightarrow> f x) (finite_subsets_at_top S)\<close>
   proof (rule topological_tendstoI)
     fix U assume \<open>open U\<close> \<open>f x \<in> U\<close>
-    with cont[unfolded continuous_at_open]
+    with cont
     obtain V where \<open>open V\<close> \<open>x \<in> V\<close> and V_sub: \<open>\<And>y. y \<in> V \<Longrightarrow> f y \<in> U\<close>
-      by (metis continuous_at_open isCont_def)
+      by (metis continuous_at_open continuous_at_open isCont_def)
     from lim_g[THEN topological_tendstoD, OF \<open>open V\<close> \<open>x \<in> V\<close>]
     show \<open>\<forall>\<^sub>F F in finite_subsets_at_top S. (f \<circ> prod g) F \<in> U\<close>
       by (eventually_elim) (auto intro: V_sub)
@@ -1248,7 +1220,7 @@ lemma infprod_comm_additive_general:
   assumes \<open>g multipliable_on S\<close>
   shows \<open>infprod (f \<circ> g) S = f (infprod g S)\<close>
   using assms
-  by (intro infprodI has_setprod_comm_multiplicative_general has_setprod_infprod) (auto simp: isCont_def)
+  by (meson has_setprod_comm_multiplicative_general has_setprod_infprod infprodI isCont_def)
 
 lemma has_setprod_reindex:
   assumes \<open>inj_on h A\<close>
@@ -1375,13 +1347,10 @@ next
   have IH: "norm (prod g M - prod g' M) \<le> real (card M) * C ^ (card M) * d"
     using insert.IH[OF gM g'M dM C0 d0] .
   define P P' where "P = prod g M" and "P' = prod g' M"
-  have normP': "norm P' \<le> C ^ (card M)"
-  proof -
-    have "norm P' = (\<Prod>m\<in>M. norm (g' m))" unfolding P'_def by (simp add: prod_norm)
-    also have "\<dots> \<le> (\<Prod>m\<in>M. C)" by (intro prod_mono conjI g'M) auto
-    also have "\<dots> = C ^ (card M)" by (simp add: prod_constant)
-    finally show ?thesis .
-  qed
+  have "norm P' = (\<Prod>m\<in>M. norm (g' m))" unfolding P'_def by (simp add: prod_norm)
+  also have "\<dots> \<le> (\<Prod>m\<in>M. C)" by (intro prod_mono conjI g'M) auto
+  also have "\<dots> = C ^ (card M)" by (simp add: prod_constant)
+  finally have normP': "norm P' \<le> C ^ (card M)" .
   have pownn: "C ^ (card M) \<ge> 0" using Cnn by simp
   have prod_eq: "prod g (insert x M) - prod g' (insert x M) = g x * P - g' x * P'"
     using insert.hyps by (simp add: P_def P'_def)
@@ -1421,11 +1390,9 @@ proof -
     if H: "\<forall>m\<in>M. norm (h m) \<le> C \<and> norm (h' m) \<le> C \<and> dist (h m) (h' m) < \<delta>"
     for h h' :: "'i \<Rightarrow> 'b"
   proof -
-    have nH: "\<And>m. m \<in> M \<Longrightarrow> norm (h m) \<le> C" using H by blast
-    have nH': "\<And>m. m \<in> M \<Longrightarrow> norm (h' m) \<le> C" using H by blast
-    have dH: "\<And>m. m \<in> M \<Longrightarrow> norm (h m - h' m) \<le> \<delta>" using H by (simp add: dist_norm less_imp_le)
     have "norm (prod h M - prod h' M) \<le> real (card M) * C ^ (card M) * \<delta>"
-      using norm_prod_diff_le[OF assms(1) nH nH' dH assms(2)] \<delta>0 by simp
+      using norm_prod_diff_le assms 
+      by (metis (no_types) H \<delta>0 dist_norm order_less_imp_le that)
     also have "\<dots> < \<epsilon>"
       using \<delta>0 K0 assms unfolding \<delta>_def K_def by (simp add: field_simps)
     finally show ?thesis by (simp add: dist_norm)
@@ -1465,7 +1432,6 @@ proof -
       by (metis (mono_tags, lifting) D_uni F_def eventually_finite_subsets_at_top)
     have \<open>finite (fst ` G)\<close> and \<open>fst ` G \<subseteq> A\<close>
       using \<open>finite G\<close> \<open>G \<subseteq> Sigma A B\<close> by auto
-    thm uniformity_prod_def
     define Ga where \<open>Ga a = {b. (a,b) \<in> G}\<close> for a
     have Ga_fin: \<open>finite (Ga a)\<close> and Ga_B: \<open>Ga a \<subseteq> B a\<close> for a
       using \<open>finite G\<close> \<open>G \<subseteq> Sigma A B\<close> finite_proj by (auto simp: Ga_def finite_proj)
@@ -1590,8 +1556,8 @@ proof -
   from multipliableB have b: \<open>\<And>x. x\<in>A \<Longrightarrow> (f x has_setprod infprod (f x) (B x)) (B x)\<close>
     by (auto intro!: has_setprod_infprod)
   show ?thesis
-    using a b
-    by (smt (verit) has_setprod_Sigma[where f=\<open>\<lambda>(x,y). f x y\<close>] has_setprod_cong old.prod.case multipliable_on_def) 
+    unfolding multipliable_on_def
+    using a b has_setprod_Sigma by fastforce
 qed
 
 lemma infprod_Sigma:
@@ -1635,22 +1601,20 @@ lemma
 proof -
   have mult_B: \<open>(f x) multipliable_on (B x)\<close> if xA: \<open>x \<in> A\<close> for x
   proof -
-    have step1: \<open>(\<lambda>(x,y). f x y) multipliable_on Sigma {x} B\<close>
-    proof (rule multipliable_on_subset_nonzero[OF _ nz])
-      show \<open>((\<lambda>(x,y). f x y) has_setprod infprod (\<lambda>(x,y). f x y) (Sigma A B)) (Sigma A B)\<close>
-        by simp
-      show \<open>Sigma {x} B \<subseteq> Sigma A B\<close> using xA by auto
-    qed
-    have step2: \<open>(\<lambda>y. f x y) \<circ> snd multipliable_on Sigma {x} B\<close>
-      using step1 multipliable_on_cong[of \<open>Sigma {x} B\<close> \<open>\<lambda>(a,b). f a b\<close> \<open>(\<lambda>y. f x y) \<circ> snd\<close>]
-      by auto
     have inj: \<open>inj_on snd (Sigma {x} B)\<close>
       by (auto intro!: inj_onI simp: Sigma_def)
-    have step3: \<open>(\<lambda>y. f x y) multipliable_on snd ` Sigma {x} B\<close>
-      using step2 multipliable_on_reindex[OF inj, of \<open>\<lambda>y. f x y\<close>] by simp
-    have \<open>snd ` Sigma {x} B = B x\<close>
+    have \<section>: \<open>snd ` Sigma {x} B = B x\<close>
       by (force simp: Sigma_def)
-    with step3 show ?thesis by simp
+    have \<open>(\<lambda>(x,y). f x y) multipliable_on Sigma {x} B\<close>
+    proof (rule multipliable_on_subset_nonzero[OF _ nz])
+      show \<open>Sigma {x} B \<subseteq> Sigma A B\<close> using xA by auto
+    qed auto
+    then have \<open>(\<lambda>y. f x y) \<circ> snd multipliable_on Sigma {x} B\<close>
+      using multipliable_on_cong[of \<open>Sigma {x} B\<close> \<open>\<lambda>(a,b). f a b\<close> \<open>(\<lambda>y. f x y) \<circ> snd\<close>]
+      by auto
+    then have \<open>(\<lambda>y. f x y) multipliable_on snd ` Sigma {x} B\<close>
+      using multipliable_on_reindex[OF inj, of \<open>\<lambda>y. f x y\<close>] by simp
+    with \<section> show ?thesis by simp
   qed
   then show ?thesis1
     using infprod_Sigma' assms by blast
@@ -1789,12 +1753,9 @@ proof -
   ultimately have \<open>(f has_setprod (inverse (inverse (infprod f A)))) A\<close>
     by simp
   from has_setprod_inverse[OF this] assms(2) 
-  have \<open>((\<lambda>x. inverse (f x)) has_setprod (inverse (infprod f A))) A\<close>
-    by simp
-  thus ?thesis
-    unfolding multipliable_on_def by blast
+  show ?thesis
+    unfolding multipliable_on_def by auto
 qed
-
 
 lemma infprod_inverse:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
@@ -1808,9 +1769,8 @@ proof -
   ultimately have \<open>(f has_setprod (inverse (inverse (infprod f A)))) A\<close>
     by simp
   from has_setprod_inverse[OF this] assms(2)
-  have \<open>((\<lambda>x. inverse (f x)) has_setprod (inverse (infprod f A))) A\<close>
-    by simp
-  thus ?thesis by (rule infprodI)
+  show ?thesis
+    by (simp add: infprodI)
 qed
 
 text \<open>
@@ -1821,27 +1781,19 @@ lemma has_setprod_divide:
   fixes f g :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes f: "(f has_setprod a) A" and g: "(g has_setprod b) A" and b: "b \<noteq> 0"
   shows   "((\<lambda>x. f x / g x) has_setprod (a / b)) A"
-proof -
-  have "((\<lambda>x. inverse (g x)) has_setprod inverse b) A"
-    by (simp add: b g has_setprod_inverse)
-  from has_setprod_mult[OF f this] show ?thesis
-    by (simp add: divide_inverse)
-qed
+  by (simp add: b divide_inverse f g has_setprod_inverse has_setprod_mult)
 
 lemma multipliable_on_divide:
   fixes f g :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes "f multipliable_on A" "g multipliable_on A" "infprod g A \<noteq> 0"
   shows   "(\<lambda>x. f x / g x) multipliable_on A"
-  using has_setprod_divide[OF has_setprod_infprod[OF assms(1)] has_setprod_infprod[OF assms(2)]
-                              assms(3)]
-  by (rule has_setprod_imp_multipliable)
+  using assms has_setprod_divide has_setprod_infprod multipliable_on_def by blast
 
 lemma infprod_divide:
   fixes f g :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes "f multipliable_on A" "g multipliable_on A" "infprod g A \<noteq> 0"
   shows   "infprod (\<lambda>x. f x / g x) A = infprod f A / infprod g A"
-  using has_setprod_divide[OF has_setprod_infprod[OF assms(1)] has_setprod_infprod[OF assms(2)] assms(3)]
-  by (rule infprodI)
+  by (simp add: assms has_setprod_divide infprodI)
 
 lemma multipliable_on_inverse_iff:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
@@ -1889,29 +1841,13 @@ lemma multipliable_on_power_int:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes "f multipliable_on A" and "infprod f A \<noteq> 0"
   shows   "(\<lambda>x. f x powi n) multipliable_on A"
-proof (cases \<open>n \<ge> 0\<close>)
-  case True
-  then show ?thesis
-    using assms(1) by (auto simp: power_int_def intro!: multipliable_on_power)
-next
-  case False
-  have \<open>(\<lambda>x. f x ^ nat (-n)) multipliable_on A\<close>
-    using assms(1) by (rule multipliable_on_power)
-  moreover have \<open>infprod (\<lambda>x. f x ^ nat (-n)) A \<noteq> 0\<close>
-    using assms by (simp add: infprod_power)
-  ultimately have \<open>(\<lambda>x. inverse (f x ^ nat (-n))) multipliable_on A\<close>
-    by (rule multipliable_on_inverse)
-  with False show ?thesis
-    by (auto simp: power_int_def power_inverse)
-qed
+  using assms has_setprod_power_int infprodI multipliable_on_def by blast
 
 lemma infprod_power_int:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes "f multipliable_on A" and "infprod f A \<noteq> 0"
   shows \<open>infprod (\<lambda>x. f x powi n) A = infprod f A powi n\<close>
-  using infprod_inverse
-infprod_power
-  using assms has_setprod_power_int infprodI multipliable_iff_has_setprod_infprod by blast
+  using assms has_setprod_infprod has_setprod_power_int infprodI by blast
 
 lemma has_sum_imp_has_setprod_exp:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
