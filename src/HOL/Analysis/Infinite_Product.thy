@@ -462,134 +462,6 @@ proof -
     by (rule has_setprod_finite_approximation)
 qed
 
-theorem abs_convergent_prod_imp_convergent_prod:
-  fixes f :: "nat \<Rightarrow> 'a :: {real_normed_div_algebra,complete_space,comm_ring_1}"
-  assumes "abs_convergent_prod f"
-  shows   "convergent_prod f"
-proof -
-  from assms have "eventually (\<lambda>n. f n \<noteq> 0) sequentially"
-    by (rule abs_convergent_prod_imp_ev_nonzero)
-  then obtain N where N: "f n \<noteq> 0" if "n \<ge> N" for n 
-    by (auto simp: eventually_at_top_linorder)
-  let ?P = "\<lambda>n. \<Prod>i\<le>n. f (i + N)" and ?Q = "\<lambda>n. \<Prod>i\<le>n. 1 + norm (f (i + N) - 1)"
-
-  have "Cauchy ?P"
-  proof (rule CauchyI', goal_cases)
-    case (1 \<epsilon>)
-    from assms have "abs_convergent_prod (\<lambda>n. f (n + N))"
-      by (rule abs_convergent_prod_ignore_initial_segment)
-    hence "Cauchy ?Q"
-      unfolding abs_convergent_prod_def
-      by (intro convergent_Cauchy convergent_prod_imp_convergent)
-    from CauchyD[OF this 1] obtain M where M: "norm (?Q m - ?Q n) < \<epsilon>" if "m \<ge> M" "n \<ge> M" for m n
-      by blast
-    show ?case
-    proof (rule exI[of _ M], safe, goal_cases)
-      case (1 m n)
-      have "dist (?P m) (?P n) = norm (?P n - ?P m)"
-        by (simp add: dist_norm norm_minus_commute)
-      also from 1 have "{..n} = {..m} \<union> {m<..n}" by auto
-      hence "norm (?P n - ?P m) = norm (?P m * (\<Prod>k\<in>{m<..n}. f (k + N)) - ?P m)"
-        by (subst prod.union_disjoint [symmetric]) (auto simp: algebra_simps)
-      also have "\<dots> = norm (?P m * ((\<Prod>k\<in>{m<..n}. f (k + N)) - 1))"
-        by (simp add: algebra_simps)
-      also have "\<dots> = (\<Prod>k\<le>m. norm (f (k + N))) * norm ((\<Prod>k\<in>{m<..n}. f (k + N)) - 1)"
-        by (simp add: norm_mult prod_norm)
-      also have "\<dots> \<le> ?Q m * ((\<Prod>k\<in>{m<..n}. 1 + norm (f (k + N) - 1)) - 1)"
-        using norm_prod_minus1_le_prod_minus1[of "\<lambda>k. f (k + N) - 1" "{m<..n}"]
-              norm_triangle_ineq[of 1 "f k - 1" for k]
-        by (intro mult_mono prod_mono ballI conjI norm_prod_minus1_le_prod_minus1 prod_nonneg) auto
-      also have "\<dots> = ?Q m * (\<Prod>k\<in>{m<..n}. 1 + norm (f (k + N) - 1)) - ?Q m"
-        by (simp add: algebra_simps)
-      also have "?Q m * (\<Prod>k\<in>{m<..n}. 1 + norm (f (k + N) - 1)) = 
-                   (\<Prod>k\<in>{..m}\<union>{m<..n}. 1 + norm (f (k + N) - 1))"
-        by (rule prod.union_disjoint [symmetric]) auto
-      also from 1 have "{..m}\<union>{m<..n} = {..n}" by auto
-      also have "?Q n - ?Q m \<le> norm (?Q n - ?Q m)" by simp
-      also from 1 have "\<dots> < \<epsilon>" by (intro M) auto
-      finally show ?case .
-    qed
-  qed
-  hence conv: "convergent ?P" by (rule Cauchy_convergent)
-  then obtain L where L: "?P \<longlonglongrightarrow> L"
-    by (auto simp: convergent_def)
-
-  have "L \<noteq> 0"
-  proof
-    assume [simp]: "L = 0"
-    from tendsto_norm[OF L] have limit: "(\<lambda>n. \<Prod>k\<le>n. norm (f (k + N))) \<longlonglongrightarrow> 0" 
-      by (simp add: prod_norm)
-
-    from assms have "(\<lambda>n. f (n + N)) \<longlonglongrightarrow> 1"
-      by (intro abs_convergent_prod_imp_LIMSEQ abs_convergent_prod_ignore_initial_segment)
-    hence "eventually (\<lambda>n. norm (f (n + N) - 1) < 1) sequentially"
-      by (auto simp: tendsto_iff dist_norm)
-    then obtain M0 where M0: "norm (f (n + N) - 1) < 1" if "n \<ge> M0" for n
-      by (auto simp: eventually_at_top_linorder)
-
-    {
-      fix M assume M: "M \<ge> M0"
-      with M0 have M: "norm (f (n + N) - 1) < 1" if "n \<ge> M" for n using that by simp
-
-      have "(\<lambda>n. \<Prod>k\<le>n. 1 - norm (f (k+M+N) - 1)) \<longlonglongrightarrow> 0"
-      proof (rule tendsto_sandwich)
-        show "eventually (\<lambda>n. (\<Prod>k\<le>n. 1 - norm (f (k+M+N) - 1)) \<ge> 0) sequentially"
-          using M by (intro always_eventually prod_nonneg allI ballI) (auto intro: less_imp_le)
-        have "norm (1::'a) - norm (f (i + M + N) - 1) \<le> norm (f (i + M + N))" for i
-          using norm_triangle_ineq3[of "f (i + M + N)" 1] by simp
-        thus "eventually (\<lambda>n. (\<Prod>k\<le>n. 1 - norm (f (k+M+N) - 1)) \<le> (\<Prod>k\<le>n. norm (f (k+M+N)))) at_top"
-          using M by (intro always_eventually allI prod_mono ballI conjI) (auto intro: less_imp_le)
-        
-        define C where "C = (\<Prod>k<M. norm (f (k + N)))"
-        from N have [simp]: "C \<noteq> 0" by (auto simp: C_def)
-        from L have "(\<lambda>n. norm (\<Prod>k\<le>n+M. f (k + N))) \<longlonglongrightarrow> 0"
-          by (intro LIMSEQ_ignore_initial_segment) (simp add: tendsto_norm_zero_iff)
-        also have "(\<lambda>n. norm (\<Prod>k\<le>n+M. f (k + N))) = (\<lambda>n. C * (\<Prod>k\<le>n. norm (f (k + M + N))))"
-        proof (rule ext, goal_cases)
-          case (1 n)
-          have "{..n+M} = {..<M} \<union> {M..n+M}" by auto
-          also have "norm (\<Prod>k\<in>\<dots>. f (k + N)) = C * norm (\<Prod>k=M..n+M. f (k + N))"
-            unfolding C_def by (subst prod.union_disjoint) (auto simp: norm_mult prod_norm)
-          also have "(\<Prod>k=M..n+M. f (k + N)) = (\<Prod>k\<le>n. f (k + N + M))"
-            by (intro prod.reindex_bij_witness[of _ "\<lambda>i. i + M" "\<lambda>i. i - M"]) auto
-          finally show ?case by (simp add: add_ac prod_norm)
-        qed
-        finally have "(\<lambda>n. C * (\<Prod>k\<le>n. norm (f (k + M + N))) / C) \<longlonglongrightarrow> 0 / C"
-          by (intro tendsto_divide tendsto_const) auto
-        thus "(\<lambda>n. \<Prod>k\<le>n. norm (f (k + M + N))) \<longlonglongrightarrow> 0" by simp
-      qed simp_all
-
-      have "1 - (\<Sum>i. norm (f (i + M + N) - 1)) \<le> 0"
-      proof (rule tendsto_le)
-        show "eventually (\<lambda>n. 1 - (\<Sum>k\<le>n. norm (f (k+M+N) - 1)) \<le> 
-                                (\<Prod>k\<le>n. 1 - norm (f (k+M+N) - 1))) at_top"
-          using M by (intro always_eventually allI Weierstrass_prod_ineq) (auto intro: less_imp_le)
-        show "(\<lambda>n. \<Prod>k\<le>n. 1 - norm (f (k+M+N) - 1)) \<longlonglongrightarrow> 0" by fact
-        show "(\<lambda>n. 1 - (\<Sum>k\<le>n. norm (f (k + M + N) - 1)))
-                  \<longlonglongrightarrow> 1 - (\<Sum>i. norm (f (i + M + N) - 1))"
-          by (intro tendsto_intros summable_LIMSEQ' summable_ignore_initial_segment 
-                abs_convergent_prod_imp_summable assms)
-      qed simp_all
-      hence "(\<Sum>i. norm (f (i + M + N) - 1)) \<ge> 1" by simp
-      also have "\<dots> + (\<Sum>i<M. norm (f (i + N) - 1)) = (\<Sum>i. norm (f (i + N) - 1))"
-        by (intro suminf_split_initial_segment [symmetric] summable_ignore_initial_segment
-              abs_convergent_prod_imp_summable assms)
-      finally have "1 + (\<Sum>i<M. norm (f (i + N) - 1)) \<le> (\<Sum>i. norm (f (i + N) - 1))" by simp
-    } note * = this
-
-    have "1 + (\<Sum>i. norm (f (i + N) - 1)) \<le> (\<Sum>i. norm (f (i + N) - 1))"
-    proof (rule tendsto_le)
-      show "(\<lambda>M. 1 + (\<Sum>i<M. norm (f (i + N) - 1))) \<longlonglongrightarrow> 1 + (\<Sum>i. norm (f (i + N) - 1))"
-        by (intro tendsto_intros summable_LIMSEQ summable_ignore_initial_segment 
-                abs_convergent_prod_imp_summable assms)
-      show "eventually (\<lambda>M. 1 + (\<Sum>i<M. norm (f (i + N) - 1)) \<le> (\<Sum>i. norm (f (i + N) - 1))) at_top"
-        using eventually_ge_at_top[of M0] by eventually_elim (use * in auto)
-    qed simp_all
-    thus False by simp
-  qed
-  with L show ?thesis by (auto simp: prod_defs)
-qed
-
 lemma abs_multipliable_multipliable:
   fixes f :: \<open>'a \<Rightarrow> 'b :: {banach, real_normed_div_algebra, semidom}\<close>
   assumes \<open>f abs_multipliable_on A\<close>
@@ -603,21 +475,9 @@ proof -
   have g_ge0: "g x \<ge> 0" for x
     using g_ge[of x] by linarith
   have norm_f_le_g: "norm (f x) \<le> g x" for x
-  proof -
-    have "norm (f x) = norm (1 + (f x - 1))" by simp
-    also have "\<dots> \<le> norm (1::'b) + norm (f x - 1)" by (rule norm_triangle_ineq)
-    also have "\<dots> = 1 + norm (f x - 1)" by simp
-    also have "\<dots> = g x" unfolding g_def ..
-    finally show ?thesis .
-  qed
+    using g_def by (metis norm_one norm_triangle_sub)
   have norm_prod_le_prod_g: "norm (prod f F) \<le> prod g F" if "finite F" for F
-  proof -
-    have "norm (prod f F) = prod (\<lambda>x. norm (f x)) F"
-      by (simp add: prod_norm)
-    also have "\<dots> \<le> prod g F"
-      by (intro prod_mono conjI norm_f_le_g ballI) auto
-    finally show ?thesis .
-  qed
+    using norm_f_le_g by (metis norm_ge_zero prod_mono prod_norm)
   have prod_g_nonneg: "prod g F \<ge> 0" if "finite F" for F
     by (intro prod_nonneg ballI) (use g_ge0 in auto)
   have dist_le: "dist (prod f F1) (prod f F2) \<le> dist (prod g F1) (prod g F2)"
@@ -927,11 +787,7 @@ proof (rule has_setprodI, unfold tendsto_iff, intro allI impI)
         also have \<open>\<dots> = prod g {..M} - prod g Y\<close>
           using factor_g by (simp add: algebra_simps)
         also have \<open>\<dots> \<le> prod g {..M} - prod g {..N}\<close>
-        proof -
-          have \<open>prod g {..N} \<le> prod g Y\<close>
-            by (intro prod_mono2 finY) (use NY g_ge1 g_ge0 in auto)
-          thus ?thesis by linarith
-        qed
+          by (simp add: NY finY g_ge0 g_ge1 prod_mono2)
         also have \<open>\<dots> \<le> L_abs - prod g {..N}\<close>
           using g_partial_le by force
         finally show ?thesis .
@@ -963,12 +819,9 @@ lemma abs_convergent_prod_imp_multipliable_on:
   fixes f :: "nat \<Rightarrow> 'a :: {real_normed_field,complete_space,comm_ring_1}"
   assumes "abs_convergent_prod f"
   shows   "f multipliable_on UNIV"
-proof -
-  from assms have "convergent_prod f"
-    by (rule abs_convergent_prod_imp_convergent_prod)
-  thus ?thesis
-    using abs_convergent_prod_imp_setprod[OF assms] multipliable_on_def by blast
-qed
+  unfolding multipliable_on_def
+  using abs_convergent_prod_imp_convergent_prod abs_convergent_prod_imp_setprod assms
+  by blast
 
 subsection \<open>Subsets\<close>
 
@@ -1274,14 +1127,8 @@ proof -
     using BA by auto
   ultimately have "(f has_setprod Q * R) A"
     by simp
-  with P have "infprod f A = Q * R"
-    using has_setprod_unique by blast
-  moreover have "infprod f B = Q"
-    using Q(1) by (rule infprodI)
-  moreover have "infprod f (A - B) = R"
-    using R(1) by (rule infprodI)
-  ultimately show ?thesis
-    by simp
+  with P show ?thesis
+    using Q(1) R(1) infprodI by blast
 qed
 
 text \<open>
@@ -1655,8 +1502,7 @@ proof -
             unfolding FB_def eventually_finite_subsets_at_top unfolding prod.case by metis
           moreover define Ha where \<open>Ha a = Ha0 a \<union> Ga a\<close> for a
           ultimately show ?thesis
-            using that[where Ha=Ha]
-            using Ga_fin Ga_B by auto
+            using that[where Ha=Ha] Ga_fin Ga_B by auto
         qed
 
         have \<open>D (\<Prod>a\<in>M. b a, \<Prod>(a,b)\<in>H. f (a,b))\<close> if \<open>finite H\<close> and \<open>H \<subseteq> Sigma M B\<close> and \<open>H \<supseteq> Sigma M Ha\<close> for H
@@ -1909,10 +1755,8 @@ lemma has_setprod_inverse:
   assumes "(f has_setprod (inverse a)) A" and "a \<noteq> 0"
   shows   \<open>((\<lambda>x. inverse (f x)) has_setprod a) A\<close>
 proof (rule has_setprodI)
-  from assms(1) have lim: \<open>(prod f \<longlongrightarrow> inverse a) (finite_subsets_at_top A)\<close>
-    by (rule has_setprodD)
-  from assms(2) have \<open>inverse a \<noteq> 0\<close> by simp
-  from tendsto_inverse[OF lim this] have \<open>((\<lambda>X. inverse (prod f X)) \<longlongrightarrow> inverse (inverse a)) (finite_subsets_at_top A)\<close> .
+  have \<open>((\<lambda>X. inverse (prod f X)) \<longlongrightarrow> inverse (inverse a)) (finite_subsets_at_top A)\<close>
+    using assms has_setprodD tendsto_inverse by fastforce 
   also have \<open>inverse (inverse a) = a\<close> using assms(2) by simp
   finally show \<open>((\<lambda>X. prod (\<lambda>x. inverse (f x)) X) \<longlongrightarrow> a) (finite_subsets_at_top A)\<close>
     by (simp add: prod_inversef[symmetric] o_def)
@@ -1979,12 +1823,7 @@ lemma has_setprod_divide:
   shows   "((\<lambda>x. f x / g x) has_setprod (a / b)) A"
 proof -
   have "((\<lambda>x. inverse (g x)) has_setprod inverse b) A"
-  proof (subst has_setprod_inverse_iff)
-    show "inverse b \<noteq> 0"
-      using b by simp
-    show "(g has_setprod inverse (inverse b)) A"
-      using g b by simp
-  qed
+    by (simp add: b g has_setprod_inverse)
   from has_setprod_mult[OF f this] show ?thesis
     by (simp add: divide_inverse)
 qed
@@ -2250,10 +2089,7 @@ proof -
   from assms(1) have \<open>(prod f \<longlongrightarrow> S) (finite_subsets_at_top UNIV)\<close>
     by (simp add: has_setprod_def)
   then have lim_S: \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> S\<close>
-  proof (rule filterlim_compose)
-    show \<open>filterlim (\<lambda>n. {..n}) (finite_subsets_at_top UNIV) sequentially\<close>
-      using filterlim_atMost_at_top by auto
-  qed
+    using filterlim_atMost_at_top filterlim_compose by blast
   from assms(2) have lim_P: \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> prodinf f\<close>
     using convergent_prod_LIMSEQ by blast
   from lim_S lim_P have \<open>S = prodinf f\<close>
@@ -2557,7 +2393,7 @@ proof -
     unfolding summable_on_def by blast
   hence tend: "((\<lambda>U. sum f U) \<longlongrightarrow> S) (finite_subsets_at_top M)"
     by (auto simp: has_sum_def)
-  \<comment> \<open>Find open W around S such that $a - b \<in> X$ whenever $a$, $b \<in> W$\<close>
+  \<comment> \<open>Find open W around S such that $a - b \in X$ whenever $a$, $b \in W$\<close>
   have "continuous_on UNIV (\<lambda>(a::'b, b). a - b)"
     by (auto intro!: continuous_intros simp: case_prod_unfold)
   hence cont: "isCont (\<lambda>(a::'b, b). a - b) (S, S)"
@@ -2787,13 +2623,7 @@ proof -
     from X have "eventually (\<lambda>X'. X \<subseteq> X' \<and> X' \<subseteq> A \<and> finite X') (finite_subsets_at_top A)"
       by (auto simp: eventually_finite_subsets_at_top)
     thus "eventually (\<lambda>X'. y < prod g X') (finite_subsets_at_top A)"
-    proof eventually_elim
-      case (elim X')
-      note \<open>y < prod g X\<close>
-      also have "prod g X \<le> prod g X'"
-        using elim by (intro g_mono) auto
-      finally show ?case .
-    qed
+      using X(3) g_mono by (smt (verit) eventually_mono)
   qed
 qed
 
@@ -2953,7 +2783,7 @@ lemma abs_multipliable_on_comparison_test:
   assumes \<open>\<And>x. x \<in> A \<Longrightarrow> norm (f x - 1) \<le> norm (g x - 1)\<close>
   shows   \<open>f abs_multipliable_on A\<close>
 proof -
-  \<comment> \<open>Step 1: From g abs_multipliable, get that partial sums of @{term\<open>norm(g x - 1)\<close>} are bounded\<close>
+  \<comment> \<open>The partial sums of @{term\<open>norm(g x - 1)\<close>} are bounded\<close>
   define gn where \<open>gn x = norm (g x - 1)\<close> for x
   define fn where \<open>fn x = norm (f x - 1)\<close> for x
   have gn_nn: \<open>gn x \<ge> 0\<close> for x unfolding gn_def by simp
@@ -3019,7 +2849,6 @@ proof -
   have xn_nn: "xn i \<ge> 0" for i unfolding xn_def by simp
   have yn_nn: "yn i \<ge> 0" for i unfolding yn_def by simp
 
-  \<comment> \<open>Key inequality: 1 + norm(xy - 1) \<le> (1 + norm(x-1)) * (1 + norm(y-1))\<close>
   have prod_ineq: "1 + norm (x i * y i - 1) \<le> (1 + xn i) * (1 + yn i)" for i
   proof -
     have "x i * y i - 1 = (x i - 1) * (y i - 1) + (x i - 1) + (y i - 1)"
@@ -3224,10 +3053,8 @@ lemma abs_multipliable_on_imp_strongly_multipliable_on:
   assumes "f abs_multipliable_on A"
   shows   "f strongly_multipliable_on A"
 proof -
-  \<comment> \<open>Step 1: norm(f x - 1) is summable\<close>
   have norm_sum: "(\<lambda>x. norm (f x - 1)) summable_on A"
     using assms by (subst (asm) abs_multipliable_on_iff_summable_on)
-  \<comment> \<open>Step 2: Only finitely many zeros\<close>
   have fin_zeros: "finite {x\<in>A. f x = 0}"
   proof -
     from summable_on_imp_nhds_0[OF abs_summable_summable[OF norm_sum], of "ball 0 (1::real)"]
@@ -3236,7 +3063,7 @@ proof -
     show ?thesis
       by (rule finite_subset[OF _ F(1)]) (use F(3) in force)
   qed
-  \<comment> \<open>Step 3: f is abs_multipliable on the nonzero part\<close>
+  \<comment> \<open>f is absolutely multipliable on the nonzero part\<close>
   define S where "S = {x\<in>A. f x \<noteq> 0}"
   have S_sub: "S \<subseteq> A" unfolding S_def by auto
   have nz: "\<And>x. x \<in> S \<Longrightarrow> f x \<noteq> 0" unfolding S_def by auto
@@ -3244,13 +3071,10 @@ proof -
     using norm_sum S_sub by (rule summable_on_subset_banach)
   have abs_mult_S: "f abs_multipliable_on S"
     using norm_sum_S by (subst abs_multipliable_on_iff_summable_on)
-  \<comment> \<open>Step 4: f is multipliable on S\<close>
   have mult_S: "f multipliable_on S"
     by (rule abs_multipliable_multipliable[OF abs_mult_S])
-  \<comment> \<open>Step 5: The inverse is also abs_multipliable on S\<close>
   have inv_abs_mult_S: "(\<lambda>x. inverse (f x)) abs_multipliable_on S"
     by (rule abs_multipliable_on_inverse) fact+
-  \<comment> \<open>Step 6: The product over S is nonzero\<close>
   have inv_mult_S: "(\<lambda>x. inverse (f x)) multipliable_on S"
     by (rule abs_multipliable_multipliable[OF inv_abs_mult_S])
   have "infprod (\<lambda>x. f x * inverse (f x)) S = infprod f S * infprod (\<lambda>x. inverse (f x)) S"
@@ -3259,7 +3083,6 @@ proof -
     by (intro infprod_1) (use nz in auto)
   ultimately have prod_nz: "infprod f S \<noteq> 0"
     by (metis mult_zero_left zero_neq_one)
-  \<comment> \<open>Conclusion\<close>
   from mult_S prod_nz obtain P where "(f has_setprod P) S" "P \<noteq> 0"
     using has_setprod_infprod multipliable_on_def by fastforce
   with fin_zeros show ?thesis

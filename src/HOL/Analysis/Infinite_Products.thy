@@ -385,11 +385,7 @@ qed
 lemma abs_convergent_prod_altdef:
   fixes f :: "nat \<Rightarrow> 'a :: {one,real_normed_vector}"
   shows  "abs_convergent_prod f \<longleftrightarrow> convergent (\<lambda>n. \<Prod>i\<le>n. 1 + norm (f i - 1))"
-proof
-  assume "abs_convergent_prod f"
-  thus "convergent (\<lambda>n. \<Prod>i\<le>n. 1 + norm (f i - 1))"
-    by (auto simp: abs_convergent_prod_def intro!: convergent_prod_imp_convergent)
-qed (auto intro: abs_convergent_prodI)
+  using abs_convergent_prodI abs_convergent_prod_def convergent_prod_imp_convergent by blast
 
 lemma Weierstrass_prod_ineq:
   fixes f :: "'a \<Rightarrow> real" 
@@ -496,12 +492,8 @@ next
   next
     from assms have "(\<lambda>n. \<Sum>i\<le>n. norm (f i - 1)) \<longlonglongrightarrow> (\<Sum>i. norm (f i - 1))"
       using sums_def_le by blast
-    hence "(\<lambda>n. exp (\<Sum>i\<le>n. norm (f i - 1))) \<longlonglongrightarrow> exp (\<Sum>i. norm (f i - 1))"
-      by (rule tendsto_exp)
-    hence "convergent (\<lambda>n. exp (\<Sum>i\<le>n. norm (f i - 1)))"
-      by (rule convergentI)
     thus "Bseq (\<lambda>n. exp (\<Sum>i\<le>n. norm (f i - 1)))"
-      by (rule convergent_imp_Bseq)
+      using convergent_def convergent_imp_Bseq tendsto_exp by blast
   qed
 qed
 
