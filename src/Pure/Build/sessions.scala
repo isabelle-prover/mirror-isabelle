@@ -350,7 +350,7 @@ object Sessions {
                 dependencies.entries.foldLeft(graph0) {
                   case (g, entry) =>
                     val a = node(entry.name)
-                    val bs = entry.imports.map(node).filterNot(_ == a)
+                    val bs = entry.imports_no_pos.map(node).filterNot(_ == a)
                     bs.foldLeft((a :: bs).foldLeft(g)(_.default_node(_, Nil)))(_.add_edge(_, a))
                 }
               }

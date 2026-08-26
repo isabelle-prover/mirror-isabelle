@@ -24,7 +24,7 @@ object Resources {
       initiators: List[Document.Node.Name] = Nil
     ): Thy = {
       Thy(name = thy._1, pos = thy._2,
-        imports = header.imports_no_pos,
+        imports = header.imports,
         options = header.options ::: options,
         keywords = header.keywords,
         abbrevs = header.abbrevs,
@@ -41,7 +41,7 @@ object Resources {
     }
 
     def encode(thy: Thy): XML.Body = {
-      val imports = thy.imports.map(_.node)
+      val imports = thy.imports_no_pos.map(_.node)
       val options = thy.options.map(spec => (spec.name, spec.value))
       val keywords = thy.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
 
@@ -59,7 +59,7 @@ object Resources {
   sealed case class Thy(
     name: Document.Node.Name = Document.Node.Name.empty,
     pos: Position.T = Position.none,
-    imports: List[Document.Node.Name] = Nil,
+    imports: List[(Document.Node.Name, Position.T)] = Nil,
     options: Options.Update = Nil,
     keywords: Thy_Header.Keywords = Nil,
     abbrevs: Thy_Header.Abbrevs = Nil,
@@ -68,6 +68,8 @@ object Resources {
     initiators: List[Document.Node.Name] = Nil
   ) {
     override def toString: String = name.toString
+
+    val imports_no_pos: List[Document.Node.Name] = imports.map(_._1)
   }
 
   def bootstrap: Resources =
@@ -429,20 +431,20 @@ class Resources(
       val irregular =
         (for {
           entry <- entries.iterator
-          imp <- entry.imports
+          imp <- entry.imports_no_pos
           if !regular(imp)
         } yield imp).toSet
 
       Document.Node.Name.make_graph(
         irregular.toList.map(name => ((name, ()), Nil)) :::
-        entries.map(entry => ((entry.name, ()), entry.imports)))
+        entries.map(entry => ((entry.name, ()), entry.imports_no_pos)))
     }
 
     lazy val loaded_theories: Graph[String, Outer_Syntax] =
       entries.foldLeft(session_base.loaded_theories) {
         case (graph, entry) =>
           val name = entry.name.theory
-          val imports = entry.imports.map(_.theory)
+          val imports = entry.imports_no_pos.map(_.theory)
 
           val graph1 = (name :: imports).foldLeft(graph)(_.default_node(_, Outer_Syntax.empty))
           val graph2 = imports.foldLeft(graph1)(_.add_edge(_, name))
