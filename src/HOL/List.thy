@@ -444,6 +444,12 @@ lemma strict_sorted_imp_sorted: "sorted_wrt (<) xs \<Longrightarrow> sorted xs"
 end
 
 
+subsubsection \<open>List homomorphism\<close>
+
+definition hom_list :: "('a list \<Rightarrow> 'b list) \<Rightarrow> bool" where
+"hom_list h = (\<forall>xs ys. h (xs @ ys) = h xs @ h ys)"
+
+
 subsubsection \<open>List comprehension\<close>
 
 text\<open>Input syntax for Haskell-like list comprehension notation.
@@ -1038,6 +1044,9 @@ lemma Cons_eq_appendI: "\<lbrakk>x # xs1 = ys; xs = xs1 @ zs\<rbrakk> \<Longrigh
 lemma append_eq_appendI: "\<lbrakk>xs @ xs1 = zs; ys = xs1 @ us\<rbrakk> \<Longrightarrow> xs @ ys = zs @ us"
   by auto
 
+
+lemma hom_list_Nil: "hom_list h \<Longrightarrow> h [] = []"
+unfolding hom_list_def by (metis self_append_conv)
 
 
 text \<open>
