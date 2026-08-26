@@ -451,11 +451,11 @@ object Build_Job {
                       List.from(
                         for {
                           (opts, thys) <- info.theories.iterator
-                          (opts_for_ML_process, thy_opts) =
+                          (process_opts, thy_opts) =
                             process.options.check_update(opts)
                               .partition(opt => process.options.get(opt.name).get.for_ML_process)
                           thy <- thys.iterator
-                        } yield Theory(opts_for_ML_process, (thy, thy_opts))),
+                        } yield Theory(process_opts, (thy, thy_opts))),
                       eq = _ options_eq _)
                       .map(ts => (ts.head.options ::: prover_options, ts.map(_.thy)))
 
