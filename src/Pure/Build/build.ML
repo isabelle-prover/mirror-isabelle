@@ -351,7 +351,7 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
             val thy: Resources.thy =
              {name = {node = node, master_dir = master_dir, theory = theory_name},
               pos = theory_pos, imports = imports, options = opts, keywords = keywords,
-              initiators = initiators0};
+              errors = [], initiators = initiators0};
           in new_entry theory_name parents (Task (parents, load_thy thy text)) tasks' end)
   end;
 
