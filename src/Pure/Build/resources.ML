@@ -43,6 +43,7 @@ sig
   val no_thy: thy
   val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
+  val map_thy_errors: (string list -> string list) -> thy -> thy
   val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
   val find_theory_file: string -> Path.T option
@@ -305,6 +306,10 @@ fun map_thy_pos f ({name, pos, imports, options, keywords, errors, initiators}: 
  {name = name, pos = f pos, imports = map (apsnd f) imports,
   options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
   keywords = keywords, errors = errors, initiators = initiators};
+
+fun map_thy_errors f ({name, pos, imports, options, keywords, errors, initiators}: thy) : thy =
+  {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+   errors = f errors, initiators = initiators};
 
 fun begin_theory ({name, pos, imports, keywords, ...}: thy) parents =
   let
