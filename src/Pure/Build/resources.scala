@@ -293,7 +293,7 @@ class Resources(
           abbrevs = header.abbrevs,
           condition_bad = conditions.bad_message)
       }
-      catch { case e: Throwable => Document.Node.Header.exn(e) }
+      catch { case e: Throwable => Document.Node.Header(errors = List(Exn.message(e))) }
     }
     else Document.Node.Header.none
   }
@@ -395,7 +395,7 @@ class Resources(
           }
           catch {
             case e: Throwable =>
-              val header = Document.Node.Header.exn(e)
+              val header = Document.Node.Header(errors = List(Exn.message(e)))
               val entry = Resources.Thy.make(thy, header, options = options, initiators = initiators)
               dependencies1.cons(entry)
           }
