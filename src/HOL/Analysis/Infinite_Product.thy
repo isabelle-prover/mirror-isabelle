@@ -1865,12 +1865,7 @@ lemma multipliable_on_exp:
   fixes f :: \<open>'a \<Rightarrow> 'b::{banach,real_normed_field}\<close>
   assumes "f summable_on A"
   shows   "(\<lambda>x. exp (f x)) multipliable_on A"
-proof -
-  from assms obtain S where S: "(f has_sum S) A"
-    by (auto simp: summable_on_def)
-  show ?thesis
-    using has_sum_imp_has_setprod_exp[OF S]  has_setprod_imp_multipliable by blast
-qed
+  using assms has_sum_imp_has_setprod_exp multipliable_on_def summable_on_def by blast
 
 lemma has_setprod_reindex_bij_betw:
   assumes "bij_betw g A B"
@@ -1912,14 +1907,8 @@ qed
 lemma multipliable_on_homomorphism:
   assumes "f multipliable_on A" "h 1 = 1" "\<And>a b. h (a * b) = h a * h b" "continuous_on UNIV h"
   shows   "(\<lambda>x. h (f x)) multipliable_on A"
-proof -
-  from assms(1) obtain S where "(f has_setprod S) A"
-    by (auto simp: multipliable_on_def)
-  hence "((\<lambda>x. h (f x)) has_setprod h S) A"
-    by (rule has_setprod_homomorphism) (use assms in auto)
-  thus ?thesis
-    by (auto simp: multipliable_on_def)
-qed
+  using assms has_setprod_homomorphism has_setprod_imp_multipliable has_setprod_infprod
+  by blast
 
 lemma infprod_homomorphism_strong:
   fixes h :: "'a :: {t2_space, topological_comm_monoid_mult, semidom} \<Rightarrow>
@@ -2005,12 +1994,7 @@ next
         assume [simp]: \<open>x \<notin> X\<close>
         have \<open>prod f (insert x X) = S\<close>
           using X x by (intro X) auto
-        then have \<open>f x * prod f X = S\<close>
-          using X(1) by simp
-        then have \<open>f x * S = S\<close> using prodX by simp
-        with False have \<open>f x = 1\<close>
-          by (metis mult_cancel_right1)
-        with x show False by auto
+        with False X(1) prodX x show False by auto
       qed
     qed
     thus ?thesis using X(1) finite_subset by blast
@@ -2022,14 +2006,10 @@ lemma has_setprod_imp_has_prod:
   assumes \<open>(f has_setprod S) (UNIV :: nat set)\<close> and \<open>convergent_prod f\<close>
   shows \<open>f has_prod S\<close>
 proof -
-  from assms(1) have \<open>(prod f \<longlongrightarrow> S) (finite_subsets_at_top UNIV)\<close>
-    by (simp add: has_setprod_def)
-  then have lim_S: \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> S\<close>
-    using filterlim_atMost_at_top filterlim_compose by blast
-  from assms(2) have lim_P: \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> prodinf f\<close>
-    using convergent_prod_LIMSEQ by blast
-  from lim_S lim_P have \<open>S = prodinf f\<close>
-    by (rule LIMSEQ_unique)
+  have \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> S\<close>
+    using filterlim_atMost_at_top filterlim_compose assms(1) has_setprodD by blast
+  then have \<open>S = prodinf f\<close>
+    using LIMSEQ_unique assms(2) convergent_prod_LIMSEQ by blast
   with assms(2) show \<open>f has_prod S\<close>
     using convergent_prod_has_prod by blast
 qed
@@ -2045,23 +2025,14 @@ proof -
   then have lim: \<open>(prod f \<longlongrightarrow> S) (finite_subsets_at_top UNIV)\<close>
     by (simp add: has_setprod_def)
   then have seq_lim: \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> S\<close>
-  proof (rule filterlim_compose)
-    show \<open>filterlim (\<lambda>n. {..n}) (finite_subsets_at_top UNIV) sequentially\<close>
-      using filterlim_atMost_at_top by auto
-  qed
+    using filterlim_atMost_at_top filterlim_compose by blast
   \<comment> \<open>Since S is nonzero, eventually partial products are nonzero\<close>
   from seq_lim assms(2)[folded S_def] have \<open>\<forall>\<^sub>F n in sequentially. prod f {..n} \<noteq> 0\<close>
     by (intro tendsto_imp_eventually_ne) auto
   then obtain N where N: \<open>\<And>n. n \<ge> N \<Longrightarrow> prod f {..n} \<noteq> 0\<close>
     by (auto simp: eventually_at_top_linorder)
   have fnz: \<open>f n \<noteq> 0\<close> if \<open>n > N\<close> for n
-  proof -
-    from N[of n] N[of \<open>n - 1\<close>] that
-    have \<open>prod f {..n} \<noteq> 0\<close> \<open>prod f {..n-1} \<noteq> 0\<close> by auto
-    moreover have \<open>prod f {..n} = f n * prod f {..n-1}\<close> using that
-      by (metis Suc_pred' gr_implies_not_zero mult.commute not_gr_zero prod.atMost_Suc)
-    ultimately show \<open>f n \<noteq> 0\<close> by auto
-  qed
+    using N[of n] N[of \<open>n - 1\<close>] that by auto
   \<comment> \<open>The shifted sequence converges to a nonzero limit\<close>
   have \<open>convergent_prod (\<lambda>i. f (i + Suc N))\<close>
   proof -
@@ -2082,10 +2053,9 @@ proof -
       ultimately have \<open>(\<lambda>n. prod f {..N} * prod (\<lambda>i. f (i + Suc N)) {..n}) \<longlonglongrightarrow> S\<close>
         by (simp add: tendsto_cong)
       then have \<open>(\<lambda>n. prod f {..N} * prod (\<lambda>i. f (i + Suc N)) {..n} / prod f {..N}) \<longlonglongrightarrow> S / prod f {..N}\<close>
-        using N[of N, simplified]
-        by (intro tendsto_divide tendsto_const) auto
+        using N[of N] by (intro tendsto_divide tendsto_const) auto
       then show ?thesis
-        using N[of N, simplified] by (simp add: field_simps)
+        using N[of N] by (simp add: field_simps)
     qed
     moreover have \<open>S / prod f {..N} \<noteq> 0\<close>
       using assms(2)[folded S_def] N[of N, simplified] by auto
@@ -2206,11 +2176,9 @@ next
       by blast
     \<comment> \<open>\<^bold>\<open>NB\<close> \<open>blast\<close> on \<open>strongly_multipliable_on_nonzero_iff\<close> together with the existential
         diverges; apply the equivalence explicitly\<close>
-    have "\<exists>P. (f has_setprod P) A \<and> P \<noteq> 0"
-      by (rule iffD1[OF strongly_multipliable_on_nonzero_iff[OF nz] assms(1)])
-    then obtain Q where Q: "(f has_setprod Q) A" "Q \<noteq> 0"
-      by blast
-    from has_setprod_unique[OF P Q(1)] Q(2) P0 show False
+    then obtain Q where "(f has_setprod Q) A" "Q \<noteq> 0"
+      using assms(1) by (meson strongly_multipliable_on_nonzero_iff)
+    with has_setprod_unique[OF P] P0 show False
       by simp
   qed
 qed
@@ -2218,14 +2186,7 @@ qed
 corollary infprod_eq_0_iff:
   assumes "f strongly_multipliable_on A"
   shows   "infprod f A = 0 \<longleftrightarrow> (\<exists>x\<in>A. f x = 0)"
-proof -
-  have "f multipliable_on A"
-    using assms by (rule strongly_multipliable_imp_multipliable)
-  hence "(f has_setprod infprod f A) A"
-    by (rule has_setprod_infprod)
-  with assms show ?thesis
-    by (rule has_setprod_eq_0_iff)
-qed
+  using assms by (metis infprodI strongly_multipliable_on_nonzero_iff zero_imp_has_setprod_0)
 
 lemma strongly_multipliable_on_Diff_finite:
   fixes f :: "_ \<Rightarrow> 'a :: real_normed_field"
@@ -2264,13 +2225,12 @@ subsection \<open>Absolute convergence\<close>
 *)
 lemma has_setprod_factors_tend_to_1:
   fixes f :: "'a \<Rightarrow> 'b :: {real_normed_div_algebra,comm_monoid_mult}"
-  assumes lim: "(prod f \<longlongrightarrow> L) (finite_subsets_at_top M)" and nz: "L \<noteq> 0"
-  shows "\<forall>\<epsilon>>0. \<exists>F. finite F \<and> F \<subseteq> M \<and> (\<forall>x\<in>M - F. dist (f x) 1 < \<epsilon>)"
-proof (intro allI impI)
-  fix \<epsilon> :: real assume \<epsilon>: "\<epsilon> > 0"
+  assumes lim: "(prod f \<longlongrightarrow> L) (finite_subsets_at_top M)" and nz: "L \<noteq> 0" and "\<epsilon>>0"
+  shows "\<exists>F. finite F \<and> F \<subseteq> M \<and> (\<forall>x\<in>M - F. dist (f x) 1 < \<epsilon>)"
+proof -
   obtain F where F: "finite F" "F \<subseteq> M"
     and near: "\<And>D. finite D \<Longrightarrow> D \<subseteq> M - F \<Longrightarrow> dist (prod f D) 1 < \<epsilon>"
-    using has_setprod_prods_near_1[OF lim nz \<epsilon>] by blast
+    using has_setprod_prods_near_1[OF lim nz \<open>\<epsilon>>0\<close>] by blast
   have "dist (f x) 1 < \<epsilon>" if "x \<in> M - F" for x
     using near[of "{x}"] that by simp
   with F show "\<exists>F. finite F \<and> F \<subseteq> M \<and> (\<forall>x\<in>M - F. dist (f x) 1 < \<epsilon>)"
@@ -2285,7 +2245,7 @@ lemma has_setprod_factors_tend_to_1':
 proof -
   from X obtain \<epsilon> where "\<epsilon> > 0" and ball_sub: "ball 1 \<epsilon> \<subseteq> X"
     using openE by blast
-  from has_setprod_factors_tend_to_1[OF lim nz, rule_format, OF \<open>\<epsilon> > 0\<close>]
+  from has_setprod_factors_tend_to_1[OF lim nz \<open>\<epsilon> > 0\<close>]
   obtain F where "finite F" "F \<subseteq> M" "\<And>x. x \<in> M - F \<Longrightarrow> dist (f x) 1 < \<epsilon>"
     by blast
   then show ?thesis
@@ -2376,14 +2336,9 @@ proof -
   from assms(1) have \<open>(prod f \<longlongrightarrow> S) (finite_subsets_at_top UNIV)\<close>
     by (simp add: has_setprod_def)
   then have \<open>(\<lambda>n. prod f {..n}) \<longlonglongrightarrow> S\<close>
-  proof (rule filterlim_compose)
-    show \<open>filterlim (\<lambda>n. {..n}) (finite_subsets_at_top UNIV) sequentially\<close>
-      using filterlim_atMost_at_top by auto
-  qed
-  with \<open>S \<noteq> 0\<close> have \<open>raw_has_prod f 0 S\<close>
-    by (simp add: raw_has_prod_def)
-  then show \<open>f has_prod S\<close>
-    by (simp add: has_prod_def)
+    using filterlim_atMost_at_top filterlim_compose by blast
+  with \<open>S \<noteq> 0\<close> show \<open>f has_prod S\<close>
+    by (simp add: raw_has_prod_def has_prod_def)
 qed
 
 text \<open>
@@ -2413,16 +2368,7 @@ proof -
   proof (rule le_Limsup[OF finite_subsets_at_top_neq_bot])
     show "\<forall>\<^sub>F X in finite_subsets_at_top A. ereal (prod f F) \<le> ereal (prod f X)"
       unfolding eventually_finite_subsets_at_top
-    proof (intro exI conjI allI impI)
-      show "finite F" by fact
-      show "F \<subseteq> A" by fact
-      fix Y assume "finite Y \<and> F \<subseteq> Y \<and> Y \<subseteq> A"
-      then have Y: "finite Y" "F \<subseteq> Y" "Y \<subseteq> A" by auto
-      have "prod f F \<le> prod f Y"
-        using Y ge1 nonneg by (intro prod_mono2) auto
-      thus "ereal (prod f F) \<le> ereal (prod f Y)"
-        by simp
-    qed
+      using assms ge1 nonneg by (smt (verit) Diff_iff ereal_less_eq(3) prod_mono2 subset_eq)
   qed
   ultimately show ?thesis by simp
 qed
@@ -2462,32 +2408,22 @@ next
         unfolding g_def by auto
       show \<open>\<forall>\<^sub>F X in finite_subsets_at_top A. a < prod g X\<close>
         unfolding eventually_finite_subsets_at_top
-      proof (intro exI[of _ F] conjI allI impI)
-        show \<open>finite F\<close> by fact
-        show \<open>F \<subseteq> A\<close> by fact
-        fix Y assume \<open>finite Y \<and> F \<subseteq> Y \<and> Y \<subseteq> A\<close>
-        then show \<open>a < prod g Y\<close>
-          using F(3) mono[of F Y] by auto
-      qed
+        using F g_ge0 g_ge1 by (meson order_less_le_trans prod_mono2)
     next
       fix a :: real assume \<open>(SUP F\<in>{F. F \<subseteq> A \<and> finite F}. prod g F) < a\<close>
       show \<open>\<forall>\<^sub>F X in finite_subsets_at_top A. prod g X < a\<close>
         unfolding eventually_finite_subsets_at_top
-      proof (intro exI[of _ "{}"] conjI allI impI)
-        show \<open>finite {}\<close> by simp
-        show \<open>{} \<subseteq> A\<close> by simp
+      proof (intro exI conjI allI impI)
         fix Y assume \<open>finite Y \<and> {} \<subseteq> Y \<and> Y \<subseteq> A\<close>
         then have \<open>prod g Y \<le> (SUP F\<in>{F. F \<subseteq> A \<and> finite F}. prod g F)\<close>
           using bdd
           by (intro cSUP_upper bdd[unfolded g_def[abs_def]]) (auto simp: g_def)
         also have \<open>\<dots> < a\<close> by fact
         finally show \<open>prod g Y < a\<close> .
-      qed
+      qed auto
     qed
-    then have \<open>g multipliable_on A\<close>
-      unfolding multipliable_on_def has_setprod_def by blast
     then show \<open>(\<lambda>x. 1 + norm (f x - 1)) multipliable_on A\<close>
-      unfolding g_def .
+      unfolding g_def multipliable_on_def has_setprod_def by blast
   qed
 qed
 
@@ -2897,8 +2833,7 @@ proof -
     hence "x \<in> A" "f x \<noteq> 1" by auto
     hence "dist (f x) 1 > 0" by auto
     then obtain n where "1 / real (Suc n) < dist (f x) 1"
-      using reals_Archimedean[of "dist (f x) 1"]
-      by (metis inverse_eq_divide)
+      using reals_Archimedean by (metis inverse_eq_divide)
     hence "f x \<notin> ball 1 (1 / real (Suc n))"
       by (simp add: dist_commute)
     hence "x \<notin> A - F n"
@@ -2956,7 +2891,6 @@ proof (rule tendsto_le)
   show "\<forall>\<^sub>F x in finite_subsets_at_top X. norm (prod f x) \<le> (\<Prod>x\<in>x. g x)"
     by (simp add: assms(3) eventually_finite_subsets_at_top_weakI in_mono prod_norm_le)
 qed auto
-
 
 lemma abs_multipliable_on_exp:
   fixes f :: "'a \<Rightarrow> 'b :: {real_normed_field, banach}"
@@ -3117,13 +3051,9 @@ next
   assume *: "f multipliable_on insert x A"
   show "f multipliable_on A"
   proof (rule multipliable_on_subset_finite_Diff[OF *])
-    show "A \<subseteq> insert x A" by auto
     show "finite (insert x A - A)"
       by (rule finite_subset[of _ "{x}"]) auto
-    fix y assume "y \<in> insert x A - A"
-    hence "y = x" by auto
-    with assms show "f y \<noteq> 0" by simp
-  qed
+  qed (use assms in auto)
 qed
 
 lemma has_setprod_finiteI: "finite A \<Longrightarrow> S = prod f A \<Longrightarrow> (f has_setprod S) A"
@@ -3345,10 +3275,8 @@ lemma has_setprod_of_nat_iff:
       has_setprod S) A \<longleftrightarrow> (\<exists>S'. S = of_nat S' \<and> (f has_setprod S') A)"
 proof
   assume *: "((\<lambda>x. of_nat (f x) :: 'b) has_setprod S) A"
-  hence "f multipliable_on A"
-    using has_setprod_imp_multipliable multipliable_on_of_nat_iff by blast
   hence "(f has_setprod infprod f A) A"
-    by (rule has_setprod_infprod)
+    using has_setprod_infprod multipliable_on_def multipliable_on_of_nat_iff by blast
   moreover from this have "S = of_nat (infprod f A)"
     using * has_setprod_of_nat has_setprod_unique by blast
   ultimately show "\<exists>S'. S = of_nat S' \<and> (f has_setprod S') A"
@@ -3620,7 +3548,6 @@ proof (intro allI impI)
     The estimate is \<open>dist(prod X, prod X2) \<le> norm(prod X) * norm(prod(X2-X) - 1)
       \<le> exp(\<Sum>\<^bsub>X\<^esub> norm f) * (exp(\<Sum>\<^bsub>X2-X\<^esub> norm f) - 1)\<close>; controlling the first factor uniformly
     is what the bound \<^term>\<open>C\<close> on \<^term>\<open>L\<close> is for.\<close>
-  note C = bdd
 
   \<comment> \<open>Pick the seed level so that the product estimate is \<open>< \<epsilon>\<close> for every \<open>y\<in>B\<close>.\<close>
   define r where "r = ln (1 + \<epsilon> / exp (C+1))"
@@ -3722,7 +3649,7 @@ proof (intro allI impI)
       have "exp (L y + 1) * (exp (r/2) - 1) < \<epsilon>"
       proof -
         have "exp (L y + 1) * (exp (r/2) - 1) \<le> exp (C + 1) * (exp (r/2) - 1)"
-          using r_pos C[OF y] by (intro mult_right_mono) auto
+          using r_pos bdd[OF y] by (intro mult_right_mono) auto
         also have "\<dots> < exp (C + 1) * (exp r - 1)"
           using r_pos by (intro mult_strict_left_mono) auto
         also have "\<dots> = \<epsilon>"
