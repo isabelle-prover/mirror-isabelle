@@ -28,15 +28,19 @@ sig
   val master_directory: theory -> Path.T
   val imports_of: theory -> (string * Position.T) list
   type node_name = {node: string, master_dir: Path.T, theory: string}
+  val empty_node_name: node_name
+  val decode_node_name: node_name XML.Decode.T
   type thy =
    {name: node_name,
     pos: Position.T,
     imports: (string * Position.T) list,
     options: Options.update_pos,
     keywords: Thy_Header.keywords,
-    initiators: string list}
+    initiators: node_name list}
   val make_thy:
-    {node: string, master_dir: Path.T, header: Thy_Header.header, initiators: string list} -> thy
+    {node: string, master_dir: Path.T, header: Thy_Header.header, initiators: node_name list} -> thy
+  val no_thy: thy
+  val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
   val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
@@ -241,7 +245,16 @@ structure Data = Theory_Data
 val master_directory = #master_dir o Data.get;
 val imports_of = #imports o Data.get;
 
+
 type node_name = {node: string, master_dir: Path.T, theory: string};
+
+val empty_node_name: node_name = {node = "", master_dir = Path.current, theory = ""};
+
+val decode_node_name: node_name XML.Decode.T =
+  let open XML.Decode
+  in triple string (Path.explode o string) string end
+  #> (fn (node, master_dir, theory) => {node = node, master_dir = master_dir, theory = theory});
+
 
 type thy =
  {name: node_name,
@@ -249,7 +262,27 @@ type thy =
   imports: (string * Position.T) list,
   options: Options.update_pos,
   keywords: Thy_Header.keywords,
-  initiators: string list};
+  initiators: node_name list};
+
+val no_thy: thy =
+ {name = empty_node_name, pos = Position.none, imports = [], options = [],
+   keywords = [], initiators = []};
+
+val decode_thy: thy XML.Decode.T =
+  let
+    open XML.Decode;
+    val string_none = rpair Position.none o string;
+    val keyword = pair string_none (Keyword.command_spec o pair string (list string));
+  in
+    pair decode_node_name
+      (pair (Position.of_properties o properties)
+        (pair (list string_none)
+          (pair (list (pair string_none (option string_none)))
+            (pair (list keyword) (list decode_node_name)))))
+  end
+  #> (fn (name, (pos, (imports, (options, (keywords, initiators))))) =>
+      {name = name, pos = pos, imports = imports,
+        options = options, keywords = keywords, initiators = initiators});
 
 fun make_thy {node, master_dir, header: Thy_Header.header, initiators} : thy =
   let

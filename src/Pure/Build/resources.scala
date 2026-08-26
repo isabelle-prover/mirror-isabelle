@@ -15,6 +15,8 @@ import java.io.{File => JFile}
 
 object Resources {
   object Thy {
+    val empty: Thy = Thy()
+
     def make(
       thy: (Document.Node.Name, Position.T),
       header: Document.Node.Header,
@@ -29,6 +31,28 @@ object Resources {
         condition_bad = header.condition_bad,
         errors = header.errors,
         initiators = initiators)
+    }
+
+    def encode_node_name(name: Document.Node.Name): XML.Body = {
+      val master = File.standard_url(name.master_dir)
+      val master_dir = if (Path.is_wellformed(master)) master else ""
+      import XML.Encode._
+      triple(string, string, string)(name.node, master_dir, name.theory)
+    }
+
+    def encode(thy: Thy): XML.Body = {
+      val imports = thy.imports.map(_.node)
+      val options = thy.options.map(spec => (spec.name, spec.value))
+      val keywords = thy.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
+
+      import XML.Encode._
+      pair(encode_node_name,
+        pair(properties,
+          pair(list(string),
+            pair(list(pair(string, option(string))),
+              pair(list(pair(string, pair(string, list(string)))),
+                pair(list(string), list(encode_node_name)))))))(
+        (thy.name, (thy.pos, (imports, (options, (keywords, (thy.errors, thy.initiators)))))))
     }
   }
 

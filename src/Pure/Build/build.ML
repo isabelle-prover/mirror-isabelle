@@ -291,7 +291,8 @@ fun load_thy (thy0: Resources.thy) text parents =
 
     fun loading_theory commands =
       let
-        val _ = writeln ("Loading theory " ^ quote name ^ required_by " " (#initiators thy));
+        val initiators = map #theory (#initiators thy);
+        val _ = writeln ("Loading theory " ^ quote name ^ required_by " " initiators);
         val _ =
           Output.try_protocol_message
             (Markup.loading_theory {name = name, commands = commands} @ text_props)
@@ -345,10 +346,12 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
             val node = File.symbolic_path thy_path;
             val master_dir = Path.dir (Path.explode node);
             val opts = header_options @ Options.update_pos_none theory_opts;
+            val initiators0 = initiators
+              |> map (fn a => {node = "", master_dir = Path.current, theory = a});
             val thy: Resources.thy =
              {name = {node = node, master_dir = master_dir, theory = theory_name},
               pos = theory_pos, imports = imports, options = opts, keywords = keywords,
-              initiators = initiators};
+              initiators = initiators0};
           in new_entry theory_name parents (Task (parents, load_thy thy text)) tasks' end)
   end;
 
