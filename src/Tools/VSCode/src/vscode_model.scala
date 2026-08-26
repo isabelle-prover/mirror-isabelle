@@ -77,6 +77,10 @@ sealed case class VSCode_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
+  def node_header: Document.Node.Header =
+    session.resources.special_header(node_name) getOrElse
+      session.resources.check_thy(session.session_options, node_name, Scan.char_reader(content.text))
+
   def get_text(range: Text.Range): Option[String] = content.doc.get_text(range)
 
   def set_version(new_version: Long): VSCode_Model = copy(version = Some(new_version))
@@ -87,13 +91,6 @@ sealed case class VSCode_Model(
   def external(b: Boolean): VSCode_Model = copy(external_file = b)
 
   def node_visible: Boolean = !external_file
-
-
-  /* header */
-
-  def node_header: Document.Node.Header =
-    session.resources.special_header(node_name) getOrElse
-      session.resources.check_thy(session.session_options, node_name, Scan.char_reader(content.text))
 
 
   /* perspective */

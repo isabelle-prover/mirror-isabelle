@@ -413,6 +413,11 @@ case class File_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
+  def node_header: Document.Node.Header =
+    PIDE.resources.special_header(node_name) getOrElse
+      PIDE.resources.check_thy(
+        session.session_options, node_name, Scan.char_reader(content.text), strict = false)
+
   override def get_text(range: Text.Range): Option[String] =
     range.try_substring(content.text)
 
@@ -420,14 +425,6 @@ case class File_Model(
   /* required */
 
   def set_node_required(b: Boolean): File_Model = copy(node_required = b)
-
-
-  /* header */
-
-  def node_header: Document.Node.Header =
-    PIDE.resources.special_header(node_name) getOrElse
-      PIDE.resources.check_thy(
-        session.session_options, node_name, Scan.char_reader(content.text), strict = false)
 
 
   /* content */
@@ -500,13 +497,7 @@ class Buffer_Model private(
   override def gui_style: GUI.Style = Isabelle_Encoding.gui_style(buffer = buffer)
 
 
-  /* text */
-
-  override def get_text(range: Text.Range): Option[String] =
-    JEdit_Lib.get_text(buffer, range)
-
-
-  /* header */
+  /* content */
 
   def node_header(): Document.Node.Header = {
     GUI_Thread.require {}
@@ -517,6 +508,9 @@ class Buffer_Model private(
           session.session_options, node_name, JEdit_Lib.buffer_reader(buffer), strict = false)
       }
   }
+
+  override def get_text(range: Text.Range): Option[String] =
+    JEdit_Lib.get_text(buffer, range)
 
 
   /* perspective */
