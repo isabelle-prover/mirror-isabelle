@@ -413,7 +413,7 @@ case class File_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
-  def node_header: Document.Node.Header =
+  def get_thy: Resources.Thy =
     PIDE.resources.special_thy(node_name) getOrElse
       PIDE.resources.check_thy(
         session.session_options, node_name, Scan.char_reader(content.text), strict = false)
@@ -460,7 +460,7 @@ case class File_Model(
   ): Option[(List[Document.Edit_Text], File_Model)] = {
     val (reparse, perspective) = node_perspective(doc_blobs, hidden)
     if (reparse || pending_edits.nonEmpty || last_perspective != perspective) {
-      val edits = node_edits(node_header, pending_edits, perspective)
+      val edits = node_edits(get_thy, pending_edits, perspective)
       Some((edits, copy(last_perspective = perspective, pending_edits = Nil)))
     }
     else None
@@ -472,7 +472,7 @@ case class File_Model(
           (node_required || !Document.Node.Perspective_Text.is_empty(last_perspective))) None
     else {
       val text_edits = List(Text.Edit.remove(0, content.text))
-      Some(node_edits(Document.Node.Header.none, text_edits, Document.Node.Perspective_Text.empty))
+      Some(node_edits(Resources.Thy.empty, text_edits, Document.Node.Perspective_Text.empty))
     }
 
   def is_stable: Boolean = pending_edits.isEmpty
@@ -499,7 +499,7 @@ class Buffer_Model private(
 
   /* content */
 
-  def node_header(): Document.Node.Header = {
+  def get_thy(): Resources.Thy = {
     GUI_Thread.require {}
 
     PIDE.resources.special_thy(node_name) getOrElse
@@ -557,7 +557,7 @@ class Buffer_Model private(
         if (reparse || edits.nonEmpty || last_perspective != perspective) {
           pending_edits.clear()
           last_perspective = perspective
-          node_edits(node_header(), edits, perspective)
+          node_edits(get_thy(), edits, perspective)
         }
         else Nil
       }

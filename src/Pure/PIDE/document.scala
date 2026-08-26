@@ -86,41 +86,7 @@ object Document {
   type Edit_Command = Edit[Command.Edit, Command.Perspective]
 
   object Node {
-    /* header and name */
-
-    object Header {
-      val none: Node.Header = Node.Header()
-    }
-
-    sealed case class Header(
-      imports: List[(Name, Position.T)] = Nil,
-      options: Options.Update = Nil,
-      keywords: Thy_Header.Keywords = Nil,
-      abbrevs: Thy_Header.Abbrevs = Nil,
-      condition_bad: String = "",
-      errors: List[String] = Nil
-    ) {
-      val imports_no_pos: List[Name] = imports.map(_._1)
-
-      def eq_no_pos(other: Node.Header): Boolean =
-        imports_no_pos == other.imports_no_pos &&
-        options == other.options &&
-        keywords == other.keywords &&
-        abbrevs == other.abbrevs &&
-        condition_bad == other.condition_bad &&
-        errors == other.errors
-
-      def append_errors(msgs: List[String]): Node.Header =
-        if (msgs.isEmpty) this
-        else copy(errors = errors ::: msgs)
-
-      def cat_errors(make_msg2: => String): Node.Header =
-        if (errors.isEmpty) this
-        else {
-          val msg2 = make_msg2
-          copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
-        }
-    }
+    /* name */
 
     object Name {
       def apply(node: String, theory: String = ""): Name = new Name(node, theory)
@@ -204,7 +170,7 @@ object Document {
     case class Blob[A, B](blob: Blobs.Item) extends Edit[A, B]
 
     case class Edits[A, B](edits: List[A]) extends Edit[A, B]
-    case class Deps[A, B](header: Node.Header) extends Edit[A, B]
+    case class Thy[A, B](thy: Resources.Thy) extends Edit[A, B]
     case class Perspective[A, B](required: Boolean, visible: B, overlays: Overlays) extends Edit[A, B]
 
 
@@ -310,7 +276,7 @@ object Document {
 
   final class Node private(
     val get_blob: Option[Blobs.Item] = None,
-    val header: Node.Header = Node.Header.none,
+    val thy: Resources.Thy = Resources.Thy.empty,
     val syntax: Option[Outer_Syntax] = None,
     val text_perspective: Text.Perspective = Text.Perspective.empty,
     val perspective: Node.Perspective_Command.T = Node.Perspective_Command.empty,
@@ -318,12 +284,12 @@ object Document {
   ) {
     def is_empty: Boolean =
       get_blob.isEmpty &&
-      header == Node.Header.none &&
+      thy == Resources.Thy.empty &&
       text_perspective.is_empty &&
       Node.Perspective_Command.is_empty(perspective) &&
       commands.isEmpty
 
-    def has_header: Boolean = header != Node.Header.none
+    def has_thy: Boolean = thy != Resources.Thy.empty
 
     override def toString: String =
       if (is_empty) "empty"
@@ -341,16 +307,16 @@ object Document {
       if (commands.size == 1 && commands.last.span.is_theory) Some(commands.last)
       else None
 
-    def update_header(new_header: Node.Header): Node =
-      new Node(get_blob, new_header, syntax, text_perspective, perspective, _commands)
+    def update_thy(new_thy: Resources.Thy): Node =
+      new Node(get_blob, new_thy, syntax, text_perspective, perspective, _commands)
 
     def update_syntax(new_syntax: Option[Outer_Syntax]): Node =
-      new Node(get_blob, header, new_syntax, text_perspective, perspective, _commands)
+      new Node(get_blob, thy, new_syntax, text_perspective, perspective, _commands)
 
     def update_perspective(
         new_text_perspective: Text.Perspective,
         new_perspective: Node.Perspective_Command.T): Node =
-      new Node(get_blob, header, syntax, new_text_perspective, new_perspective, _commands)
+      new Node(get_blob, thy, syntax, new_text_perspective, new_perspective, _commands)
 
     def edit_perspective: Node.Edit[Text.Edit, Text.Perspective] =
       Node.Perspective(perspective.required, text_perspective, perspective.overlays)
@@ -366,7 +332,7 @@ object Document {
     def update_commands(new_commands: Linear_Set[Command]): Node =
       if (new_commands eq _commands.commands) this
       else {
-        new Node(get_blob, header, syntax, text_perspective, perspective,
+        new Node(get_blob, thy, syntax, text_perspective, perspective,
           Node.Commands(new_commands))
       }
 
@@ -418,7 +384,7 @@ object Document {
 
     def + (entry: (Node.Name, Node)): Nodes = {
       val (name, node) = entry
-      val imports = node.header.imports_no_pos
+      val imports = node.thy.imports_no_pos
       val graph1 = (name :: imports).foldLeft(graph)(Nodes.init)
       val graph2 =
         graph1.imm_preds(name).foldLeft(graph1) { case (g, dep) => g.del_edge(dep, name) }
@@ -918,7 +884,7 @@ object Document {
     def get_data[C](c: Class[C]): Option[C] = Library.as_subclass(c)(untyped_data)
 
     def node_edits(
-      node_header: Node.Header,
+      thy: Resources.Thy,
       text_edits: List[Text.Edit],
       perspective: Node.Perspective_Text.T
     ): List[Edit_Text] = {
@@ -931,7 +897,7 @@ object Document {
               }
               else Nil
             List(
-              Node.Deps(node_header.append_errors(errors)),
+              Node.Thy(thy.append_errors(errors)),
               Node.Edits(text_edits), perspective)
           case Some(blob) => List(Node.Blob(blob), Node.Edits(text_edits))
         }

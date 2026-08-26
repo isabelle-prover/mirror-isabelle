@@ -17,22 +17,6 @@ object Resources {
   object Thy {
     val empty: Thy = Thy()
 
-    def make(
-      thy: (Document.Node.Name, Position.T),
-      header: Document.Node.Header,
-      options: Options.Update = Nil,
-      initiators: List[Document.Node.Name] = Nil
-    ): Thy = {
-      Thy(name = thy._1, pos = thy._2,
-        imports = header.imports,
-        options = header.options ::: options,
-        keywords = header.keywords,
-        abbrevs = header.abbrevs,
-        condition_bad = header.condition_bad,
-        errors = header.errors,
-        initiators = initiators)
-    }
-
     def encode_node_name(name: Document.Node.Name): XML.Body = {
       val master = File.standard_url(name.master_dir)
       val master_dir = if (Path.is_wellformed(master)) master else ""
@@ -70,6 +54,27 @@ object Resources {
     override def toString: String = name.toString
 
     val imports_no_pos: List[Document.Node.Name] = imports.map(_._1)
+
+    def append_errors(msgs: List[String]): Thy =
+      if (msgs.isEmpty) this
+      else copy(errors = errors ::: msgs)
+
+    def cat_errors(make_msg2: => String): Thy =
+      if (errors.isEmpty) this
+      else {
+        val msg2 = make_msg2
+        copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
+      }
+
+    def eq_no_pos(other: Thy): Boolean =
+      name == name &&
+      imports_no_pos == other.imports_no_pos &&
+      options == other.options &&
+      keywords == other.keywords &&
+      abbrevs == other.abbrevs &&
+      condition_bad == other.condition_bad &&
+      errors == other.errors &&
+      initiators == other.initiators
   }
 
   def bootstrap: Resources =
@@ -268,9 +273,10 @@ class Resources(
     session_options: Options,
     node_name: Document.Node.Name,
     reader: Reader[Char],
+    pos: Position.T = Nil,
     command: Boolean = true,
     strict: Boolean = true
-  ): Document.Node.Header = {
+  ): Resources.Thy = {
     if (node_name.is_theory && reader.source.length > 0) {
       try {
         val header = Thy_Header.read(node_name, reader, command = command, strict = strict)
@@ -286,26 +292,31 @@ class Resources(
         val conditions_options = Sessions.Conditions.make_options(session_options, header.options)
         val conditions = Sessions.Conditions.eval(List(conditions_options))
 
-        Document.Node.Header(
+        Resources.Thy(
+          name = node_name,
+          pos = pos,
           imports = imports,
           options = header.options,
           keywords = header.keywords,
           abbrevs = header.abbrevs,
           condition_bad = conditions.bad_message)
       }
-      catch { case e: Throwable => Document.Node.Header(errors = List(Exn.message(e))) }
+      catch {
+        case e: Throwable =>
+          Resources.Thy(name = node_name, pos = pos, errors = List(Exn.message(e)))
+      }
     }
-    else Document.Node.Header.none
+    else Resources.Thy.empty
   }
 
-  def special_thy(name: Document.Node.Name): Option[Document.Node.Header] = {
+  def special_thy(name: Document.Node.Name): Option[Resources.Thy] = {
     val imports =
       if (name.theory == Sessions.root_name) List(import_name(name, Sessions.theory_import))
       else if (Thy_Header.is_ml_root(name.theory)) List(import_name(name, Thy_Header.ML_BOOTSTRAP))
       else if (Thy_Header.is_bootstrap(name.theory)) List(import_name(name, Sessions.Pure))
       else Nil
     if (imports.isEmpty) None
-    else Some(Document.Node.Header(imports = imports.map((_, Position.none))))
+    else Some(Resources.Thy(name = name, imports = imports.map((_, Position.none))))
   }
 
 
@@ -383,20 +394,21 @@ class Resources(
             if (initiators.contains(name)) error(Dependencies.cycle_msg(initiators))
 
             progress.expose_interrupt()
-            val header =
+            val entry0 =
               try {
                 with_thy_reader(name,
-                  check_thy(session_options, name, _, command = false)).cat_errors(message)
+                  check_thy(session_options, name, _, pos = pos, command = false))
+                  .cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = Resources.Thy.make(thy, header, options = options, initiators = initiators)
-            dependencies1.require_thys(session_options, header.imports, options = options,
+            val entry = entry0.copy(options = entry0.options ::: options, initiators = initiators)
+            dependencies1.require_thys(session_options, entry.imports, options = options,
               initiators = name :: initiators, progress = progress).cons(entry)
           }
           catch {
             case e: Throwable =>
-              val header = Document.Node.Header(errors = List(Exn.message(e)))
-              val entry = Resources.Thy.make(thy, header, options = options, initiators = initiators)
+              val entry = Resources.Thy(name = name, pos = pos, options = options,
+                errors = List(Exn.message(e)), initiators = initiators)
               dependencies1.cons(entry)
           }
         }

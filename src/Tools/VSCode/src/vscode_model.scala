@@ -77,7 +77,7 @@ sealed case class VSCode_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
-  def node_header: Document.Node.Header =
+  def get_thy: Resources.Thy =
     session.resources.special_thy(node_name) getOrElse
       session.resources.check_thy(session.session_options, node_name, Scan.char_reader(content.text))
 
@@ -182,7 +182,7 @@ sealed case class VSCode_Model(
   ): Option[(List[Document.Edit_Text], VSCode_Model)] = {
     val (reparse, perspective) = node_perspective(doc_blobs, caret)
     if (reparse || pending_edits.nonEmpty || last_perspective != perspective) {
-      val prover_edits = node_edits(node_header, pending_edits, perspective)
+      val prover_edits = node_edits(get_thy, pending_edits, perspective)
       Some(prover_edits, copy(pending_edits = Nil, last_perspective = perspective))
     }
     else None

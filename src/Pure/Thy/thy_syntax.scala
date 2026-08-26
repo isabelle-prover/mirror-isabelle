@@ -76,15 +76,14 @@ object Thy_Syntax {
     val doc_edits = new mutable.ListBuffer[Document.Edit_Command]
 
     edits foreach {
-      case (name, Document.Node.Deps(header)) if !resources.loaded_theory(name) =>
+      case (name, Document.Node.Thy(thy)) if !resources.loaded_theory(name) =>
         val node = nodes(name)
-        val update_header =
-          node.header.errors.nonEmpty || header.errors.nonEmpty || node.header != header
-        if (update_header) {
-          val node1 = node.update_header(header)
-          if (!(node.header eq_no_pos node1.header)) syntax_changed0 += name
+        val update_thy = node.thy.errors.nonEmpty || thy.errors.nonEmpty || node.thy != thy
+        if (update_thy) {
+          val node1 = node.update_thy(thy)
+          if (!(node.thy eq_no_pos node1.thy)) syntax_changed0 += name
           nodes += (name -> node1)
-          doc_edits += (name -> Document.Node.Deps(header))
+          doc_edits += (name -> Document.Node.Thy(thy))
         }
       case _ =>
     }
@@ -96,13 +95,13 @@ object Thy_Syntax {
       val syntax =
         if (node.is_empty) None
         else {
-          val header = node.header
+          val thy = node.thy
           val imports_syntax =
-            if (header.imports.nonEmpty) {
-              Outer_Syntax.merge(header.imports_no_pos.map(resources.session_base.node_syntax(nodes, _)))
+            if (thy.imports.nonEmpty) {
+              Outer_Syntax.merge(thy.imports_no_pos.map(resources.session_base.node_syntax(nodes, _)))
             }
             else resources.session_base.overall_syntax
-          Some(imports_syntax.add_keywords(header.keywords).add_abbrevs(header.abbrevs))
+          Some(imports_syntax.add_keywords(thy.keywords).add_abbrevs(thy.abbrevs))
         }
       nodes += (name -> node.update_syntax(syntax))
     }
@@ -314,7 +313,7 @@ object Thy_Syntax {
         }
         else node
 
-      case (_, Document.Node.Deps(_)) => node
+      case (_, Document.Node.Thy(_)) => node
 
       case (name, Document.Node.Perspective(_, _, _)) if resources.loaded_theory(name) => node
 
@@ -369,7 +368,7 @@ object Thy_Syntax {
       doc_blobs.get(name) orElse previous.nodes(name).get_blob
 
     def can_import(name: Document.Node.Name): Boolean =
-      resources.loaded_theory(name) || nodes0(name).has_header
+      resources.loaded_theory(name) || nodes0(name).has_thy
 
     val (doc_edits, version) =
       if (edits.isEmpty) (Nil, Document.Version.make(previous.nodes))
