@@ -296,10 +296,7 @@ class Resources(
     else Document.Node.Header.none
   }
 
-
-  /* special header */
-
-  def special_header(name: Document.Node.Name): Option[Document.Node.Header] = {
+  def special_thy(name: Document.Node.Name): Option[Document.Node.Header] = {
     val imports =
       if (name.theory == Sessions.root_name) List(import_name(name, Sessions.theory_import))
       else if (Thy_Header.is_ml_root(name.theory)) List(import_name(name, Thy_Header.ML_BOOTSTRAP))
