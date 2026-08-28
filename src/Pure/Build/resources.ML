@@ -47,11 +47,6 @@ sig
   val find_theory_file: string -> Path.T option
   val import_name: string -> Path.T -> string ->
     {node_name: Path.T, master_dir: Path.T, theory_name: string}
-  val check_thy: Path.T -> string ->
-   {thy_path: Path.T, text: string, theory_pos: Position.T,
-    imports: (string * Position.T) list,
-    options: Options.update_pos,
-    keywords: Thy_Header.keywords}
   val read_file_node: string -> Path.T -> Path.T * Position.T -> Token.file
   val read_file: Path.T -> Path.T * Position.T -> Token.file
   val parsed_files: (Path.T -> Path.T list) ->
@@ -349,28 +344,6 @@ fun import_name qualifier dir s =
           if Thy_Header.is_base_name s andalso Long_Name.is_qualified s
           then loaded_theory_node theory
           else theory_node (File.full_path dir (Path.thy (Path.expand (Path.explode s)))))
-  end;
-
-fun check_file dir file = File.check_file (File.full_path dir file);
-
-fun check_thy dir thy_name =
-  let
-    val thy_base_name = Long_Name.base_name thy_name;
-    val thy_path =
-      (case find_theory_file thy_name of
-        SOME path => check_file Path.current path
-      | NONE => check_file dir (Path.thy (Path.basic thy_base_name)));
-    val text = File.read thy_path;
-
-    val {name = (name, pos), imports, options, keywords} =
-      Thy_Header.read (Position.file (File.symbolic_path thy_path)) text;
-    val _ =
-      thy_base_name <> name andalso
-        error ("Bad theory name " ^ quote name ^
-          " for file " ^ Path.print (Path.base thy_path) ^ Position.here pos);
-  in
-    {thy_path = thy_path, text = text, theory_pos = pos, imports = imports,
-      options = options, keywords = keywords}
   end;
 
 
