@@ -100,7 +100,7 @@ val session_parser =
             ignore (Completion.check_option_value ctxt spec (Options.default []))
               handle ERROR msg => Output.error_message msg);
 
-        fun check_thy source =
+        fun check_file source =
           ignore (Resources.check_file ctxt (SOME Path.current) source)
             handle ERROR msg => Output.error_message msg;
 
@@ -113,7 +113,7 @@ val session_parser =
                 Resources.import_name session session_dir s
                   handle ERROR msg => error (msg ^ Position.here pos);
               val thy_path = the_default node_name (Resources.find_theory_file theory_name);
-            in check_thy (path_source source thy_path) end);
+            in check_file (path_source source thy_path) end);
 
         val _ =
           directories |> List.app (ignore o Resources.check_dir ctxt (SOME session_dir));
@@ -126,7 +126,7 @@ val session_parser =
             in
               (case Resources.find_theory_file thy of
                 NONE => Output.error_message ("Unknown theory " ^ quote thy ^ Position.here pos)
-              | SOME path => check_thy (path_source source path))
+              | SOME path => check_file (path_source source path))
             end);
 
         val _ =
