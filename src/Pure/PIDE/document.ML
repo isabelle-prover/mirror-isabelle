@@ -123,15 +123,15 @@ fun set_keywords keywords =
 
 fun read_thy node_name node span =
   let
-    val (master_dir, name, imports0) =
-      (case get_thy node of
-        {errors = [], master_dir, header, ...} => (master_dir, #1 (#name header), #imports header)
-      | {errors, ...} =>
-          cat_lines errors |>
-          (case Position.id_of (Position.thread_data ()) of
-            NONE => I
-          | SOME id => Protocol_Message.command_positions_yxml id)
-          |> error);
+    val {master_dir, header = {name = (name, _), imports = imports0, ...}, errors} = get_thy node;
+    val _ =
+      if null errors then ()
+      else
+        error
+          (cat_lines errors |>
+            (case Position.id_of (Position.thread_data ()) of
+              NONE => I
+            | SOME id => Protocol_Message.command_positions_yxml id));
     val {name = (_, pos), imports = imports1, options, keywords} =
       Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
