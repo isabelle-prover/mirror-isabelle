@@ -273,7 +273,6 @@ class Resources(
     session_options: Options,
     node_name: Document.Node.Name,
     reader: Reader[Char],
-    pos: Position.T = Nil,
     command: Boolean = true,
     strict: Boolean = true
   ): Resources.Thy = {
@@ -294,17 +293,14 @@ class Resources(
 
         Resources.Thy(
           name = node_name,
-          pos = pos,
+          pos = header.pos,
           imports = imports,
           options = header.options,
           keywords = header.keywords,
           abbrevs = header.abbrevs,
           condition_bad = conditions.bad_message)
       }
-      catch {
-        case e: Throwable =>
-          Resources.Thy(name = node_name, pos = pos, errors = List(Exn.message(e)))
-      }
+      catch { case e: Throwable => Resources.Thy(name = node_name, errors = List(Exn.message(e))) }
     }
     else Resources.Thy.empty
   }
@@ -397,8 +393,7 @@ class Resources(
             val thy0 =
               try {
                 with_thy_reader(name,
-                  check_thy(session_options, name, _, pos = pos, command = false))
-                  .cat_errors(message)
+                  check_thy(session_options, name, _, command = false)).cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
             val thy = thy0.copy(options = thy0.options ::: options, initiators = initiators)
@@ -407,7 +402,7 @@ class Resources(
           }
           catch {
             case e: Throwable =>
-              val thy = Resources.Thy(name = name, pos = pos, options = options,
+              val thy = Resources.Thy(name = name, options = options,
                 errors = List(Exn.message(e)), initiators = initiators)
               dependencies1.cons(thy)
           }
