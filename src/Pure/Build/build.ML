@@ -131,19 +131,10 @@ datatype result =
     present: unit -> Thy_Presentation.context option,
     commit: Document_Output.segment list -> unit};
 
-fun theory_result theory =
-  Result
-   {theory = theory,
-    exec_id = Document_ID.none,
-    present = K NONE,
-    commit = K ()};
-
 fun result_theory (Result {theory, ...}) = theory;
 fun result_commit (Result {commit, ...}) = commit;
 
-datatype task =
-  Task of string list * (theory list -> result) |
-  Finished of theory;
+type task = {parents: string list, body: theory list -> result};
 
 local
 
@@ -164,24 +155,26 @@ in
 
 fun schedule_theories tasks =
   let
+    fun join_theory deps name =
+      (case AList.lookup (op =) deps name of
+        NONE => get_theory name
+      | SOME res => result_theory (Future.join res));
+
     fun join_parents deps name parents =
       (case map #1 (filter (not o can Future.join o #2) deps) of
-        [] => map (result_theory o Future.join o the o AList.lookup (op =) deps) parents
+        [] => map (join_theory deps) parents
       | bad =>
           error ("Failed to load theory " ^ quote name ^ " (unresolved " ^ commas_quote bad ^ ")"));
 
     val futures = tasks
-      |> String_Graph.schedule (fn deps => fn (name, task) =>
-        (case task of
-          Task (parents, body) =>
-            if Multithreading.max_threads () > 1 then
-              (singleton o Future.forks)
-                {name = "theory:" ^ name, group = NONE,
-                  deps = map (Future.task_of o #2) deps, pri = 0, interrupts = true}
-                (fn () => body (join_parents deps name parents))
-            else
-              Future.value_result (Exn.capture_body (fn () => body (join_parents deps name parents)))
-        | Finished theory => Future.value (theory_result theory)));
+      |> String_Graph.schedule (fn deps => fn (name, {parents, body}) =>
+          if Multithreading.max_threads () > 1 then
+            (singleton o Future.forks)
+              {name = "theory:" ^ name, group = NONE,
+                deps = map (Future.task_of o #2) deps, pri = 0, interrupts = true}
+              (fn () => body (join_parents deps name parents))
+          else
+            Future.value_result (Exn.capture_body (fn () => body (join_parents deps name parents))));
 
     val results1 = futures |> maps (consolidate_theory o Future.join_result);
 
@@ -266,7 +259,7 @@ fun eval_thy loading_theory (thy: Resources.thy) text_pos text parents =
   in (thy, present) end;
 
 
-(* require_thy -- checking database entries wrt. the file-system *)
+(* use_thy -- task for thy entry in foundational order *)
 
 local
 
@@ -317,52 +310,23 @@ fun load_thy (thy0: Resources.thy) text parents =
 
 in
 
-fun require_thys initiators qualifier dir imports tasks =
-      fold (require_thy initiators qualifier dir) imports tasks
-and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
+fun use_thy (thy as {name, imports, ...}: Resources.thy) =
   let
-    val {master_dir = theory_dir, theory_name, ...} = Resources.import_name qualifier dir s;
-  in
-    if String_Graph.defined tasks theory_name then tasks
-    else
-      (member (op =) initiators theory_name andalso error (cycle_msg initiators);
-       case lookup_theory theory_name of
-        SOME theory => new_entry theory_name [] (Finished theory) tasks
-      | NONE =>
-          let
-            val {thy_path, text, theory_pos, imports, options = header_options, keywords} =
-              Resources.check_thy theory_dir theory_name handle ERROR msg =>
-                cat_error msg
-                  ("The error(s) above occurred for theory " ^ quote theory_name ^
-                    Position.here require_pos ^ required_by "\n" initiators);
+    val theory_path = Path.explode (#node name);
+    val node = File.symbolic_path theory_path;
+    val master_dir = Path.dir (Path.explode node);
+    val text = File.read theory_path;
 
-            val qualifier' = Resources.theory_qualifier theory_name;
-            val dir' = dir + Path.dir thy_path;
-            val imports' = map (rpair theory_opts) imports;
+    val parents = map (#theory o #1) imports;
+    val use_parents = filter_out defined_theory parents;
 
-            val parents = map (#theory_name o Resources.import_name qualifier' dir' o #1) imports;
-            val tasks' = require_thys (theory_name :: initiators) qualifier' dir' imports' tasks;
-
-            val node = File.symbolic_path thy_path;
-            val master_dir = Path.dir (Path.explode node);
-            val opts = header_options @ Options.update_pos_none theory_opts;
-            val imports0 = map (apfst Resources.node_name) imports;
-            val initiators0 = initiators
-              |> map (fn a => {node = "", master_dir = Path.current, theory = a});
-            val thy: Resources.thy =
-             {name = {node = node, master_dir = master_dir, theory = theory_name},
-              pos = theory_pos, imports = imports0, options = opts, keywords = keywords,
-              errors = [], initiators = initiators0};
-          in new_entry theory_name parents (Task (parents, load_thy thy text)) tasks' end)
-  end;
+    val thy': Resources.thy =
+     {name = {node = node, master_dir = master_dir, theory = #theory name},
+      pos = #pos thy, imports = imports, options = #options thy,
+      keywords = #keywords thy, errors = #errors thy, initiators = #initiators thy};
+  in new_entry (#theory name) use_parents {parents = parents, body = load_thy thy' text} end;
 
 end;
-
-
-(* use theories *)
-
-fun use_theories qualifier imports =
-  schedule_theories (require_thys [] qualifier Path.current imports String_Graph.empty);
 
 
 
@@ -399,7 +363,7 @@ fun apply_hooks qualifier loaded_theories =
 end;
 
 
-fun build_theories qualifier (options, thys) =
+fun build_theories (options, thys) =
   let
     val _ = ML_Profiling.check_mode (Options.string options "profiling");
     val print_mode = space_explode "," (Options.string options "print_mode") @ print_mode_value ();
@@ -407,8 +371,9 @@ fun build_theories qualifier (options, thys) =
     val _ = Isabelle_Process.init_options ();
     val _ = Future.fork I;
   in
-    (use_theories qualifier
-      |> Unsynchronized.setmp Print_Mode.print_mode print_mode) thys
+    String_Graph.empty
+    |> fold use_thy thys
+    |> Unsynchronized.setmp Print_Mode.print_mode print_mode schedule_theories
   end;
 
 fun finish_session () =
@@ -428,11 +393,8 @@ val _ =
           val session_name = Bytes.content session_name_bytes;
           val _ = Resources.init_session_yxml resources_yxml;
           val theories = theories_yxml |> map (YXML.parse_body_bytes #>
-              let
-                open XML.Decode;
-                val position = Position.of_properties o properties;
-                val theory = pair (pair string position) (list (pair string (option string)));
-              in pair Options.decode (list theory) end);
+              let open XML.Decode
+              in pair Options.decode (list Resources.decode_thy) end);
 
           val _ = Session.init session_name;
 
@@ -440,7 +402,7 @@ val _ =
             let
               val res =
                 theories |>
-                  (maps (build_theories session_name)
+                  (maps build_theories
                     |> session_timing
                     |> Exn.capture);
               val res1 =
