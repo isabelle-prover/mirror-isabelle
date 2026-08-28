@@ -38,8 +38,6 @@ sig
     keywords: Thy_Header.keywords,
     errors: string list,
     initiators: node_name list}
-  val make_thy:
-    {node: string, master_dir: Path.T, header: Thy_Header.header, initiators: node_name list} -> thy
   val no_thy: thy
   val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
@@ -280,20 +278,6 @@ val decode_thy: thy XML.Decode.T =
   #> (fn (name, (pos, (imports, (options, (keywords, (errors, initiators)))))) =>
       {name = name, pos = pos, imports = map (rpair Position.none) imports,
         options = options, keywords = keywords, errors = errors, initiators = initiators});
-
-fun make_thy {node, master_dir, header: Thy_Header.header, initiators} : thy =
-  let
-    val (theory, pos) = #name header;
-    val name = {node = node, master_dir = master_dir, theory = theory};
-  in
-   {name = name,
-    pos = pos,
-    imports = map (apfst node_name) (#imports header),
-    options = #options header,
-    keywords = #keywords header,
-    errors = [],
-    initiators = initiators}
-  end;
 
 fun map_thy_pos f ({name, pos, imports, options, keywords, errors, initiators}: thy) : thy =
  {name = name, pos = f pos, imports = map (apsnd f) imports,

@@ -8,11 +8,10 @@ list of commands, associated with asynchronous execution process.
 signature DOCUMENT =
 sig
   val timing: bool Unsynchronized.ref
-  type thy = {master_dir: Path.T, header: Thy_Header.header, errors: string list}
   type overlay = Document_ID.command * (string * string list)
   datatype node_edit =
     Edits of (Document_ID.command option * Document_ID.command option) list |
-    Thy of thy |
+    Thy of Resources.thy |
     Perspective of bool * Document_ID.command list * overlay list
   type edit = string * node_edit
   type state
@@ -50,9 +49,6 @@ fun timeit msg e = cond_timeit (! timing) msg e;
 fun err_dup kind id = error ("Duplicate " ^ kind ^ ": " ^ Document_ID.print id);
 fun err_undef kind id = error ("Undefined " ^ kind ^ ": " ^ Document_ID.print id);
 
-type thy =
-  {master_dir: Path.T, header: Thy_Header.header, errors: string list};
-
 type perspective =
  {required: bool,  (*required node*)
   visible: Bitset.T,  (*visible commands*)
@@ -62,7 +58,7 @@ type perspective =
 structure Entries = Linear_Set(type key = Document_ID.command val ord = int_ord);
 
 abstype node = Node of
- {thy: thy,  (*master directory, theory header, errors*)
+ {thy: Resources.thy,  (*theory header information*)
   keywords: Keyword.keywords option,  (*outer syntax keywords*)
   perspective: perspective,  (*command perspective*)
   entries: Command.exec option Entries.T,  (*command entries with executions*)
@@ -84,13 +80,10 @@ fun make_perspective (required, command_ids, overlays) : perspective =
   visible_last = try List.last command_ids,
   overlays = Inttab.make_list overlays};
 
-val no_thy: thy =
-  {master_dir = Path.current, header = Thy_Header.make ("", Position.none) [] [] [], errors = []};
-
 val empty_perspective = make_perspective (false, [], []);
 
 val empty_node =
-  make_node (no_thy, NONE, empty_perspective, Entries.empty, NONE, Lazy.value ());
+  make_node (Resources.no_thy, NONE, empty_perspective, Entries.empty, NONE, Lazy.value ());
 
 fun is_empty_perspective ({required, visible, visible_last, overlays}: perspective) =
   not required andalso
@@ -99,7 +92,7 @@ fun is_empty_perspective ({required, visible, visible_last, overlays}: perspecti
   Inttab.is_empty overlays;
 
 fun is_empty_node (Node {thy, keywords, perspective, entries, result, consolidated}) =
-  thy = no_thy andalso
+  thy = Resources.no_thy andalso
   is_none keywords andalso
   is_empty_perspective perspective andalso
   Entries.is_empty entries andalso
@@ -109,21 +102,20 @@ fun is_empty_node (Node {thy, keywords, perspective, entries, result, consolidat
 
 (* basic components *)
 
-fun set_thy master_dir header errors =
+fun set_thy thy =
   map_node (fn (_, keywords, perspective, entries, result, consolidated) =>
-    ({master_dir = master_dir, header = header, errors = errors},
-      keywords, perspective, entries, result, consolidated));
+    (thy, keywords, perspective, entries, result, consolidated));
 
 fun get_thy (Node {thy, ...}) = thy;
-val get_thy_options = Options.update_no_pos o #options o #header o get_thy;
+val get_thy_options = Options.update_no_pos o #options o get_thy;
 
 fun set_keywords keywords =
   map_node (fn (thy, _, perspective, entries, result, consolidated) =>
     (thy, keywords, perspective, entries, result, consolidated));
 
-fun read_thy node_name node span =
+fun read_thy node span : Resources.thy =
   let
-    val {master_dir, header = {name = (name, _), imports = imports0, ...}, errors} = get_thy node;
+    val {name, imports = imports0, errors, ...} = get_thy node;
     val _ =
       if null errors then ()
       else
@@ -135,9 +127,9 @@ fun read_thy node_name node span =
     val {name = (_, pos), imports = imports1, options, keywords} =
       Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
-    val header = Thy_Header.make (name, pos) imports options keywords;
   in
-    Resources.make_thy {node = node_name, master_dir = master_dir, header = header, initiators = []}
+    {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+      errors = [], initiators = []}
   end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;
@@ -224,7 +216,7 @@ type overlay = Document_ID.command * (string * string list);
 
 datatype node_edit =
   Edits of (Document_ID.command option * Document_ID.command option) list |
-  Thy of thy |
+  Thy of Resources.thy |
   Perspective of bool * Document_ID.command list * overlay list;
 
 type edit = string * node_edit;
@@ -268,19 +260,20 @@ fun edit_nodes (name, node_edit) (Version nodes) =
   Version
     (case node_edit of
       Edits edits => update_node name (edit_node edits) nodes
-    | Thy {master_dir, header, errors} =>
+    | Thy thy =>
         let
-          val imports = map fst (#imports header);
+          val imports = map (#node o #1) (#imports thy);
           val nodes1 = nodes
             |> default_node name
             |> fold default_node imports;
           val nodes2 = nodes1
             |> String_Graph.Keys.fold
                 (fn dep => String_Graph.del_edge (dep, name)) (String_Graph.imm_preds nodes1 name);
-          val (nodes3, errors1) =
-            (String_Graph.add_deps_acyclic (name, imports) nodes2, errors)
-              handle String_Graph.CYCLES cs => (nodes2, errors @ map cycle_msg cs);
-        in String_Graph.map_node name (set_thy master_dir header errors1) nodes3 end
+          val (nodes3, more_errors) =
+            (String_Graph.add_deps_acyclic (name, imports) nodes2, [])
+              handle String_Graph.CYCLES cs => (nodes2, map cycle_msg cs);
+          val thy' = thy |> Resources.map_thy_errors (fn errors => errors @ more_errors);
+        in String_Graph.map_node name (set_thy thy') nodes3 end
     | Perspective perspective => update_node name (set_perspective perspective) nodes);
 
 fun update_keywords name nodes =
@@ -288,17 +281,17 @@ fun update_keywords name nodes =
     if is_empty_node node then node
     else
       let
-        val {master_dir, header, errors} = get_thy node;
-        val imports_keywords = #imports header
-          |> map (fn (import, _) => node_keywords import (get_node nodes import));
+        val thy = get_thy node;
+        val imports_keywords = #imports thy
+          |> map (fn ({node = import, ...}, _) => node_keywords import (get_node nodes import));
         val keywords = Library.foldl Keyword.merge_keywords (pure_keywords (), imports_keywords);
-        val (keywords', errors') =
-          (Keyword.add_keywords (#keywords header) keywords, errors)
-            handle ERROR msg =>
-              (keywords, if member (op =) errors msg then errors else errors @ [msg]);
+        val (keywords', more_errors) =
+          (Keyword.add_keywords (#keywords thy) keywords, [])
+            handle ERROR msg => (keywords, if member (op =) (#errors thy) msg then [] else [msg]);
+        val thy' = thy |> Resources.map_thy_errors (fn errors => errors @ more_errors);
       in
         node
-        |> set_thy master_dir header errors'
+        |> set_thy thy'
         |> set_keywords (SOME keywords')
       end);
 
@@ -614,7 +607,7 @@ local
 
 fun init_theory deps node_name node span =
   let
-    val thy = read_thy node_name node span;
+    val thy = read_thy node span;
 
     fun maybe_eval_result eval = Command.eval_result_state eval
       handle Fail _ => Toplevel.make_state NONE;
@@ -653,11 +646,7 @@ fun init_theory deps node_name node span =
 
 fun get_special_parent node_name node =
   let
-    val {master_dir, header, ...} = get_thy node;
-    val thy =
-      Resources.make_thy
-        {node = node_name, master_dir = master_dir, header = header, initiators = []};
-    val name = #theory (#name thy);
+    val thy as {name = {theory = name, ...}, ...} = get_thy node;
     val parent =
       if name = Sessions.root_name then
         SOME (Build.get_theory Sessions.theory_name)
@@ -737,7 +726,7 @@ fun new_exec keywords state node proper_init command_id' (assign_update, command
         Command.eval
           (if is_theory_begin then [] else opts)
           keywords
-          (#master_dir (get_thy node))
+          (#master_dir (#name (get_thy node)))
           (fn () => the_default illegal_init init span)
           (blobs, blobs_index) command_id' span (#1 (#2 command_exec));
       val prints' = perhaps (Command.print opts visible overlays command_name command_kind eval') [];

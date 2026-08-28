@@ -426,16 +426,7 @@ trait Protocol {
           : T[Document.Node.Edit[Command.Edit, Command.Perspective]] =
         variant(List(
           { case Document.Node.Edits(a) => (Nil, list(pair(option(id), option(id)))(a)) },
-          { case Document.Node.Thy(thy) =>
-              val master = File.standard_url(name.master_dir)
-              val master_dir = if (Path.is_wellformed(master)) master else ""
-              val imports = thy.imports.map({ case (name, _) => name.node })
-              val options = thy.options.map(spec => (spec.name, spec.value))
-              val keywords = thy.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
-              (Nil,
-                pair(string, pair(string, pair(list(string), pair(list(pair(string, option(string))),
-                  pair(list(pair(string, pair(string, list(string)))), list(string))))))(
-                (master_dir, (name.theory, (imports, (options, (keywords, thy.errors))))))) },
+          { case Document.Node.Thy(a) => (Nil, Resources.Thy.encode(a)) },
           { case Document.Node.Perspective(a, b, c) =>
               (bool_atom(a) :: b.commands.map(cmd => long_atom(cmd.id)),
                 list(pair(id, pair(string, list(string))))(c.dest)) }))
