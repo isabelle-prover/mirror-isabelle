@@ -460,15 +460,13 @@ object Build_Job {
                       .map(ts => (ts.head.options ::: prover_options, ts.map(_.thy)))
 
                   val theories_xml =
-                    theories.map({ arg =>
+                    theories.map({ case (opts, thys) =>
                       import XML.Encode._
                       val encode_spec: T[Options.Spec] =
                         spec => pair(string, option(string))(spec.name, spec.value)
                       val encode_thy: T[Thy] =
                         pair(pair(string, properties), list(encode_spec))
-                      val encode_options: T[Options.Update] =
-                        opts => (process.options ++ opts).encode
-                      pair(encode_options, list(encode_thy))(arg)
+                      pair(Options.encode, list(encode_thy))((process.options ++ opts, thys))
                     })
 
                   session.protocol_command_args("build_session",

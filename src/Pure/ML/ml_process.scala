@@ -84,7 +84,7 @@ List.app PolyML.Compiler.forgetStructure ["CInterface", "Signal"];
     val eval_options = if (session_bootstrap) Nil else List("Options.load_process_default ()")
     val isabelle_process_options = Isabelle_System.tmp_file("options")
     File.restrict(File.path(isabelle_process_options))
-    File.write(isabelle_process_options, YXML.string_of_body(ml_options.encode))
+    File.write(isabelle_process_options, YXML.string_of_body(Options.encode(ml_options)))
 
     // session resources
     val eval_init_session = if (session_bootstrap) Nil else List("Resources.init_session_env ()")

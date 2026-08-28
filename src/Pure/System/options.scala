@@ -339,6 +339,19 @@ Usage: isabelle options [OPTIONS] [MORE_OPTIONS ...]
         progress.echo(options.print(filter = filter))
       }
     })
+
+
+  /* encode */
+
+  def encode(options: Options): XML.Body = {
+    val opts =
+      List.from(
+        for (opt <- options.iterator if !opt.unknown)
+          yield (opt.pos, (opt.name, (opt.typ.print, (opt.value, opt.standard_value)))))
+
+    import XML.Encode.{string => string_, _}
+    list(pair(properties, pair(string_, pair(string_, pair(string_, option(string_))))))(opts)
+  }
 }
 
 
@@ -541,18 +554,6 @@ final class Options private(
 
   def sections: List[(String, List[Options.Entry])] =
     options.groupBy(_._2.section).toList.map({ case (a, opts) => (a, opts.toList.map(_._2)) })
-
-
-  /* encode */
-
-  def encode: XML.Body = {
-    val opts =
-      for ((_, opt) <- options.toList; if !opt.unknown)
-        yield (opt.pos, (opt.name, (opt.typ.print, (opt.value, opt.standard_value))))
-
-    import XML.Encode.{string => string_, _}
-    list(pair(properties, pair(string_, pair(string_, pair(string_, option(string_))))))(opts)
-  }
 
 
   /* changed options */
