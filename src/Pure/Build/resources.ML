@@ -26,7 +26,6 @@ sig
   val check_load_command: Proof.context -> string * Position.T -> string
   val check_scala_function: Proof.context -> string * Position.T -> string * scala_fun
   val master_directory: theory -> Path.T
-  val imports_of: theory -> (string * Position.T) list
   type node_name = {node: string, master_dir: Path.T, theory: string}
   val node_name: string -> node_name
   val empty_node_name: node_name
@@ -231,22 +230,14 @@ val _ = Theory.setup
 
 (* theory resources and entries *)
 
-type data =
- {master_dir: Path.T,  (*master directory of theory source*)
-  imports: (string * Position.T) list};  (*source specification of imports*)
-
-fun make_data (master_dir, imports): data =
- {master_dir = master_dir, imports = imports};
-
 structure Data = Theory_Data
 (
-  type T = data;
-  val empty = make_data (Path.current, []);
+  type T = Path.T;  (*master directory of theory source*)
+  val empty = Path.current;
   val merge = fst;
 );
 
-val master_directory = #master_dir o Data.get;
-val imports_of = #imports o Data.get;
+val master_directory = Data.get;
 
 
 type node_name = {node: string, master_dir: Path.T, theory: string};
@@ -313,12 +304,12 @@ fun map_thy_errors f ({name, pos, imports, options, keywords, errors, initiators
   {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
    errors = f errors, initiators = initiators};
 
-fun begin_theory ({name, pos, imports, keywords, ...}: thy) parents =
+fun begin_theory ({name, pos, keywords, ...}: thy) parents =
   let
     val master_dir = Path.explode (File.symbolic_path (#master_dir name));
     val thy =
       Theory.begin_theory (#theory name, pos) parents
-      |> Data.put {master_dir = master_dir, imports = map (apfst #node) imports}
+      |> Data.put master_dir
       |> Thy_Header.add_keywords keywords;
     val ctxt = Proof_Context.init_global thy;
     val _ = List.app (ignore o check_load_command ctxt o #load_command o #2) keywords;
