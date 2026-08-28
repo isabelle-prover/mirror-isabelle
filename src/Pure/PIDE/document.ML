@@ -851,10 +851,10 @@ fun update old_version_id new_version_id edits consolidate state =
 
     val updated = timeit "Document.update" (fn () =>
       nodes |> String_Graph.schedule
-        (fn deps => fn (name, node) =>
+        (fn deps_future => fn (name, node) =>
           (singleton o Future.forks)
             {name = "Document.update", group = NONE,
-              deps = map (Future.task_of o #2) deps, pri = 1, interrupts = false}
+              deps = map (Future.task_of o #2) deps_future, pri = 1, interrupts = false}
             (fn () =>
               timeit ("Document.update " ^ name) (fn () =>
                 Runtime.exn_trace_system_message (fn () =>
@@ -863,24 +863,24 @@ fun update old_version_id new_version_id edits consolidate state =
                     val keywords = node_keywords name node;
 
                     val maybe_consolidate = consolidate name andalso could_consolidate node;
-                    val imports = map (apsnd Future.join) deps;
-                    val imports_result_changed = exists (#4 o #1 o #2) imports;
+                    val deps = map (apsnd Future.join) deps_future;
+                    val deps_result_changed = exists (#4 o #1 o #2) deps;
                     val node_required = Symset.member required name;
                   in
                     if Symset.member edited name orelse maybe_consolidate orelse
-                      visible_node node orelse imports_result_changed orelse
+                      visible_node node orelse deps_result_changed orelse
                       Symset.member required0 name <> node_required
                     then
                       let
                         val node0 = node_of old_version name;
-                        val init = init_theory imports name node;
+                        val init = init_theory deps name node;
                         val proper_init =
                           is_some special_parent orelse
                             check_theory false name node andalso
-                            forall (fn (name, (_, node)) => check_theory true name node) imports;
+                            forall (fn (name, (_, node)) => check_theory true name node) deps;
 
                         val (print_execs, common, (still_visible, initial)) =
-                          if imports_result_changed
+                          if deps_result_changed
                           then (assign_update_empty, NONE, (true, true))
                           else last_common the_command_name_kind node_required node0 node;
 
