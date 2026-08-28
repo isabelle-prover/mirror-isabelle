@@ -605,7 +605,7 @@ fun assign_update_result (tab: assign_update) =
 
 local
 
-fun init_theory deps node_name node span =
+fun init_theory deps node span =
   let
     val thy = read_thy node span;
 
@@ -644,7 +644,7 @@ fun init_theory deps node_name node span =
     val skipped = Thy_Header.skipping_theory warning (#theory (#name thy)) bad_conditions;
   in {skipped = skipped, theory = theory} end;
 
-fun get_special_parent node_name node =
+fun get_special_parent node =
   let
     val thy as {name = {theory = name, ...}, ...} = get_thy node;
     val parent =
@@ -750,7 +750,7 @@ fun finished_eval node =
           | SOME (eval, _) => SOME (not (null (Execution.snapshot [Command.eval_exec_id eval])))));
   in not active end;
 
-fun presentation_context options the_command_span node_name node : Thy_Presentation.context =
+fun presentation_context options the_command_span node : Thy_Presentation.context =
   let
     val (_, offsets, rev_segments) =
       (node, (0, Inttab.empty, [])) |-> iterate_entries
@@ -785,18 +785,18 @@ fun presentation_context options the_command_span node_name node : Thy_Presentat
          prev_state = st, command = tr, state = st'});
   in
    {options = options,
-    file_pos = Position.file node_name,
+    file_pos = Position.file (#node (#name (get_thy node))),
     adjust_pos = Position.adjust_offsets adjust,
     segments = segments}
   end;
 
-fun print_consolidation options the_command_span node_name (assign_update, node) =
+fun print_consolidation options the_command_span (assign_update, node) =
   timeit "Document.print_consolidation" (fn () =>
     (case finished_result_theory node of
       SOME (id, thy) =>
         if finished_eval node then
           let
-            val context = presentation_context options the_command_span node_name node;
+            val context = presentation_context options the_command_span node;
             val consolidate =
               Command.print0 {pri = Task_Queue.urgent_pri + 1, print_fn = fn _ => fn _ =>
                 let
@@ -848,7 +848,7 @@ fun update old_version_id new_version_id edits consolidate state =
               timeit ("Document.update " ^ name) (fn () =>
                 Runtime.exn_trace_system_message (fn () =>
                   let
-                    val special_parent = get_special_parent name node;
+                    val special_parent = get_special_parent node;
                     val keywords = node_keywords name node;
 
                     val maybe_consolidate = consolidate name andalso could_consolidate node;
@@ -862,7 +862,7 @@ fun update old_version_id new_version_id edits consolidate state =
                     then
                       let
                         val node0 = node_of old_version name;
-                        val init = init_theory deps name node;
+                        val init = init_theory deps node;
                         val proper_init =
                           is_some special_parent orelse
                             check_theory false name node andalso
@@ -907,7 +907,7 @@ fun update old_version_id new_version_id edits consolidate state =
                           |> result_changed ? reset_consolidated
                           |> pair assign_update
                           |> (not result_changed andalso maybe_consolidate) ?
-                              print_consolidation options the_command_span name;
+                              print_consolidation options the_command_span;
 
                         val assign_result = assign_update_result assign_update';
                         val removed = maps (removed_execs node0) assign_result;
