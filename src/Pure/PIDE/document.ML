@@ -623,7 +623,7 @@ fun init_theory deps node_name node span =
       handle ERROR msg => (Output.error_message msg; NONE);
 
     val parents_reports =
-      #imports thy |> map_filter (fn (import, pos) =>
+      #imports thy |> map_filter (fn ({node = import, ...}, pos) =>
         (case Build.lookup_theory import of
           NONE =>
             maybe_end_theory pos

@@ -25,14 +25,14 @@ object Resources {
     }
 
     def encode(thy: Thy): XML.Body = {
-      val imports = thy.imports_no_pos.map(_.node)
+      val imports = thy.imports_no_pos
       val options = thy.options.map(spec => (spec.name, spec.value))
       val keywords = thy.keywords.map({ case (a, spec) => (a, (spec.kind, spec.tags)) })
 
       import XML.Encode._
       pair(encode_node_name,
         pair(properties,
-          pair(list(string),
+          pair(list(encode_node_name),
             pair(list(pair(string, option(string))),
               pair(list(pair(string, pair(string, list(string)))),
                 pair(list(string), list(encode_node_name)))))))(

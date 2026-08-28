@@ -346,11 +346,12 @@ and require_thy initiators qualifier dir ((s, require_pos), theory_opts) tasks =
             val node = File.symbolic_path thy_path;
             val master_dir = Path.dir (Path.explode node);
             val opts = header_options @ Options.update_pos_none theory_opts;
+            val imports0 = map (apfst Resources.node_name) imports;
             val initiators0 = initiators
               |> map (fn a => {node = "", master_dir = Path.current, theory = a});
             val thy: Resources.thy =
              {name = {node = node, master_dir = master_dir, theory = theory_name},
-              pos = theory_pos, imports = imports, options = opts, keywords = keywords,
+              pos = theory_pos, imports = imports0, options = opts, keywords = keywords,
               errors = [], initiators = initiators0};
           in new_entry theory_name parents (Task (parents, load_thy thy text)) tasks' end)
   end;
