@@ -369,17 +369,17 @@ class Resources(
     rev_entries: List[Resources.Thy],
     seen: Set[Document.Node.Name]
   ) {
-    private def cons(entry: Resources.Thy): Dependencies =
-      new Dependencies(entry :: rev_entries, seen)
+    private def cons(thy: Resources.Thy): Dependencies =
+      new Dependencies(thy :: rev_entries, seen)
 
     def require_thy(
       session_options: Options,
-      thy: (Document.Node.Name, Position.T),
+      theory: (Document.Node.Name, Position.T),
       options: Options.Update = Nil,
       initiators: List[Document.Node.Name] = Nil,
       progress: Progress = new Progress
     ): Dependencies = {
-      val (name, pos) = thy
+      val (name, pos) = theory
 
       def message: String =
         "The error(s) above occurred for theory " + quote(name.theory) +
@@ -394,22 +394,22 @@ class Resources(
             if (initiators.contains(name)) error(Dependencies.cycle_msg(initiators))
 
             progress.expose_interrupt()
-            val entry0 =
+            val thy0 =
               try {
                 with_thy_reader(name,
                   check_thy(session_options, name, _, pos = pos, command = false))
                   .cat_errors(message)
               }
               catch { case ERROR(msg) => cat_error(msg, message) }
-            val entry = entry0.copy(options = entry0.options ::: options, initiators = initiators)
-            dependencies1.require_thys(session_options, entry.imports, options = options,
-              initiators = name :: initiators, progress = progress).cons(entry)
+            val thy = thy0.copy(options = thy0.options ::: options, initiators = initiators)
+            dependencies1.require_thys(session_options, thy.imports, options = options,
+              initiators = name :: initiators, progress = progress).cons(thy)
           }
           catch {
             case e: Throwable =>
-              val entry = Resources.Thy(name = name, pos = pos, options = options,
+              val thy = Resources.Thy(name = name, pos = pos, options = options,
                 errors = List(Exn.message(e)), initiators = initiators)
-              dependencies1.cons(entry)
+              dependencies1.cons(thy)
           }
         }
       }
@@ -417,12 +417,12 @@ class Resources(
 
     def require_thys(
         session_options: Options,
-        thys: List[(Document.Node.Name, Position.T)],
+        theories: List[(Document.Node.Name, Position.T)],
         options: Options.Update = Nil,
         initiators: List[Document.Node.Name] = Nil,
         progress: Progress = new Progress
     ): Dependencies = {
-      thys.foldLeft(this)(
+      theories.foldLeft(this)(
         _.require_thy(session_options, _,
             options = options, initiators = initiators, progress = progress))
     }
