@@ -132,7 +132,7 @@ val _ =
                           val header =
                             Thy_Header.make (name, Position.none) imports' options' keywords';
                         in
-                          Document.Deps {master_dir = master_dir, header = header, errors = errors}
+                          Document.Thy {master_dir = master_dir, header = header, errors = errors}
                         end,
                       fn (a :: b, c) =>
                         Document.Perspective (bool_atom a, map int_atom b,
