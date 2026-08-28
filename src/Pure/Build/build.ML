@@ -29,7 +29,7 @@ val show_path = space_implode " via " o map quote;
 fun cycle_msg names = "Cyclic dependency of " ^ show_path names;
 
 
-(* derived graph operations *)
+(* generic graph operations *)
 
 fun add_deps name parents G = String_Graph.add_deps_acyclic (name, parents) G
   handle String_Graph.CYCLES namess => error (cat_lines (map cycle_msg namess));
@@ -108,10 +108,7 @@ fun get_theory_elements name =
 val check_theory = Theory.check_theory {get = get_theory, all = all_theories};
 
 
-
-(** thy operations **)
-
-(* commit *)
+(* commit theory *)
 
 fun commit_thy (res as (theory, _)) = change_thys (fn thys =>
   let
@@ -121,6 +118,9 @@ fun commit_thy (res as (theory, _)) = change_thys (fn thys =>
     val _ = List.app (check_old thys) parents;
   in new_entry name (map #1 parents) res thys end);
 
+
+
+(** thy operations **)
 
 (* scheduling loader tasks *)
 
