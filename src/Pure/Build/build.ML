@@ -156,13 +156,13 @@ in
 fun schedule_theories tasks =
   let
     fun join_theory deps name =
-      (case AList.lookup (op =) deps name of
+      (case Symtab.lookup deps name of
         NONE => get_theory name
       | SOME res => result_theory (Future.join res));
 
     fun join_parents deps name parents =
       (case map #1 (filter (not o can Future.join o #2) deps) of
-        [] => map (join_theory deps) parents
+        [] => map (join_theory (Symtab.make deps)) parents
       | bad =>
           error ("Failed to load theory " ^ quote name ^ " (unresolved " ^ commas_quote bad ^ ")"));
 
