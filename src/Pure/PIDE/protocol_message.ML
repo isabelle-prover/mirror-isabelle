@@ -27,13 +27,15 @@ fun marker a props =
 
 (* inlined messages *)
 
+fun command_position_property id (a, b) =
+  if Markup.command_position_property = (a, b) then (a, id) else (a, b);
+
 fun command_positions id =
   let
-    fun attribute (a, b) =
-      if a = Markup.idN andalso b = Markup.commandN then (a, id) else (a, b);
-    fun tree (XML.Elem ((a, atts), ts)) = XML.Elem ((a, map attribute atts), map tree ts)
-      | tree text = text;
-  in map tree end;
+    val attributes = map (command_position_property id);
+    fun body xml = xml |> map
+      (fn XML.Elem ((a, atts), ts) => XML.Elem ((a, attributes atts), body ts) | text => text);
+  in body end;
 
 fun command_positions_yxml id =
   YXML.string_of_body o command_positions id o YXML.parse_body;

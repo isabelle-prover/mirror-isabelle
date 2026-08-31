@@ -210,6 +210,7 @@ sig
   val command_offsetN: string val command_offset: int option -> T -> T
   val parse_command_timing_properties:
     Properties.T -> ({file: string, offset: int, name: string} * Time.time) option
+  val command_position_property: Properties.entry
   val command_indentN: string val command_indent: int -> T
   val goalN: string val goal: T
   val subgoalN: string val subgoal: string -> T
@@ -731,6 +732,11 @@ fun parse_command_timing_properties props =
       SOME ({file = file, offset = Value.parse_int offset, name = name},
         Properties.get_seconds props elapsedN)
   | _ => NONE);
+
+
+(* command position *)
+
+val command_position_property: Properties.entry = (idN, commandN);
 
 
 (* indentation *)
