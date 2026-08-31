@@ -333,7 +333,8 @@ class Resources(
       thys: List[(Document.Node.Name, Position.T)],
       options: Options.Update = Nil,
       progress: Progress = new Progress): Dependencies =
-    Dependencies.empty.require_thys(session_options, thys, options = options, progress = progress)
+    Dependencies.empty.require_thys(session_options, thys,
+      options = options, progress = progress)
 
   def session_dependencies(
     info: Sessions.Info,
@@ -361,64 +362,58 @@ class Resources(
   }
 
   final class Dependencies private(
-    rev_entries: List[Resources.Thy],
-    seen: Set[Document.Node.Name]
+    protected val rev_entries: List[Resources.Thy],
+    protected val seen: Set[Document.Node.Name]
   ) {
     private def cons(thy: Resources.Thy): Dependencies =
       new Dependencies(thy :: rev_entries, seen)
-
-    def require_thy(
-      session_options: Options,
-      theory: (Document.Node.Name, Position.T),
-      options: Options.Update = Nil,
-      initiators: List[Document.Node.Name] = Nil,
-      progress: Progress = new Progress
-    ): Dependencies = {
-      val (name, pos) = theory
-
-      def message: String =
-        "The error(s) above occurred for theory " + quote(name.theory) +
-          Dependencies.required_by(initiators) + Position.here(pos)
-
-      if (seen(name)) this
-      else {
-        val dependencies1 = new Dependencies(rev_entries, seen + name)
-        if (loaded_theory(name)) dependencies1
-        else {
-          try {
-            if (initiators.contains(name)) error(Dependencies.cycle_msg(initiators))
-
-            progress.expose_interrupt()
-            val thy0 =
-              try {
-                with_thy_reader(name,
-                  check_thy(session_options, name, _, command = false)).cat_errors(message)
-              }
-              catch { case ERROR(msg) => cat_error(msg, message) }
-            val thy = thy0.copy(options = thy0.options ::: options, initiators = initiators)
-            dependencies1.require_thys(session_options, thy.imports, options = options,
-              initiators = name :: initiators, progress = progress).cons(thy)
-          }
-          catch {
-            case e: Throwable =>
-              val thy = Resources.Thy(name = name, options = options,
-                errors = List(Exn.message(e)), initiators = initiators)
-              dependencies1.cons(thy)
-          }
-        }
-      }
-    }
 
     def require_thys(
         session_options: Options,
         theories: List[(Document.Node.Name, Position.T)],
         options: Options.Update = Nil,
-        initiators: List[Document.Node.Name] = Nil,
         progress: Progress = new Progress
     ): Dependencies = {
-      theories.foldLeft(this)(
-        _.require_thy(session_options, _,
-            options = options, initiators = initiators, progress = progress))
+      def require_thy(
+        dependencies: Dependencies,
+        theory: (Document.Node.Name, Position.T),
+        initiators: List[Document.Node.Name]
+      ): Dependencies = {
+        val (name, pos) = theory
+
+        def message: String =
+          "The error(s) above occurred for theory " + quote(name.theory) +
+            Dependencies.required_by(initiators) + Position.here(pos)
+
+        if (dependencies.seen(name)) dependencies
+        else {
+          val dependencies1 = new Dependencies(dependencies.rev_entries, dependencies.seen + name)
+          if (loaded_theory(name)) dependencies1
+          else {
+            try {
+              if (initiators.contains(name)) error(Dependencies.cycle_msg(initiators))
+
+              progress.expose_interrupt()
+              val thy0 =
+                try {
+                  with_thy_reader(name,
+                    check_thy(session_options, name, _, command = false)).cat_errors(message)
+                }
+                catch { case ERROR(msg) => cat_error(msg, message) }
+              val thy = thy0.copy(options = thy0.options ::: options, initiators = initiators)
+              thy.imports.foldLeft(dependencies1)(require_thy(_, _, name :: initiators)).cons(thy)
+            }
+            catch {
+              case e: Throwable =>
+                val thy = Resources.Thy(name = name, options = options,
+                  errors = List(Exn.message(e)), initiators = initiators)
+                dependencies1.cons(thy)
+            }
+          }
+        }
+      }
+
+      theories.foldLeft(this)(require_thy(_, _, Nil))
     }
 
     def entries: List[Resources.Thy] = rev_entries.reverse
