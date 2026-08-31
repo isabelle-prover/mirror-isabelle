@@ -47,6 +47,31 @@ lemma has_zorder_weierstrass_factor [zorder_intros]: "has_zorder (weierstrass_fa
   by (rule has_zorderI)
      (auto intro!: analytic_on_imp_meromorphic_on analytic_intros eventually_neq_at_within)
 
+lemma has_field_derivative_weierstrass_factor:
+  assumes "(f has_field_derivative f') (at z within A)"
+  assumes "f z \<noteq> 1"
+  shows   "((\<lambda>z. weierstrass_factor n (f z)) has_field_derivative
+             (f' * weierstrass_factor n (f z) * f z ^ n / (f z - 1)))
+             (at z within A)"
+proof -
+  define W where "W = weierstrass_factor n (f z)"
+  have "((\<lambda>z. weierstrass_factor n (f z)) has_field_derivative 
+          (f' * ((\<Sum>n=1..n. f z ^ (n - 1)) * W - exp (\<Sum>k=1..n. f z ^ k / of_nat k)))) (at z within A)"
+    unfolding weierstrass_factor_def W_def
+    by (auto intro!: derivative_eq_intros assms(1) simp: algebra_simps 
+             simp flip: sum_distrib_left sum_distrib_right)
+  also have "exp (\<Sum>k=1..n. f z ^ k / of_nat k) = W / (1 - f z)"
+    using \<open>f z \<noteq> 1\<close> by (auto simp: weierstrass_factor_def W_def)
+  also have "(\<Sum>n=1..n. f z ^ (n - 1)) = (\<Sum>k<n. f z ^ k)"
+    by (rule sum.reindex_bij_witness[of _ "\<lambda>n. n+1" "\<lambda>n. n-1"]) auto
+  also have "\<dots> = (f z ^ n - 1) / (f z - 1)"
+    by (subst geometric_sum) (use \<open>f z \<noteq> 1\<close> in auto)
+  also have "(f z ^ n - 1) / (f z - 1) * W - W / (1 - f z) = W * f z ^ n / (f z - 1)"
+    using \<open>f z \<noteq> 1\<close> by (auto simp: divide_simps) (auto simp: algebra_simps)?
+  finally show ?thesis
+    unfolding W_def by (simp add: mult_ac)
+qed
+
 lemma weierstrass_factor_bound:
   assumes "norm z \<le> 1 / 2"
   shows   "norm (weierstrass_factor n z - 1) \<le> 3 * norm z ^ Suc n"
@@ -138,6 +163,11 @@ locale weierstrass_product =
   assumes summable_a_p: "\<And>r. r > 0 \<Longrightarrow> (\<lambda>x. (r / norm (a x)) ^ Suc (p x)) summable_on I"
 begin
 
+text \<open>
+  Due to the assumptions on \<^term>\<open>a\<close>, every point can only occur a finite number of times.
+  Moreover, the range of \<^term>\<open>a\<close> is a sparse set (i.e.\ it has no limit points) and is therefore 
+  in particular a closed set.
+\<close>
 lemma finite_occs_a: "finite (a -` {z} \<inter> I)"
 proof -
   have "eventually (\<lambda>n. norm (a n) > norm z) (inf cofinite (principal I))"
@@ -148,9 +178,44 @@ proof -
     by (rule finite_subset [rotated]) auto
 qed
 
+lemma not_islimpt_range_a: "\<not>z islimpt a ` I"
+proof -
+  define r where "r = norm z + 1"
+  define U where "U = ball (0::complex) r"
+  have "finite (U \<inter> a ` I)"
+  proof -
+    have "eventually (\<lambda>n. norm (a n) \<ge> r) (inf cofinite (principal I))"
+      using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top)
+    hence "finite {x \<in> I. norm (a x) < r}"
+      by (auto simp: eventually_inf_principal eventually_cofinite not_le)
+    also have "{x\<in>I. norm (a x) < r} = a -` U \<inter> I"
+      by (auto simp: U_def)
+    finally have "finite (a -` U \<inter> I)" .
+    hence "finite (a ` (a -` U \<inter> I))"
+      by (rule finite_imageI)
+    also have "a ` (a -` U \<inter> I) = U \<inter> a ` I"
+      by auto
+    finally show ?thesis .
+  qed
+  moreover have "open U" "z \<in> U"
+    by (auto simp: U_def r_def)
+  ultimately show ?thesis
+    unfolding islimpt_eq_acc_point by blast
+qed
+
+lemma closed_range_a: "closed (a ` I)"
+  using not_islimpt_range_a unfolding closed_limpt by blast
+
+
+text \<open>
+  We construct the product by multiplying the Weierstra\ss\ factors with the appropriate weight.
+\<close>
 definition f :: "complex \<Rightarrow> complex" where
   "f z = (\<Prod>\<^sub>\<infinity>x\<in>I. weierstrass_factor (p x) (z / a x))"
 
+text \<open>
+  The product converges absolutely.
+\<close>
 lemma abs_multipliable: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) abs_multipliable_on I"
   unfolding abs_multipliable_on_iff_summable_on
 proof -
@@ -198,52 +263,69 @@ lemma multipliable: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) multipliab
 lemma has_setprod: "((\<lambda>x. weierstrass_factor (p x) (z / a x)) has_setprod f z) I"
   using multipliable[of z] unfolding f_def by auto
 
+
+text \<open>
+  On compact sets, it converges uniformly.
+\<close>
 context
   fixes P
   defines "P \<equiv> (\<lambda>J z. \<Prod>x\<in>J. weierstrass_factor (p x) (z / a x))"
 begin 
 
 lemma uniform_limit:
-  assumes "R > 0"
-  shows   "uniform_limit (cball 0 R) P f (finite_subsets_at_top I)"
+  assumes "compact K"
+  shows   "uniform_limit K P f (finite_subsets_at_top I)"
 proof -
-  define I1 where "I1 = {x\<in>I. R \<le> norm (a x) / 2}"
-  show ?thesis
-    unfolding P_def f_def
-  proof (rule uniform_limit_infprod_M_test_strong)
-    show "finite (I - I1)"
-    proof -
-      have "eventually (\<lambda>x. norm (a x) \<ge> 2 * R) (inf cofinite (principal I))"
-        using filterlim_a unfolding filterlim_at_infinity_conv_norm_at_top filterlim_at_top
-        by blast
-      hence "finite {x \<in> I. norm (a x) < 2 * R}"
-        by (auto simp: eventually_inf_principal eventually_cofinite not_le)
-      thus "finite (I - I1)"
-        by (rule finite_subset [rotated]) (auto simp: I1_def norm_divide divide_simps)
+  have *: "uniform_limit (cball 0 R) P f (finite_subsets_at_top I)" if "R > 0" for R
+  proof -
+    define I1 where "I1 = {x\<in>I. R \<le> norm (a x) / 2}"
+    show ?thesis
+      unfolding P_def f_def
+    proof (rule uniform_limit_infprod_M_test_strong)
+      show "finite (I - I1)"
+      proof -
+        have "eventually (\<lambda>x. norm (a x) \<ge> 2 * R) (inf cofinite (principal I))"
+          using filterlim_a unfolding filterlim_at_infinity_conv_norm_at_top filterlim_at_top
+          by blast
+        hence "finite {x \<in> I. norm (a x) < 2 * R}"
+          by (auto simp: eventually_inf_principal eventually_cofinite not_le)
+        thus "finite (I - I1)"
+          by (rule finite_subset [rotated]) (auto simp: I1_def norm_divide divide_simps)
+      qed
+    next
+      fix x z assume x: "x \<in> I1" and z: "z \<in> cball (0::complex) R"
+      from x z have "norm (weierstrass_factor (p x) (z / a x) - 1) \<le> 3 * (norm (z / a x)) ^ Suc (p x)"
+        by (intro weierstrass_factor_bound) (auto simp: norm_divide divide_simps I1_def)
+      also have "\<dots> = 3 * (norm z / norm (a x)) ^ Suc (p x)"
+        by (simp add: norm_divide)
+      also have "\<dots> \<le> 3 * (R / norm (a x)) ^ Suc (p x)"
+        by (intro mult_left_mono power_mono divide_right_mono) (use z in auto)
+      finally show "norm (weierstrass_factor (p x) (z / a x) - 1) \<le>
+                      3 * (R / norm (a x)) ^ Suc (p x)" by simp
+    next
+      show "(\<lambda>x. 3 * (R / norm (a x)) ^ Suc (p x)) summable_on I1"
+        by (rule summable_on_cmult_right, rule summable_on_subset, rule summable_a_p)
+           (auto simp: I1_def \<open>R > 0\<close>)
+    next
+      fix x assume x: "x \<in> I - I1"
+      have "compact ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
+        by (intro compact_continuous_image continuous_intros) (use x in \<open>auto simp: a_nonzero\<close>)
+      thus "bounded ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
+        by (rule compact_imp_bounded)
     qed
-  next
-    fix x z assume x: "x \<in> I1" and z: "z \<in> cball (0::complex) R"
-    from x z have "norm (weierstrass_factor (p x) (z / a x) - 1) \<le> 3 * (norm (z / a x)) ^ Suc (p x)"
-      by (intro weierstrass_factor_bound) (auto simp: norm_divide divide_simps I1_def)
-    also have "\<dots> = 3 * (norm z / norm (a x)) ^ Suc (p x)"
-      by (simp add: norm_divide)
-    also have "\<dots> \<le> 3 * (R / norm (a x)) ^ Suc (p x)"
-      by (intro mult_left_mono power_mono divide_right_mono) (use z in auto)
-    finally show "norm (weierstrass_factor (p x) (z / a x) - 1) \<le>
-                    3 * (R / norm (a x)) ^ Suc (p x)" by simp
-  next
-    show "(\<lambda>x. 3 * (R / norm (a x)) ^ Suc (p x)) summable_on I1"
-      by (rule summable_on_cmult_right, rule summable_on_subset, rule summable_a_p)
-         (auto simp: I1_def \<open>R > 0\<close>)
-  next
-    fix x assume x: "x \<in> I - I1"
-    have "compact ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
-      by (intro compact_continuous_image continuous_intros) (use x in \<open>auto simp: a_nonzero\<close>)
-    thus "bounded ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
-      by (rule compact_imp_bounded)
   qed
+
+  from assms have "bounded K"
+    by (rule compact_imp_bounded)
+  then obtain R where R: "K \<subseteq> cball 0 R"
+    by (auto simp: bounded_iff cball_def)
+  show ?thesis
+    by (rule uniform_limit_on_subset[OF *[of "max R 1"]]) (use R in auto)
 qed
 
+text \<open>
+  Since the factors are entire, so is the product.
+\<close>
 lemma analytic [analytic_intros]: "f analytic_on A"
 proof -
   have "f analytic_on {z}" for z
@@ -272,37 +354,15 @@ lemma holomorphic [holomorphic_intros]: "f holomorphic_on A"
 end
 
 
+text \<open>
+  The zeros of the product are precisely the numbers in the range of \<^term>\<open>a\<close>.
+\<close>
 lemma zero: "f z = 0 \<longleftrightarrow> z \<in> a ` I"
 proof -
   have *: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) strongly_multipliable_on I"
     using abs_multipliable by (rule abs_multipliable_on_imp_strongly_multipliable_on)
   show ?thesis
     using has_setprod_eq_0_iff[OF * has_setprod] a_nonzero by auto
-qed
-
-lemma not_islimpt_range_a: "\<not>z islimpt a ` I"
-proof -
-  define r where "r = norm z + 1"
-  define U where "U = ball (0::complex) r"
-  have "finite (U \<inter> a ` I)"
-  proof -
-    have "eventually (\<lambda>n. norm (a n) \<ge> r) (inf cofinite (principal I))"
-      using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top)
-    hence "finite {x \<in> I. norm (a x) < r}"
-      by (auto simp: eventually_inf_principal eventually_cofinite not_le)
-    also have "{x\<in>I. norm (a x) < r} = a -` U \<inter> I"
-      by (auto simp: U_def)
-    finally have "finite (a -` U \<inter> I)" .
-    hence "finite (a ` (a -` U \<inter> I))"
-      by (rule finite_imageI)
-    also have "a ` (a -` U \<inter> I) = U \<inter> a ` I"
-      by auto
-    finally show ?thesis .
-  qed
-  moreover have "open U" "z \<in> U"
-    by (auto simp: U_def r_def)
-  ultimately show ?thesis
-    unfolding islimpt_eq_acc_point by blast
 qed
 
 lemma isolated_zero:
@@ -319,7 +379,10 @@ proof -
     by (auto simp: isolated_zero_def)
 qed
 
-lemma has_zorder: "has_zorder f z (card (a -` {z} \<inter> I))"
+text \<open>
+  The multiplicity of each zero is the number of times it appears in the range of \<^term>\<open>a\<close>.
+\<close>
+theorem has_zorder: "has_zorder f z (card (a -` {z} \<inter> I))"
 proof -
   define g where "g = (\<lambda>z x. weierstrass_factor (p x) (z / a x))"
   define I1 where "I1 = {x\<in>I. a x \<noteq> z}"
@@ -390,6 +453,77 @@ qed
 
 lemma zorder: "zorder f z = card (a -` {z} \<inter> I)"
   using has_zorder by (simp add: has_zorder_def)
+
+
+text \<open>
+  We also derive a nice form for the logarithmic derivative, which is a uniformly convergent sum.
+\<close>
+lemma uniform_limit_logderiv:
+  assumes K: "compact K" "K \<inter> a ` I = {}"
+  shows "uniform_limit K (\<lambda>J z. \<Sum>x\<in>J. (z / a x) ^ p x / (z - a x)) (\<lambda>z. deriv f z / f z) 
+           (finite_subsets_at_top I)"
+proof -
+  define g where "g = (\<lambda>x z. weierstrass_factor (p x) (z / a x))"
+  have "uniform_limit K (\<lambda>J z. \<Sum>x\<in>J. deriv (g x) z / g x z) (\<lambda>z. deriv f z / f z) 
+           (finite_subsets_at_top I)"
+  proof (rule logderiv_infprod_uniform_limit)
+    show "K \<subseteq> -(a ` I)"
+      using K by auto
+    show "compact K"
+      by fact
+    show "open (-a ` I)"
+      using closed_range_a by blast
+    show "g x holomorphic_on - a ` I" if "x \<in> I" for x
+      by (auto simp: g_def intro!: holomorphic_intros)
+    show "f z \<noteq> 0" if "z \<in> -a ` I" for z
+      using that by (auto simp: zero)
+    show "uniform_limit L (\<lambda>J x. \<Prod>xa\<in>J. g xa x) f (finite_subsets_at_top I)" if "compact L" for L
+      unfolding g_def by (rule uniform_limit) fact
+  qed
+  also have "?this \<longleftrightarrow> uniform_limit K (\<lambda>J z. \<Sum>x\<in>J. (z / a x) ^ p x / (z - a x)) (\<lambda>z. deriv f z / f z) 
+                         (finite_subsets_at_top I)"
+  proof (rule uniform_limit_cong)
+    have "\<forall>\<^sub>F J in finite_subsets_at_top I. finite J \<and> J \<subseteq> I"
+      by (rule eventually_finite_subsets_at_top_weakI) auto
+    show "\<forall>\<^sub>F J in finite_subsets_at_top I.
+            \<forall>z\<in>K. (\<Sum>x\<in>J. deriv (g x) z / g x z) = (\<Sum>x\<in>J. (z / a x) ^ p x / (z - a x))"
+    proof (intro eventually_finite_subsets_at_top_weakI ballI sum.cong refl)
+      fix J z x
+      assume J: "finite J" "J \<subseteq> I" and z: "z \<in> K" and x: "x \<in> J"
+      have neq: "z \<noteq> a x"
+        using J z x K by auto
+      have [simp]: "a x \<noteq> 0"
+        by (rule a_nonzero) (use J x in auto)
+      note [derivative_intros] = has_field_derivative_weierstrass_factor
+      have "((\<lambda>z. g x z) has_field_derivative (g x z * (z / a x) ^ p x / (a x * (z / a x - 1)))) (at z)"
+        unfolding g_def using neq by (auto intro!: derivative_eq_intros simp: a_nonzero)
+      also have "(a x * (z / a x - 1)) = z - a x"
+        using neq by (simp add: field_simps)
+      finally have "deriv (g x) z = g x z * (z / a x) ^ p x / (z - a x)"
+        by (rule DERIV_imp_deriv)
+      also have "\<dots> / g x z = (z / a x) ^ p x / (z - a x)"
+        by (simp add: g_def)
+      finally show "deriv (g x) z / g x z = (z / a x) ^ p x / (z - a x)" .
+    qed
+  qed auto
+  finally show ?thesis .
+qed
+
+lemma has_sum_logderiv:
+  assumes "z \<notin> a ` I"
+  shows "((\<lambda>x. (z / a x) ^ p x / (z - a x)) has_sum (deriv f z / f z)) I"
+proof -
+  have "uniform_limit {z} (\<lambda>J z. \<Sum>x\<in>J. (z / a x) ^ p x / (z - a x)) (\<lambda>z. deriv f z / f z) 
+           (finite_subsets_at_top I)"
+    by (rule uniform_limit_logderiv) (use assms in auto)
+  thus ?thesis
+    by (simp add: has_sum_def)
+qed
+
+theorem logderiv_eq:
+  assumes "z \<notin> a ` I"
+  shows   "deriv f z / f z = (\<Sum>\<^sub>\<infinity>x\<in>I. (z / a x) ^ p x / (z - a x))"
+  using has_sum_logderiv[OF assms] by (simp add: has_sum_iff)  
 
 end (* weierstrass_product *)
 
