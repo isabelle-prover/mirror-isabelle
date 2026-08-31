@@ -260,11 +260,12 @@ val no_thy: thy =
 val decode_thy: thy XML.Decode.T =
   let
     open XML.Decode;
+    val position = Position.of_properties o properties;
     val string_none = rpair Position.none o string;
     val keyword = pair string_none (Keyword.command_spec o pair string (list string));
   in
     pair decode_node_name
-      (pair (Position.of_properties o properties)
+      (pair position
         (pair (list decode_node_name)
           (pair (list (pair string_none (option string_none)))
             (pair (list keyword)
