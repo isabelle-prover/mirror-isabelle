@@ -312,19 +312,10 @@ in
 
 fun use_thy (thy as {name, imports, ...}: Resources.thy) =
   let
-    val theory_path = Path.explode (#node name);
-    val node = File.symbolic_path theory_path;
-    val master_dir = Path.dir (Path.explode node);
-    val text = File.read theory_path;
-
+    val text = File.read (Path.explode (#node name));
     val parents = map (#theory o #1) imports;
     val use_parents = filter_out defined_theory parents;
-
-    val thy': Resources.thy =
-     {name = {node = node, master_dir = master_dir, theory = #theory name},
-      pos = #pos thy, imports = imports, options = #options thy,
-      keywords = #keywords thy, errors = #errors thy, initiators = #initiators thy};
-  in new_entry (#theory name) use_parents {parents = parents, body = load_thy thy' text} end;
+  in new_entry (#theory name) use_parents {parents = parents, body = load_thy thy text} end;
 
 end;
 

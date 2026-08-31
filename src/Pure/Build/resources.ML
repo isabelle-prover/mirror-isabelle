@@ -266,14 +266,14 @@ val decode_thy: thy XML.Decode.T =
   in
     pair decode_node_name
       (pair position
-        (pair (list decode_node_name)
+        (pair (list (pair decode_node_name position))
           (pair (list (pair string_none (option string_none)))
             (pair (list keyword)
               (pair (list string) (list decode_node_name))))))
   end
   #> (fn (name, (pos, (imports, (options, (keywords, (errors, initiators)))))) =>
-      {name = name, pos = pos, imports = map (rpair Position.none) imports,
-        options = options, keywords = keywords, errors = errors, initiators = initiators});
+      {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+        errors = errors, initiators = initiators});
 
 fun map_thy_pos f ({name, pos, imports, options, keywords, errors, initiators}: thy) : thy =
  {name = name, pos = f pos, imports = map (apsnd f) imports,
