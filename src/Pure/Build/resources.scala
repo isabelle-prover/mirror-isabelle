@@ -372,10 +372,10 @@ class Resources(
       new Dependencies(thy :: rev_entries, seen)
 
     def require_thys(
-        session_options: Options,
-        theories: List[(Document.Node.Name, Position.T)],
-        options: Options.Update = Nil,
-        progress: Progress = new Progress
+      session_options: Options,
+      theories: List[(Document.Node.Name, Position.T)],
+      options: Options.Update = Nil,
+      progress: Progress = new Progress
     ): Dependencies = {
       def require_thy(
         dependencies: Dependencies,
