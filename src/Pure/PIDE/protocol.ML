@@ -42,7 +42,7 @@ fun decode_command id name kind parents_xml blobs_xml toks_xml sources : Documen
     val (blobs_digests, blobs_index) =
       blobs_xml |>
         let
-          val message = YXML.string_of_body o Protocol_Message.command_positions id;
+          val message = YXML.string_of_body o Protocol_Message.command_positions_body id;
           val blob =
             triple string string (option string)
             #> (fn (a, b, c) => {file_node = a, src_path = Path.explode b, digest = c});

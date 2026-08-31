@@ -115,15 +115,10 @@ fun set_keywords keywords =
 
 fun read_thy node span : Resources.thy =
   let
-    val {name, imports = imports0, errors, ...} = get_thy node;
+    val {name, imports = imports0, errors = errs, ...} = get_thy node;
     val _ =
-      if null errors then ()
-      else
-        error
-          (cat_lines errors |>
-            (case Position.id_of (Position.thread_data ()) of
-              NONE => I
-            | SOME id => Protocol_Message.command_positions_yxml id));
+      if null errs then ()
+      else error (Protocol_Message.command_positions_yxml (Position.thread_data ()) (cat_lines errs));
     val {name = (_, pos), imports = imports1, options, keywords} =
       Thy_Header.read_tokens Position.none span;
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
