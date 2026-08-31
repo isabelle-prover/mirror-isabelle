@@ -5,7 +5,7 @@ theory Infinite_Product
 begin
 
 text \<open>The recurring theme of the whole development: the sum theory works because
-  addition is uniformly continuous on UNIV (one uniformity entourage is invariant
+  addition is uniformly continuous on \<^const>\<open>UNIV\<close> (one uniformity entourage is invariant
   under translation by any constant).  Multiplication is not, so the sum proofs
   cannot be ported verbatim.  It is, however, uniformly continuous away from 0,
   and in a product with a non-zero value almost all subproducts lie near 1.\<close>
@@ -3424,100 +3424,6 @@ proof -
     using multipliable_on_SigmaD[of "f \<circ> snd" A B] sum2 by simp
 qed
 
-text \<open>
-  \<^bold>\<open>NOTE.\<close>  The next lemma is about sums, not products, and belongs in
-  \<^theory>\<open>HOL-Analysis.Infinite_Sum\<close>.  It is the Weierstrass \<open>M\<close>-test for \<^emph>\<open>unordered\<close> sums in its
-  uniform form: a family dominated by a summable \<^term>\<open>M\<close> converges uniformly on \<^term>\<open>B\<close> along
-  \<^term>\<open>finite_subsets_at_top A\<close>.  It is proved here because that is where it was needed.
-\<close>
-lemma uniform_limit_infsum_M_test:
-  fixes h :: "'k \<Rightarrow> 'a \<Rightarrow> real"
-  assumes le: "\<And>k y. k \<in> A \<Longrightarrow> y \<in> B \<Longrightarrow> h k y \<le> M k"
-    and nn: "\<And>k y. k \<in> A \<Longrightarrow> y \<in> B \<Longrightarrow> 0 \<le> h k y"
-    and M: "M summable_on A"
-  shows "uniform_limit B (\<lambda>X y. \<Sum>k\<in>X. h k y) (\<lambda>y. \<Sum>\<^sub>\<infinity>k\<in>A. h k y) (finite_subsets_at_top A)"
-proof (cases "B = {}")
-  case True
-  thus ?thesis
-    by simp
-next
-  case False
-  then obtain y0 where y0: "y0 \<in> B" by blast
-  have Mnn: "0 \<le> M k" if "k \<in> A" for k
-    using nn[OF that y0] le[OF that y0] by linarith
-  have summ: "(\<lambda>k. h k y) summable_on A" if "y \<in> B" for y
-    using M by (rule summable_on_comparison_test) (use le nn that in auto)
-  have summ_sub: "(\<lambda>k. h k y) summable_on A'" if "y \<in> B" "A' \<subseteq> A" for y A'
-    using summ[OF that(1)] that(2) by (rule summable_on_subset_banach)
-  have M_sub: "M summable_on A'" if "A' \<subseteq> A" for A'
-    using M that by (rule summable_on_subset_banach)
-  \<comment> \<open>splitting off a finite part of the index set\<close>
-  have split: "(\<Sum>\<^sub>\<infinity>k\<in>A. h k y) = (\<Sum>k\<in>X. h k y) + (\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y)"
-    if "y \<in> B" "finite X" "X \<subseteq> A" for y X
-  proof -
-    have "A = X \<union> (A - X)"
-      using that by auto
-    hence "(\<Sum>\<^sub>\<infinity>k\<in>A. h k y) = (\<Sum>\<^sub>\<infinity>k\<in>X \<union> (A - X). h k y)"
-      by simp
-    also have "\<dots> = (\<Sum>\<^sub>\<infinity>k\<in>X. h k y) + (\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y)"
-      using that by (intro infsum_Un_disjoint summ_sub) auto
-    finally show ?thesis
-      using that by simp
-  qed
-  have splitM: "(\<Sum>\<^sub>\<infinity>k\<in>A. M k) = (\<Sum>k\<in>X. M k) + (\<Sum>\<^sub>\<infinity>k\<in>A-X. M k)"
-    if "finite X" "X \<subseteq> A" for X
-  proof -
-    have "A = X \<union> (A - X)"
-      using that by auto
-    hence "(\<Sum>\<^sub>\<infinity>k\<in>A. M k) = (\<Sum>\<^sub>\<infinity>k\<in>X \<union> (A - X). M k)"
-      by simp
-    also have "\<dots> = (\<Sum>\<^sub>\<infinity>k\<in>X. M k) + (\<Sum>\<^sub>\<infinity>k\<in>A-X. M k)"
-      using that by (intro infsum_Un_disjoint M_sub) auto
-    finally show ?thesis
-      using that by simp
-  qed
-  show ?thesis
-    unfolding uniform_limit_iff
-  proof (intro allI impI)
-    fix \<epsilon> :: real assume \<epsilon>: "\<epsilon> > 0"
-    \<comment> \<open>a seed whose \<^term>\<open>M\<close>-tail is small; it works for every \<^term>\<open>y \<in> B\<close> at once\<close>
-    obtain S where S: "finite S" "S \<subseteq> A" and Sclose: "dist (\<Sum>k\<in>S. M k) (\<Sum>\<^sub>\<infinity>k\<in>A. M k) \<le> \<epsilon>/2"
-      using infsum_finite_approximation[OF M, of "\<epsilon>/2"] \<epsilon> by auto
-    have tailM: "(\<Sum>\<^sub>\<infinity>k\<in>A-S. M k) \<le> \<epsilon>/2"
-      using Sclose splitM[OF S] by (simp add: dist_real_def)
-    show "\<forall>\<^sub>F X in finite_subsets_at_top A. \<forall>y\<in>B. dist (\<Sum>k\<in>X. h k y) (\<Sum>\<^sub>\<infinity>k\<in>A. h k y) < \<epsilon>"
-      unfolding eventually_finite_subsets_at_top
-    proof (intro exI[of _ S] conjI allI impI S)
-      fix X assume X: "finite X \<and> S \<subseteq> X \<and> X \<subseteq> A"
-      hence X': "finite X" "S \<subseteq> X" "X \<subseteq> A" by auto
-      show "\<forall>y\<in>B. dist (\<Sum>k\<in>X. h k y) (\<Sum>\<^sub>\<infinity>k\<in>A. h k y) < \<epsilon>"
-      proof
-        fix y assume y: "y \<in> B"
-        have nonneg: "0 \<le> (\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y)"
-          using nn y by (intro infsum_nonneg) auto
-        have "(\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A-X. M k)"
-          using y X' le by (intro infsum_mono summ_sub M_sub) auto
-        also have "\<dots> \<le> (\<Sum>\<^sub>\<infinity>k\<in>A-S. M k)"
-          using X' Mnn by (intro infsum_mono2 M_sub) auto
-        also have "\<dots> \<le> \<epsilon>/2"
-          by (rule tailM)
-        finally have "(\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y) \<le> \<epsilon>/2" .
-        moreover have "dist (\<Sum>k\<in>X. h k y) (\<Sum>\<^sub>\<infinity>k\<in>A. h k y) = (\<Sum>\<^sub>\<infinity>k\<in>A-X. h k y)"
-          using split[OF y X'(1,3)] nonneg by (simp add: dist_real_def)
-        ultimately show "dist (\<Sum>k\<in>X. h k y) (\<Sum>\<^sub>\<infinity>k\<in>A. h k y) < \<epsilon>"
-          using \<epsilon> by simp
-      qed
-    qed
-  qed
-qed
-
-text \<open>
-  The workhorse for products.  Earlier versions of this lemma assumed \<^term>\<open>continuous_on B (f n)\<close>
-  for every \<^term>\<open>n\<close> together with \<^term>\<open>compact B\<close>; those served only to bound the limit
-  \<^term>\<open>L\<close> of the partial sums on \<^term>\<open>B\<close>, so that bound is now the hypothesis and \<^term>\<open>B\<close> may be
-  any set.  The usable form is the \<open>M\<close>-test \<open>uniform_limit_infprod_M_test\<close> below, which discharges
-  the uniform-convergence hypothesis as well.
-\<close>
 lemma uniform_limit_prodinf:
   fixes f :: "'k \<Rightarrow> 'a :: topological_space \<Rightarrow> 'b :: {real_normed_div_algebra, comm_ring_1, banach, semidom, topological_semigroup_mult, t2_space}"
   assumes conv_sum: "uniform_limit B (\<lambda>X y. \<Sum>x\<in>X. norm (f x y)) L (finite_subsets_at_top A)"
@@ -3675,51 +3581,69 @@ proof -
     by simp
 qed
 
-text \<open>
-  \<^bold>\<open>The Weierstrass \<open>M\<close>-test for unordered products\<close>, and the form to use in practice: a
-  dominating summable \<^term>\<open>M\<close> is all one has to produce.  No continuity, no compactness, and no
-  uniform-convergence hypothesis -- \<open>uniform_limit_infsum_M_test\<close> supplies the latter and the
-  bound \<^term>\<open>\<Sum>\<^sub>\<infinity>k\<in>A. M k\<close> the former.  This is the shape in which Weierstrass products arise: on
-  a compact set one bounds \<^term>\<open>norm (f k z - 1)\<close> by a summable sequence independent of \<^term>\<open>z\<close>.
-  Feeding it to \<open>logderiv_infprod_uniform_limit\<close> gives the logarithmic derivative as a uniformly
-  convergent sum.
-\<close>
+corollary uniform_limit_infprod_M_test_strong:
+  fixes f :: "'k \<Rightarrow> 'a :: topological_space \<Rightarrow> 'b :: {real_normed_div_algebra, comm_ring_1, banach, semidom, topological_semigroup_mult, t2_space}"
+  assumes le: "\<And>k y. k \<in> A' \<Longrightarrow> y \<in> B \<Longrightarrow> norm (f k y - 1) \<le> M k"
+  assumes bounded: "\<And>k. k \<in> A - A' \<Longrightarrow> bounded ((\<lambda>y. f k y - 1) ` B)"
+    and M: "M summable_on A'"
+    and "finite (A - A')"
+  shows "uniform_limit B (\<lambda>X y. \<Prod>k\<in>X. f k y) (\<lambda>y. \<Prod>\<^sub>\<infinity>k\<in>A. f k y) (finite_subsets_at_top A)"
+proof -
+  from bounded have "\<forall>k\<in>A-A'. \<exists>c. \<forall>y\<in>B. norm (f k y - 1) \<le> c"
+    by (auto simp: bounded_iff)
+  then obtain M' where le': "norm (f k y - 1) \<le> M' k" if "k \<in> A - A'" "y \<in> B" for k y
+    by metis
+  show ?thesis
+  proof (rule uniform_limit_prodinf'[where L = "\<lambda>y. \<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)"])
+    show "uniform_limit B (\<lambda>X y. \<Sum>k\<in>X. norm (f k y - 1))
+                          (\<lambda>y. \<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)) (finite_subsets_at_top A)"
+    proof (rule Weierstrass_m_test_general_strong)
+      show "\<And>k y. k \<in> A' \<Longrightarrow> y \<in> B \<Longrightarrow> norm (norm (f k y - 1)) \<le> M k"
+        using le by auto
+      show "M summable_on A'"
+        by (rule M)
+    qed fact
+  
+    show "(\<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. M k) + (\<Sum>\<^sub>\<infinity>k\<in>A-A'. M' k)"
+      if y: "y \<in> B" for y
+    proof -
+      have M': "M summable_on (A'\<inter>A)"
+        using M by (rule summable_on_subset) auto
+      have summable: "(\<lambda>k. norm (f k y - 1)) summable_on (A'\<inter>A)"
+        using M' le summable_on_comparison_test y by fastforce
+  
+      have "(\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. norm (f k y - 1)) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. M k)"
+      proof (intro M infsum_mono)
+        show "\<And>k. k \<in> A'\<inter>A \<Longrightarrow> norm (f k y - 1) \<le> M k"
+          using le y by blast
+      qed fact+
+      moreover have "(\<Sum>\<^sub>\<infinity>k\<in>A-A'. norm (f k y - 1)) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A-A'. M' k)"
+        by (intro infsum_mono le' y summable_on_finite) fact+
+      ultimately have "(\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. norm (f k y - 1)) + (\<Sum>\<^sub>\<infinity>k\<in>A-A'. norm (f k y - 1)) \<le> 
+                         (\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. M k) + (\<Sum>\<^sub>\<infinity>k\<in>A-A'. M' k)"
+        by linarith
+      also have "(\<Sum>\<^sub>\<infinity>k\<in>A'\<inter>A. norm (f k y - 1)) + (\<Sum>\<^sub>\<infinity>k\<in>A-A'. norm (f k y - 1)) = 
+                   (\<Sum>\<^sub>\<infinity>k\<in>(A'\<inter>A)\<union>(A-A'). norm (f k y - 1))"
+      proof (rule infsum_Un_disjoint [symmetric])
+        show "(\<lambda>k. f k y - 1) abs_summable_on A' \<inter> A"
+          by fact
+        show "(\<lambda>k. f k y - 1) abs_summable_on A - A'"
+          by (rule summable_on_finite) fact
+      qed auto
+      also have "(A'\<inter>A)\<union>(A-A') = A"
+        by blast
+      finally show ?thesis .
+    qed
+  qed
+qed
+
 corollary uniform_limit_infprod_M_test:
   fixes f :: "'k \<Rightarrow> 'a :: topological_space \<Rightarrow> 'b :: {real_normed_div_algebra, comm_ring_1, banach, semidom, topological_semigroup_mult, t2_space}"
   assumes le: "\<And>k y. k \<in> A \<Longrightarrow> y \<in> B \<Longrightarrow> norm (f k y - 1) \<le> M k"
     and M: "M summable_on A"
   shows "uniform_limit B (\<lambda>X y. \<Prod>k\<in>X. f k y) (\<lambda>y. \<Prod>\<^sub>\<infinity>k\<in>A. f k y) (finite_subsets_at_top A)"
-  \<comment> \<open>every step instantiated: at a general index type the search-based versions of these two
-      applications diverge\<close>
-proof (rule uniform_limit_prodinf'[where L = "\<lambda>y. \<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)"
-                                     and C = "\<Sum>\<^sub>\<infinity>k\<in>A. M k"])
-  show "uniform_limit B (\<lambda>X y. \<Sum>k\<in>X. norm (f k y - 1))
-                        (\<lambda>y. \<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)) (finite_subsets_at_top A)"
-  proof (rule uniform_limit_infsum_M_test[where h = "\<lambda>k y. norm (f k y - 1)" and M = M])
-    show "\<And>k y. k \<in> A \<Longrightarrow> y \<in> B \<Longrightarrow> norm (f k y - 1) \<le> M k"
-      using le by blast
-    show "\<And>k y. k \<in> A \<Longrightarrow> y \<in> B \<Longrightarrow> 0 \<le> norm (f k y - 1)"
-      by simp
-    show "M summable_on A"
-      by (rule M)
-  qed
-  show "(\<Sum>\<^sub>\<infinity>k\<in>A. norm (f k y - 1)) \<le> (\<Sum>\<^sub>\<infinity>k\<in>A. M k)" if y: "y \<in> B" for y
-  proof (intro M infsum_mono)
-    show "(\<lambda>k. norm (f k y - 1)) summable_on A"
-      using M le summable_on_comparison_test y by fastforce
-    show "\<And>k. k \<in> A \<Longrightarrow> norm (f k y - 1) \<le> M k"
-      using le y by blast
-  qed
-qed
+  by (rule uniform_limit_infprod_M_test_strong[OF assms(1) _ assms(2)]) auto
 
-text \<open>
-  The bridge to the sequential theory.  A uniform limit along
-  \<^term>\<open>finite_subsets_at_top (UNIV :: nat set)\<close> specialises to a uniform limit over the initial
-  segments.  For the logarithmic derivative of a
-  Weierstrass product the detour is no longer needed: \<open>uniform_limit_prodinf'\<close> feeds
-  \<open>logderiv_infprod_uniform_limit\<close> above directly, both being stated along
-  \<^term>\<open>finite_subsets_at_top A\<close>.
-\<close>
 corollary uniform_limit_prod_lessThan:
   fixes f :: "nat \<Rightarrow> 'a \<Rightarrow> 'b :: {metric_space, comm_monoid_mult}"
   assumes "uniform_limit B (\<lambda>X y. \<Prod>x\<in>X. f x y) P (finite_subsets_at_top UNIV)"

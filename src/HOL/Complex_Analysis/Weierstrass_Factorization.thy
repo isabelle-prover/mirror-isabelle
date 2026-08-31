@@ -1,8 +1,10 @@
 section \<open>The Weierstra\ss\ Factorisation Theorem\<close>
 theory Weierstrass_Factorization
   imports Meromorphic
-begin 
-                
+begin
+
+no_notation Infinite_Set_Sum.abs_summable_on (infix \<open>abs'_summable'_on\<close> 50)
+
 subsection \<open>The elementary factors\<close>
 
 text \<open>
@@ -39,7 +41,11 @@ lemma zorder_weierstrass_factor [simp]: "zorder (weierstrass_factor n) 1 = 1"
 proof (rule zorder_eqI)
   show "(\<lambda>z. -exp (\<Sum>k=1..n. z ^ k / of_nat k)) holomorphic_on UNIV"
     by (intro holomorphic_intros) auto
-qed (auto simp: weierstrass_factor_def algebra_simps)  
+qed (auto simp: weierstrass_factor_def algebra_simps)
+
+lemma has_zorder_weierstrass_factor [zorder_intros]: "has_zorder (weierstrass_factor n) 1 1"
+  by (rule has_zorderI)
+     (auto intro!: analytic_on_imp_meromorphic_on analytic_intros eventually_neq_at_within)
 
 lemma weierstrass_factor_bound:
   assumes "norm z \<le> 1 / 2"
@@ -124,154 +130,183 @@ text \<open>
 \<close>
 
 locale weierstrass_product =
-  fixes a :: "nat \<Rightarrow> complex"
-  fixes p :: "nat \<Rightarrow> nat"
-  assumes a_nonzero: "\<And>n. a n \<noteq> 0"
-  assumes filterlim_a: "filterlim a at_infinity at_top"
-  assumes summable_a_p: "\<And>r. r > 0 \<Longrightarrow> summable (\<lambda>n. (r / norm (a n)) ^ Suc (p n))"
+  fixes a :: "'a \<Rightarrow> complex"
+  fixes p :: "'a \<Rightarrow> nat"
+  fixes I :: "'a set"
+  assumes a_nonzero: "\<And>x. x \<in> I \<Longrightarrow> a x \<noteq> 0"
+  assumes filterlim_a: "filterlim a at_infinity (inf cofinite (principal I))"
+  assumes summable_a_p: "\<And>r. r > 0 \<Longrightarrow> (\<lambda>x. (r / norm (a x)) ^ Suc (p x)) summable_on I"
 begin
 
-definition f :: "complex \<Rightarrow> complex" where
-  "f z = (\<Prod>n. weierstrass_factor (p n) (z / a n))"
-
-lemma abs_convergent: "abs_convergent_prod (\<lambda>n. weierstrass_factor (p n) (z / a n))"
-  unfolding abs_convergent_prod_conv_summable
-proof (rule summable_comparison_test_ev)
-  have "eventually (\<lambda>n. norm (a n) > 2 * norm z) at_top"
-    using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top_dense)
-  thus "eventually (\<lambda>n. norm (norm (weierstrass_factor (p n) (z / a n) - 1)) \<le>
-          3 * norm (z / a n) ^ Suc (p n)) at_top"
-  proof eventually_elim
-    case (elim n)
-    hence "norm (z / a n) \<le> 1 / 2"
-      by (auto simp: norm_divide divide_simps)
-    thus ?case using weierstrass_factor_bound[of "z / a n" "p n"]
-      by simp
-  qed
-next
-  show "summable (\<lambda>n. 3 * norm (z / a n) ^ Suc (p n))"
-    using summable_mult[OF summable_a_p[of "norm z"], of 3]
-    by (cases "z = 0") (auto simp: norm_divide)
-qed
-
-lemma convergent: "convergent_prod (\<lambda>n. weierstrass_factor (p n) (z / a n))"
-  using abs_convergent[of z] abs_convergent_prod_imp_convergent_prod by blast
-
-lemma has_prod: "(\<lambda>n. weierstrass_factor (p n) (z / a n)) has_prod f z"
-  using convergent[of z] unfolding f_def by auto
-
-lemma finite_occs_a: "finite (a -` {z})"
+lemma finite_occs_a: "finite (a -` {z} \<inter> I)"
 proof -
-  have "eventually (\<lambda>n. norm (a n) > norm z) at_top"
+  have "eventually (\<lambda>n. norm (a n) > norm z) (inf cofinite (principal I))"
     using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top_dense)
-  then obtain N where N: "\<And>n. n \<ge> N \<Longrightarrow> norm (a n) > norm z"
-    by (auto simp: eventually_at_top_linorder)
-  have "n < N" if "n \<in> a -` {z}" for n
-    using N[of n] that by (cases "n < N") auto
-  hence "a -` {z} \<subseteq> {..<N}" "finite {..<N}"
-    by auto
+  hence "finite {x \<in> I. norm (a x) \<le> norm z}"
+    by (auto simp: eventually_inf_principal eventually_cofinite not_less)
   thus ?thesis
-    using finite_subset by blast
+    by (rule finite_subset [rotated]) auto
 qed
+
+definition f :: "complex \<Rightarrow> complex" where
+  "f z = (\<Prod>\<^sub>\<infinity>x\<in>I. weierstrass_factor (p x) (z / a x))"
+
+lemma abs_multipliable: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) abs_multipliable_on I"
+  unfolding abs_multipliable_on_iff_summable_on
+proof -
+  define I1 where "I1 = {x\<in>I. norm (z / a x) \<le> 1 / 2}"
+  define I2 where "I2 = {x\<in>I. norm (z / a x) > 1 / 2}"
+  have "finite I2"
+  proof -
+    have "eventually (\<lambda>x. norm (a x) \<ge> 2 * norm z) (inf cofinite (principal I))"
+      using filterlim_a unfolding filterlim_at_infinity_conv_norm_at_top filterlim_at_top
+      by blast
+    hence "finite {x \<in> I. norm (a x) < 2 * norm z}"
+      by (auto simp: eventually_inf_principal eventually_cofinite not_le)
+    thus "finite I2"
+      by (rule finite_subset [rotated]) (auto simp: I2_def norm_divide divide_simps)
+  qed
+
+  have "(\<lambda>n. weierstrass_factor (p n) (z / a n) - 1) abs_summable_on (I1 \<union> I2)"
+  proof (rule summable_on_Un_disjoint)
+    show "(\<lambda>x. weierstrass_factor (p x) (z / a x) - 1) abs_summable_on I2"
+      by (rule summable_on_finite) fact
+  next
+    show "(\<lambda>x. weierstrass_factor (p x) (z / a x) - 1) abs_summable_on I1"
+    proof (rule summable_on_comparison_test)
+      have "(\<lambda>x. 3 * norm (z / a x) ^ Suc (p x)) summable_on I"
+        using summable_on_cmult_right[OF summable_a_p[of "norm z"], of 3]
+        by (cases "z = 0") (auto simp: norm_divide)
+      thus "(\<lambda>x. 3 * norm (z / a x) ^ Suc (p x)) summable_on I1"
+        by (rule summable_on_subset) (auto simp: I1_def)
+    next
+      fix x assume x: "x \<in> I1"
+      hence "norm (z / a x) \<le> 1 / 2"
+        by (auto simp: norm_divide I1_def)
+      thus "norm (weierstrass_factor (p x) (z / a x) - 1) \<le> 3 * cmod (z / a x) ^ Suc (p x)"
+        by (rule weierstrass_factor_bound)
+    qed auto
+  qed (auto simp: I1_def I2_def)
+  also have "I1 \<union> I2 = I"
+    by (auto simp: I1_def I2_def)
+  finally show "(\<lambda>n. weierstrass_factor (p n) (z / a n) - 1) abs_summable_on I" .
+qed
+
+lemma multipliable: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) multipliable_on I"
+  using abs_multipliable by (rule abs_multipliable_multipliable)
+
+lemma has_setprod: "((\<lambda>x. weierstrass_factor (p x) (z / a x)) has_setprod f z) I"
+  using multipliable[of z] unfolding f_def by auto
 
 context
   fixes P
-  defines "P \<equiv> (\<lambda>N z. \<Prod>n<N. weierstrass_factor (p n) (z / a n))"
+  defines "P \<equiv> (\<lambda>J z. \<Prod>x\<in>J. weierstrass_factor (p x) (z / a x))"
 begin 
-
-lemma uniformly_convergent:
-  assumes "R > 0"
-  shows   "uniformly_convergent_on (cball 0 R) P"
-  unfolding P_def
-proof (rule uniformly_convergent_on_prod')
-  show "uniformly_convergent_on (cball 0 R) (\<lambda>N z. \<Sum>n<N. norm (weierstrass_factor (p n) (z / a n) - 1))"
-  proof (rule Weierstrass_m_test'_ev)
-    have "eventually (\<lambda>n. norm (a n) \<ge> 2 * R) sequentially"
-      using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top)
-    thus "\<forall>\<^sub>F n in sequentially. \<forall>z\<in>cball 0 R. norm (norm (weierstrass_factor (p n) (z / a n) - 1)) \<le>
-            3 * (R / norm (a n)) ^ Suc (p n)"
-    proof eventually_elim
-      case (elim n)
-      show ?case
-      proof safe
-        fix z :: complex assume z: "z \<in> cball 0 R"
-        have "2 * norm z \<le> 2 * R"
-          using z by auto
-        also have "\<dots> \<le> norm (a n)"
-          using elim by simp
-        finally have "norm (a n) \<ge> 2 * norm z" .
-        hence "norm (weierstrass_factor (p n) (z / a n) - 1) \<le> 3 * norm (z / a n) ^ Suc (p n)"
-          by (intro weierstrass_factor_bound) (auto simp: norm_divide divide_simps)
-        also have "\<dots> = 3 * (norm z / norm (a n)) ^ Suc (p n)"
-          by (simp add: norm_divide)
-        also have "\<dots> \<le> 3 * (R / norm (a n)) ^ Suc (p n)"
-          by (intro mult_left_mono power_mono divide_right_mono) (use z in auto)
-        finally show "norm (norm (weierstrass_factor (p n) (z / a n) - 1)) \<le>
-                        3 * (R / norm (a n)) ^ Suc (p n)" by simp
-      qed
-    qed
-  next
-    show "summable (\<lambda>n. 3 * (R / norm (a n)) ^ Suc (p n))"
-      by (intro summable_mult summable_a_p assms)
-  qed
-qed (auto intro!: continuous_intros simp: a_nonzero)
 
 lemma uniform_limit:
   assumes "R > 0"
-  shows   "uniform_limit (cball 0 R) P f at_top"
+  shows   "uniform_limit (cball 0 R) P f (finite_subsets_at_top I)"
 proof -
-  obtain g where g: "uniform_limit (cball 0 R) P g at_top"
-    using uniformly_convergent[OF assms] by (auto simp: uniformly_convergent_on_def)
-  also have "?this \<longleftrightarrow> uniform_limit (cball 0 R) P f at_top"
-  proof (intro uniform_limit_cong)
-    fix z :: complex assume "z \<in> cball 0 R"
-    with g have "(\<lambda>n. P (Suc n) z) \<longlonglongrightarrow> g z"
-      by (metis tendsto_uniform_limitI filterlim_sequentially_Suc)
-    moreover have "(\<lambda>n. P (Suc n) z) \<longlonglongrightarrow> f z"
-      using convergent_prod_LIMSEQ[OF convergent[of z]] unfolding P_def lessThan_Suc_atMost
-      by (simp add: f_def)
-    ultimately show "g z = f z"
-      using tendsto_unique by force
-  qed auto
-  finally show ?thesis .
+  define I1 where "I1 = {x\<in>I. R \<le> norm (a x) / 2}"
+  show ?thesis
+    unfolding P_def f_def
+  proof (rule uniform_limit_infprod_M_test_strong)
+    show "finite (I - I1)"
+    proof -
+      have "eventually (\<lambda>x. norm (a x) \<ge> 2 * R) (inf cofinite (principal I))"
+        using filterlim_a unfolding filterlim_at_infinity_conv_norm_at_top filterlim_at_top
+        by blast
+      hence "finite {x \<in> I. norm (a x) < 2 * R}"
+        by (auto simp: eventually_inf_principal eventually_cofinite not_le)
+      thus "finite (I - I1)"
+        by (rule finite_subset [rotated]) (auto simp: I1_def norm_divide divide_simps)
+    qed
+  next
+    fix x z assume x: "x \<in> I1" and z: "z \<in> cball (0::complex) R"
+    from x z have "norm (weierstrass_factor (p x) (z / a x) - 1) \<le> 3 * (norm (z / a x)) ^ Suc (p x)"
+      by (intro weierstrass_factor_bound) (auto simp: norm_divide divide_simps I1_def)
+    also have "\<dots> = 3 * (norm z / norm (a x)) ^ Suc (p x)"
+      by (simp add: norm_divide)
+    also have "\<dots> \<le> 3 * (R / norm (a x)) ^ Suc (p x)"
+      by (intro mult_left_mono power_mono divide_right_mono) (use z in auto)
+    finally show "norm (weierstrass_factor (p x) (z / a x) - 1) \<le>
+                    3 * (R / norm (a x)) ^ Suc (p x)" by simp
+  next
+    show "(\<lambda>x. 3 * (R / norm (a x)) ^ Suc (p x)) summable_on I1"
+      by (rule summable_on_cmult_right, rule summable_on_subset, rule summable_a_p)
+         (auto simp: I1_def \<open>R > 0\<close>)
+  next
+    fix x assume x: "x \<in> I - I1"
+    have "compact ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
+      by (intro compact_continuous_image continuous_intros) (use x in \<open>auto simp: a_nonzero\<close>)
+    thus "bounded ((\<lambda>z. weierstrass_factor (p x) (z / a x) - 1) ` cball 0 R)"
+      by (rule compact_imp_bounded)
+  qed
+qed
+
+lemma analytic [analytic_intros]: "f analytic_on A"
+proof -
+  have "f analytic_on {z}" for z
+  proof -
+    define r where "r = norm z + 1"
+    have r: "r > 0"
+      by (auto simp: r_def add_nonneg_pos)
+    have "\<forall>\<^sub>F J in finite_subsets_at_top I. finite J \<and> J \<subseteq> I"
+      by (rule eventually_finite_subsets_at_top_weakI) auto
+    hence *: "\<forall>\<^sub>F J in finite_subsets_at_top I. continuous_on (cball 0 r) (P J) \<and> P J holomorphic_on ball 0 r"
+      by eventually_elim (auto simp: P_def a_nonzero intro!: continuous_intros holomorphic_intros)
+    have "f holomorphic_on ball 0 r" using r holomorphic_uniform_limit[OF * uniform_limit]
+      by auto
+    hence "f analytic_on ball 0 r"
+      by (simp add: analytic_on_open)
+    thus "f analytic_on {z}"
+      by (rule analytic_on_subset) (auto simp: r_def)
+  qed
+  thus "f analytic_on A"
+    by (metis analytic_on_analytic_at)
 qed
 
 lemma holomorphic [holomorphic_intros]: "f holomorphic_on A"
-proof (rule holomorphic_on_subset)
-  show "f holomorphic_on UNIV"
-  proof (rule holomorphic_uniform_sequence)
-    fix z :: complex
-    have *: "uniform_limit (cball 0 (norm z + 1)) P f sequentially"
-      by (rule uniform_limit) (auto intro: add_nonneg_pos)
-    hence "uniform_limit (cball z 1) P f sequentially"
-      by (rule uniform_limit_on_subset) (simp add: cball_subset_cball_iff)
-    thus "\<exists>d>0. cball z d \<subseteq> UNIV \<and> uniform_limit (cball z d) P f sequentially"
-      by (intro exI[of _ 1]) auto
-  qed (auto intro!: holomorphic_intros simp: P_def)
-qed auto
-
-lemma analytic [analytic_intros]: "f analytic_on A"
-  using holomorphic[of UNIV] analytic_on_holomorphic by blast
+  using analytic by (rule analytic_imp_holomorphic)
 
 end
 
 
-lemma zero: "f z = 0 \<longleftrightarrow> z \<in> range a"
-  using has_prod_eq_0_iff[OF has_prod, of z] by (auto simp: a_nonzero)  
+lemma zero: "f z = 0 \<longleftrightarrow> z \<in> a ` I"
+proof -
+  have *: "(\<lambda>x. weierstrass_factor (p x) (z / a x)) strongly_multipliable_on I"
+    using abs_multipliable by (rule abs_multipliable_on_imp_strongly_multipliable_on)
+  show ?thesis
+    using has_setprod_eq_0_iff[OF * has_setprod] a_nonzero by auto
+qed
 
-lemma not_islimpt_range_a: "\<not>z islimpt (range a)"
-proof
-  assume "z islimpt (range a)"
-  then obtain r :: "nat \<Rightarrow> nat" where r: "strict_mono r" "(a \<circ> r) \<longlonglongrightarrow> z"
-    using islimpt_range_imp_convergent_subsequence by metis
-  moreover have "filterlim (a \<circ> r) at_infinity sequentially"
-    unfolding o_def by (rule filterlim_compose[OF filterlim_a filterlim_subseq[OF r(1)]])
-  ultimately show False
-    by (meson not_tendsto_and_filterlim_at_infinity trivial_limit_sequentially)
+lemma not_islimpt_range_a: "\<not>z islimpt a ` I"
+proof -
+  define r where "r = norm z + 1"
+  define U where "U = ball (0::complex) r"
+  have "finite (U \<inter> a ` I)"
+  proof -
+    have "eventually (\<lambda>n. norm (a n) \<ge> r) (inf cofinite (principal I))"
+      using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top)
+    hence "finite {x \<in> I. norm (a x) < r}"
+      by (auto simp: eventually_inf_principal eventually_cofinite not_le)
+    also have "{x\<in>I. norm (a x) < r} = a -` U \<inter> I"
+      by (auto simp: U_def)
+    finally have "finite (a -` U \<inter> I)" .
+    hence "finite (a ` (a -` U \<inter> I))"
+      by (rule finite_imageI)
+    also have "a ` (a -` U \<inter> I) = U \<inter> a ` I"
+      by auto
+    finally show ?thesis .
+  qed
+  moreover have "open U" "z \<in> U"
+    by (auto simp: U_def r_def)
+  ultimately show ?thesis
+    unfolding islimpt_eq_acc_point by blast
 qed
 
 lemma isolated_zero:
-  assumes "z \<in> range a"
+  assumes "z \<in> a ` I"
   shows   "isolated_zero f z"
 proof -
   have "eventually (\<lambda>z. f z \<noteq> 0) (at z)"
@@ -284,120 +319,105 @@ proof -
     by (auto simp: isolated_zero_def)
 qed
 
-lemma zorder: "zorder f z = card (a -` {z})"
+lemma has_zorder: "has_zorder f z (card (a -` {z} \<inter> I))"
 proof -
-  obtain N where N: "a -` {z} \<subseteq> {..N}"
-    using finite_occs_a[of z] by (meson finite_nat_iff_bounded_le)
-  define g where "g = (\<lambda>z n. weierstrass_factor (p n) (z / a n))"
-  define h1 where "h1 = (\<lambda>w. (\<Prod>n\<in>{..N} - a-`{z}. g w n) * (\<Prod>n. g w (n + Suc N)))"
-  define h2 where "h2 = (\<lambda>w. (\<Prod>n\<in>{..N} \<inter> a-`{z}. g w n))"
-
-  have has_prod_h1': "(\<lambda>n. g w (n + Suc N)) has_prod (\<Prod>n. g w (n + Suc N))" for w
-    unfolding g_def
-    by (intro convergent_prod_has_prod convergent_prod_ignore_initial_segment convergent)
-
-  have f_eq: "f w = h1 w * h2 w" for w
-  proof -
-    have "f w = (\<Prod>n<Suc N. g w n) * (\<Prod>n. g w (n + Suc N))"
-    proof (rule has_prod_unique2)
-      show "(\<lambda>n. g w n) has_prod ((\<Prod>n<Suc N. g w n) * (\<Prod>n. g w (n + Suc N)))"
-        unfolding g_def by (intro has_prod_ignore_initial_segment' convergent)
-      show "g w has_prod f w"
-        unfolding g_def by (rule has_prod)
-    qed 
-    also have "{..<Suc N} = ({..N} - a-`{z}) \<union> ({..N} \<inter> a-`{z})"
-      by auto
-    also have "(\<Prod>k\<in>\<dots>. g w k) = (\<Prod>k\<in>{..N} - a-`{z}. g w k) * (\<Prod>k\<in>{..N} \<inter> a-`{z}. g w k)"
-      by (intro prod.union_disjoint) auto
-    finally show ?thesis
-      by (simp add: h1_def h2_def mult_ac)
-  qed    
-
-  have ana_h1: "h1 analytic_on {z}"
-  proof -
-    interpret h1: weierstrass_product "\<lambda>n. a (n + Suc N)" "\<lambda>n. p (n + Suc N)"
-    proof
-      have "filterlim (\<lambda>n. n + Suc N) at_top at_top"
-        by (rule filterlim_add_const_nat_at_top)
-      thus "filterlim (\<lambda>n. a (n + Suc N)) at_infinity at_top"
-        by (intro filterlim_compose[OF filterlim_a])
-      show "summable (\<lambda>n. (r / cmod (a (n + Suc N))) ^ Suc (p (n + Suc N)))" if "r > 0" for r
-        by (intro summable_ignore_initial_segment summable_a_p that)
-    qed (auto simp: a_nonzero)
-
-    show ?thesis using h1.analytic
-      unfolding h1_def g_def h1.f_def by (intro analytic_intros) (auto simp: a_nonzero)
+  define g where "g = (\<lambda>z x. weierstrass_factor (p x) (z / a x))"
+  define I1 where "I1 = {x\<in>I. a x \<noteq> z}"
+  define I2 where "I2 = a -` {z} \<inter> I"
+  have "finite I2"
+    using finite_occs_a[of z] unfolding I2_def .
+  hence prod2: "(g w has_setprod (\<Prod>x\<in>I2. g w x)) I2" for w
+    by (rule has_setprod_finite)
+  have "has_zorder (\<lambda>w. \<Prod>x\<in>I2. g w x) z (\<Sum>x\<in>I2. 1)"
+  proof (intro zorder_intros)
+    fix x assume x: "x \<in> I2"
+    have [simp]: "a x \<noteq> 0"
+      using a_nonzero[of x] x by (auto simp: I2_def)
+    have "has_zorder (\<lambda>z. weierstrass_factor (p x) z) 1 1"
+      by (rule zorder_intros)
+    hence *: "has_zorder (\<lambda>z. weierstrass_factor (p x) z) (1 / a x * z) 1"
+      using x by (auto simp: I2_def)
+    show "has_zorder (\<lambda>z. g z x) z 1"
+      using has_zorder_compose_scale[OF *] by (simp add: g_def)
   qed
-
-  have ana_h2: "h2 analytic_on {z}"
-    unfolding h2_def g_def by (intro analytic_intros) (auto simp: a_nonzero)
-
-  have "zorder f z = zorder (\<lambda>w. h1 w * h2 w) z"
-    by (simp add: f_eq [abs_def])
-  also have "\<dots> = zorder h1 z + zorder h2 z"
-  proof (rule zorder_times_analytic)
-    have "eventually (\<lambda>w. f w \<noteq> 0) (at z)"
-      using not_islimpt_range_a[of z] by (auto simp: islimpt_conv_frequently_at frequently_def zero)
-    thus "eventually (\<lambda>w. h1 w * h2 w \<noteq> 0) (at z)"
-      by (simp add: f_eq)
-  qed fact+
-  also have "zorder h2 z = (\<Sum>n\<in>{..N} \<inter> a -` {z}. zorder (\<lambda>w. g w n) z)"
-    unfolding h2_def
-    by (intro zorder_prod_analytic)
-       (auto simp: a_nonzero g_def eventually_at_filter intro!: analytic_intros)
-  also have "h1 z \<noteq> 0" using N has_prod_eq_0_iff[OF has_prod_h1'[of z]]
-    by (auto simp: h1_def g_def)
-  hence "zorder h1 z = 0"
-    by (intro zorder_eq_0I ana_h1)
-  also have "(\<Sum>n\<in>{..N} \<inter> a -` {z}. zorder (\<lambda>w. g w n) z) = (\<Sum>n\<in>{..N} \<inter> a -` {z}. 1)"
-  proof (intro sum.cong refl)
-    fix n :: nat
-    assume n: "n \<in> {..N} \<inter> a -` {z}"
-    have "zorder (\<lambda>w. weierstrass_factor (p n) (1 / a n * w)) z =
-          zorder (weierstrass_factor (p n)) (1 / a n * z)"
-      using a_nonzero[of n] eventually_neq_at_within[of 1 "z / a n" UNIV]
-      by (intro zorder_scale analytic_intros analytic_on_imp_meromorphic_on) auto
-    hence "zorder (\<lambda>w. g w n) z = zorder (weierstrass_factor (p n)) 1"
-      using n a_nonzero[of n] by (auto simp: g_def)
-    thus "zorder (\<lambda>w. g w n) z = 1"
-      by simp
-  qed
-  also have "\<dots> = card ({..N} \<inter> a -` {z})"
+  hence zorder2: "has_zorder (\<lambda>w. \<Prod>x\<in>I2. g w x) z (card I2)"
     by simp
-  also have "{..N} \<inter> a -` {z} = a -` {z}"
-    using N by blast
+
+  have abs_mult1: "g w abs_multipliable_on I1" for w
+    by (rule abs_multipliable_on_subset[of _ I])
+       (use abs_multipliable in \<open>auto simp: g_def I1_def\<close>)
+  hence prod1: "(g w has_setprod (\<Prod>\<^sub>\<infinity>x\<in>I1. g w x)) I1" for w
+    by (intro has_setprod_infprod abs_multipliable_multipliable)
+  have zorder1: "has_zorder (\<lambda>w. \<Prod>\<^sub>\<infinity>x\<in>I1. g w x) z 0"
+  proof (rule analytic_imp_has_zorder_0)
+    show "(\<lambda>w. infprod (g w) I1) analytic_on {z}"
+    proof -
+      interpret I1: weierstrass_product a p I1
+      proof
+        show "filterlim a at_infinity (inf cofinite (principal I1))"
+          by (intro filterlim_mono[OF filterlim_a] inf_mono) (auto simp: I1_def)
+      next
+        fix r :: real assume r: "r > 0"
+        show "(\<lambda>x. (r / cmod (a x)) ^ Suc (p x)) summable_on I1"
+          by (rule summable_on_subset [OF summable_a_p[OF r]]) (auto simp: I1_def)
+      qed (auto simp: a_nonzero I1_def)
+      show ?thesis
+        using I1.analytic[of "{z}"] by (simp add: I1.f_def [abs_def] g_def)
+    qed
+  next
+    have "(\<Prod>\<^sub>\<infinity>x\<in>I1. g z x) = 0 \<longleftrightarrow> (\<exists>x\<in>I1. g z x = 0)"
+      by (rule has_setprod_eq_0_iff)
+         (use prod1 abs_mult1 in \<open>auto intro: abs_multipliable_on_imp_strongly_multipliable_on\<close>)
+    thus "infprod (g z) I1 \<noteq> 0"
+      by (auto simp: g_def I1_def)
+  qed
+
+  have "has_zorder (\<lambda>w. (\<Prod>\<^sub>\<infinity>x\<in>I1. g w x) * (\<Prod>x\<in>I2. g w x)) z (card I2)"
+    using has_zorder_mult[OF zorder1 zorder2 refl] by simp
+  also have "(\<lambda>w. (\<Prod>\<^sub>\<infinity>x\<in>I1. g w x) * (\<Prod>x\<in>I2. g w x)) = f"
+  proof
+    fix w :: complex
+    have "((\<lambda>x. g w x) has_setprod ((\<Prod>\<^sub>\<infinity>x\<in>I1. g w x) * (\<Prod>x\<in>I2. g w x))) (I1 \<union> I2)"
+      by (intro has_setprod_Un_disjoint prod1 prod2) (auto simp: I1_def I2_def)
+    also have "I1 \<union> I2 = I"
+      by (auto simp: I1_def I2_def)
+    finally show "(\<Prod>\<^sub>\<infinity>x\<in>I1. g w x) * (\<Prod>x\<in>I2. g w x) = f w"
+      using has_setprod_unique[OF _ has_setprod[of w]] unfolding g_def by blast
+  qed
   finally show ?thesis
-    by simp
+    by (simp add: I2_def)
 qed
+
+lemma zorder: "zorder f z = card (a -` {z} \<inter> I)"
+  using has_zorder by (simp add: has_zorder_def)
 
 end (* weierstrass_product *)
 
 
 text \<open>
-  The following locale is the most common case of $p(n) = n$.
+  The following locale is the case where we take the product over a sequence of points 
+  $(a_n)_{n\geq 0}$ with $|a_n|\to\infty$ and we choose $p(n) = n$, which is guaranteed to work.
 \<close>
 locale weierstrass_product' =
   fixes a :: "nat \<Rightarrow> complex"
-  assumes a_nonzero: "\<And>n. a n \<noteq> 0"
-  assumes filterlim_a: "filterlim a at_infinity at_top"
-  assumes finite_occs_a': "\<And>z. z \<in> range a \<Longrightarrow> finite (a -` {z})"
+  assumes a_nonzero': "\<And>n. a n \<noteq> 0"
+  assumes filterlim_a': "filterlim a at_infinity at_top"
 begin
 
-lemma finite_occs_a: "finite (a -` {z})"
-proof (cases "z \<in> range a")
-  case False
-  hence "a -` {z} = {}"
-    by auto
-  thus ?thesis by simp
-qed (use finite_occs_a'[of z] in auto)
-
-sublocale weierstrass_product a "\<lambda>n. n"
+sublocale weierstrass_product a "\<lambda>n. n" UNIV
 proof
+  show "a n \<noteq> 0" for n :: nat
+    using a_nonzero' by auto
+next
+  show "filterlim a at_infinity (inf cofinite (principal UNIV))"
+    using filterlim_a' by (simp add: cofinite_eq_sequentially)
+next
   fix r :: real assume r: "r > 0"
-  show "summable (\<lambda>n. (r / norm (a n)) ^ Suc n)"
+
+  have "summable (\<lambda>n. (r / norm (a n)) ^ Suc n)"
   proof (rule summable_comparison_test_ev)
     have "eventually (\<lambda>n. norm (a n) > 2 * r) at_top"
-      using filterlim_a by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top_dense)
+      using filterlim_a' by (metis filterlim_at_infinity_imp_norm_at_top filterlim_at_top_dense)
     thus "eventually (\<lambda>n. norm ((r / norm (a n)) ^ Suc n) \<le> (1 / 2) ^ Suc n) at_top"
     proof eventually_elim
       case (elim n)
@@ -411,7 +431,9 @@ proof
     show "summable (\<lambda>n. (1 / 2) ^ Suc n :: real)"
       unfolding summable_Suc_iff by (intro summable_geometric) auto
   qed
-qed (use a_nonzero filterlim_a finite_occs_a in auto)
+  thus "(\<lambda>x. (r / norm (a x)) ^ Suc x) summable_on UNIV"
+    by (rule summable_nonneg_imp_summable_on) (use r in auto)
+qed
 
 end (* weierstrass_product' *)
 
@@ -1042,8 +1064,6 @@ next
     proof
       show "a n \<noteq> 0" for n
         using a(2) by auto
-      show "finite (a -` {z})" if "z \<in> range a" for z
-        using a(3)[of z] a(2) that by simp
     qed fact+
 
     define m where "m = (if 0 \<in> A then nat (zorder g 0) else  0)"
@@ -1095,7 +1115,7 @@ next
       also have "int (subdegree F) = zorder f.f z"
         using has_fps_expansion_zorder[OF exp1] by simp
       also have "\<dots> = int (card (a -` {z}))"
-        by (rule f.zorder)
+        using f.zorder by simp
       also have "card (a -` {z}) = (if z = 0 then 0 else c z)"
       proof (cases "z = 0")
         case True
