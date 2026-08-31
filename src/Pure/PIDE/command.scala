@@ -444,16 +444,15 @@ object Command {
       case Thy_Header.THEORY =>
         val reader = span.content_reader
         val thy = resources.check_thy(session.session_options, node_name, span.content_reader)
-        val imports = thy.imports
         val raw_imports =
           try {
             val read_imports = Thy_Header.read(node_name, reader).imports.map(_._1)
-            if (imports.length == read_imports.length) read_imports else error("")
+            if (thy.imports.length == read_imports.length) read_imports else error("")
           }
           catch { case _: Throwable => List.fill(thy.imports.length)("") }
 
         val errors =
-          for { ((import_name, pos), s) <- imports zip raw_imports if !can_import(import_name) }
+          for { ((import_name, pos), s) <- thy.imports zip raw_imports if !can_import(import_name) }
           yield {
             val completion =
               if (Url.is_base_name(s)) resources.complete_import_name(node_name, s) else Nil
