@@ -203,15 +203,12 @@ object Thy_Header {
     strict: Boolean = true,
     unicode_symbols: Boolean = true
   ): Thy_Header = {
-    val (_, tokens0) = read_tokens(reader, true)
-    val text = Scan.reader_decode_utf8(reader, Token.implode(tokens0))
-
+    val text = Scan.reader_decode_utf8(reader, Token.implode(read_tokens(reader, true)._2))
     val (skip_tokens, tokens) = read_tokens(Scan.char_reader(text), strict)
-    val pos =
+    val start =
       if (command) Token.Pos.command
       else skip_tokens.foldLeft(Token.Pos.file(node_name.node))(_ advance _)
-
-    Parsers.parse_header(tokens, pos).output(unicode_symbols).check(node_name)
+    Parsers.parse_header(tokens, start).output(unicode_symbols).check(node_name)
   }
 }
 
