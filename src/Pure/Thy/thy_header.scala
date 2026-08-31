@@ -179,15 +179,15 @@ object Thy_Header {
       }
 
     val all_tokens = make_tokens(reader)
-    val drop_tokens =
+    val skip_tokens =
       if (strict) Nil
       else all_tokens.takeWhile(tok => !tok.is_command(Thy_Header.THEORY)).toList
 
-    val tokens = all_tokens.drop(drop_tokens.length)
+    val tokens = all_tokens.drop(skip_tokens.length)
     val tokens1 = tokens.takeWhile(tok => !tok.is_begin).toList
     val tokens2 = tokens.dropWhile(tok => !tok.is_begin).headOption.toList
 
-    (drop_tokens, tokens1 ::: tokens2)
+    (skip_tokens, tokens1 ::: tokens2)
   }
 
   private object Parsers extends Parsers {
