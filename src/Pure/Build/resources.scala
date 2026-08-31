@@ -366,10 +366,13 @@ class Resources(
 
   final class Dependencies private(
     protected val rev_entries: List[Resources.Thy],
-    protected val seen: Set[Document.Node.Name]
+    protected val visited: Set[Document.Node.Name]
   ) {
     private def cons(thy: Resources.Thy): Dependencies =
-      new Dependencies(thy :: rev_entries, seen)
+      new Dependencies(thy :: rev_entries, visited)
+
+    private def visit(name: Document.Node.Name): Dependencies =
+      new Dependencies(rev_entries, visited + name)
 
     def require_thys(
       session_options: Options,
@@ -388,9 +391,9 @@ class Resources(
           "The error(s) above occurred for theory " + quote(name.theory) +
             Dependencies.required_by(initiators) + Position.here(pos)
 
-        if (dependencies.seen(name)) dependencies
+        if (dependencies.visited(name)) dependencies
         else {
-          val dependencies1 = new Dependencies(dependencies.rev_entries, dependencies.seen + name)
+          val dependencies1 = dependencies.visit(name)
           if (loaded_theory(name)) dependencies1
           else {
             try {
