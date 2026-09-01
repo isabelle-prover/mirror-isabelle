@@ -22,7 +22,9 @@ import org.scalajs.linker.{PathIRContainer, StandardImpl, PathOutputDirectory}
 import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer, ModuleKind}
 
 import dotty.tools.dotc.Driver
-import dotty.tools.dotc.interfaces.{Diagnostic, SimpleReporter}
+import dotty.tools.dotc.core.Contexts.Context
+import dotty.tools.dotc.interfaces.Diagnostic
+import dotty.tools.dotc.reporting
 
 
 object Scalajs {
@@ -36,16 +38,7 @@ object Scalajs {
     enum Phase { case compilation, linking }
     enum Kind { case error, warning, info, debug, other }
 
-    def compilation(diagnostic: Diagnostic): Message = {
-      val kind =
-        diagnostic.level() match {
-         case Diagnostic.ERROR => Kind.error
-         case Diagnostic.WARNING => Kind.warning
-         case Diagnostic.INFO => Kind.info
-         case _ => Kind.other
-        }
-      Message(Phase.compilation, kind, diagnostic.message().nn)
-    }
+    def compilation(kind: Kind, text: String): Message = Message(Phase.compilation, kind, text)
 
     def linking(level: logging.Level, text: String): Message = {
       val kind =
@@ -100,8 +93,17 @@ object Scalajs {
 
       val msgs = new mutable.ListBuffer[Message]()
       val reporter =
-        new SimpleReporter {
-          def report(diagnostic: Diagnostic): Unit = { msgs += Message.compilation(diagnostic.nn) }
+        new reporting.AbstractReporter {
+          def doReport(diagnostic: reporting.Diagnostic)(using Context): Unit = {
+            val kind =
+              diagnostic.level() match {
+                case Diagnostic.ERROR => Message.Kind.error
+                case Diagnostic.WARNING => Message.Kind.warning
+                case Diagnostic.INFO => Message.Kind.info
+                case _ => Message.Kind.other
+              }
+            msgs += Message.compilation(kind, messageAndPos(diagnostic))
+          }
         }
 
       val args = settings ::: "--" :: sources.map(_.toString)
