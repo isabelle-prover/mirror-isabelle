@@ -564,6 +564,9 @@ object Sessions {
   object Conditions {
     def init(session_options: Options): Conditions =
       new Conditions(session_options, SortedMap.empty)
+
+    def explode(options: Options): List[String] =
+      space_explode(',', options.string(Condition.name))
   }
 
   final class Conditions private(
@@ -588,7 +591,10 @@ object Sessions {
         case errs => error(cat_lines(errs))
       }
 
-    def eval(cond: String): Conditions =
+    def options(specs: Options.Update): Options =
+      session_options ++ specs.filter(p => p._1 == Condition.name)
+
+    def evaluate(cond: String): Conditions =
       if (rep.isDefinedAt(cond)) this
       else {
         val result =
@@ -605,11 +611,10 @@ object Sessions {
         new Conditions(session_options, rep + (cond -> result))
       }
 
-    def eval(options: Options): Conditions =
-      space_explode(',', options.string(Condition.name)).foldLeft(this)(_ eval _)
+    def evaluate(conds: List[String]): Conditions = conds.foldLeft(this)(_ evaluate _)
 
-    def eval(options: Options.Update): Conditions =
-      eval(session_options ++ options.filter(p => p._1 == Condition.name))
+    def eval(options: Options): Conditions = evaluate(Conditions.explode(options))
+    def eval(specs: Options.Update): Conditions = eval(options(specs))
 
     override def toString: String = {
       val a = if_proper(good, "good = " + quote(good.mkString(",")))
