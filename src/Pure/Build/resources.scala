@@ -334,21 +334,23 @@ class Resources(
   /* theory and file dependencies */
 
   def dependencies(
-      session_options: Options,
-      thys: List[(Document.Node.Name, Position.T)],
-      options: Options.Update = Nil,
-      progress: Progress = new Progress): Dependencies =
-    Dependencies.require_thys(Dependencies.empty, session_options, thys,
+    session_options: Options,
+    theories: List[(Document.Node.Name, Position.T)],
+    options: Options.Update = Nil,
+    progress: Progress = new Progress
+  ): Dependencies = {
+    Dependencies.require_thys(Dependencies.empty, session_options, theories,
       options = options, progress = progress)
+  }
 
   def session_dependencies(
     info: Sessions.Info,
     progress: Progress = new Progress
   ) : Dependencies = {
     info.theories.foldLeft(Dependencies.empty) {
-      case (dependencies, (options, thys)) =>
+      case (dependencies, (options, theories)) =>
         Dependencies.require_thys(dependencies, info.options,
-          for { (thy, pos) <- thys } yield (import_name(info, thy), pos),
+          for { (s, pos) <- theories } yield (import_name(info, s), pos),
           options = options, progress = progress)
     }
   }
