@@ -192,8 +192,6 @@ object HTML {
     control_blocks: Boolean,
     hidden: Boolean,
   ): Unit = {
-    def output_string(str: String): Unit = xml_output.text(str)
-
     def output_hidden(body: => Unit): Unit =
       if (hidden) {
         xml_output.elem(Markup("span", List("class" -> "hidden")))
@@ -205,22 +203,22 @@ object HTML {
       if (sym.nonEmpty) {
         control_block_begin.get(sym) match {
           case Some(op) if control_blocks =>
-            output_hidden(output_string(sym))
+            output_hidden(xml_output.text(sym))
             xml_output.elem(Markup(op.name, Nil))
           case _ =>
             control_block_end.get(sym) match {
               case Some(op) if control_blocks =>
                 xml_output.end_elem(op.name)
-                output_hidden(output_string(sym))
+                output_hidden(xml_output.text(sym))
               case _ =>
                 if (hidden && Symbol.is_control_encoded(sym)) {
-                  output_hidden(output_string(Symbol.control_prefix))
+                  output_hidden(xml_output.text(Symbol.control_prefix))
                   xml_output.elem(Markup("span", List("class" -> "control")))
-                  output_string(Symbol.control_name(sym).get)
+                  xml_output.text(Symbol.control_name(sym).get)
                   xml_output.end_elem("span")
-                  output_hidden(output_string(Symbol.control_suffix))
+                  output_hidden(xml_output.text(Symbol.control_suffix))
                 }
-                else output_string(sym)
+                else xml_output.text(sym)
             }
         }
       }
