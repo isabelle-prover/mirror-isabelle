@@ -292,7 +292,7 @@ class Resources(
 
         val options = header.options ::: more_options
         val conditions_options = Sessions.Conditions.make_options(session_options, options)
-        val conditions = Sessions.Conditions.eval(session_options, List(conditions_options))
+        val conditions = Sessions.Conditions.init(session_options).eval(conditions_options)
 
         Resources.Thy(
           name = node_name,

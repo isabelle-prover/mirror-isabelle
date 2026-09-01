@@ -501,7 +501,7 @@ object Sessions {
         session_base.used_theories.map(entry =>
           Conditions.make_options(session_info.options, entry.options))
       val conditions =
-        Conditions.eval(session_info.options, theories_options).dest
+        theories_options.foldLeft(Conditions.init(session_info.options))(_ eval _).dest
           .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
 
       val sources =
@@ -572,30 +572,11 @@ object Sessions {
     def make_options(options: Options, opts: Options.Update): Options =
       options ++ opts.filter(p => p._1 == CONDITION)
 
-    private val empty_rep = SortedMap.empty[String, Boolean]
-    val empty: Conditions = new Conditions(empty_rep)
-    def eval(session_options: Options, opts: List[Options]): Conditions = {
-      def check(cond: String): Boolean =
-        Library.try_unprefix("$", cond) match {
-          case Some(a) => Isabelle_System.getenv(a).nonEmpty
-          case None =>
-            try { session_options.proper_value(cond) }
-            catch {
-              case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
-            }
-        }
-
-      new Conditions(
-        opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
-          case (map, cond) =>
-            if (map.isDefinedAt(cond)) map
-            else map + (cond -> check(cond))
-        }
-      )
-    }
+    def init(session_options: Options): Conditions =
+      new Conditions(session_options, SortedMap.empty[String, Boolean])
   }
 
-  final class Conditions private(private val rep: SortedMap[String, Boolean]) {
+  final class Conditions private(session_options: Options, rep: SortedMap[String, Boolean]) {
     def dest: List[(String, Boolean)] = rep.toList
     def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
     def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
@@ -605,13 +586,29 @@ object Sessions {
         case xs => xs.map(x => "undefined " + x).mkString("(", ", ", ")")
       }
 
-    override def toString: String =
-      if (rep.isEmpty) "Sessions.Conditions.empty"
+    def eval(cond: String): Conditions =
+      if (rep.isDefinedAt(cond)) this
       else {
-        val a = if_proper(good, "good = " + quote(good.mkString(",")))
-        val b = if_proper(bad, "bad = " + quote(bad.mkString(",")))
-        "Sessions.Conditions(" + a + if_proper(a.nonEmpty && b.nonEmpty, ", ") + b + ")"
+        val res =
+          Library.try_unprefix("$", cond) match {
+            case Some(a) => Isabelle_System.getenv(a).nonEmpty
+            case None =>
+              try { session_options.proper_value(cond) }
+              catch {
+                case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
+              }
+          }
+        new Conditions(session_options, rep + (cond -> res))
       }
+
+    def eval(options: Options): Conditions =
+      Conditions.get_options(options).foldLeft(this)(_ eval _)
+
+    override def toString: String = {
+      val a = if_proper(good, "good = " + quote(good.mkString(",")))
+      val b = if_proper(bad, "bad = " + quote(bad.mkString(",")))
+      "Sessions.Conditions(" + a + if_proper(a.nonEmpty && b.nonEmpty, ", ") + b + ")"
+    }
   }
 
 
