@@ -14,8 +14,7 @@ sig
     keywords: keywords}
   val make: string * Position.T -> (string * Position.T) list ->
     Options.update_pos -> keywords -> header
-  val bad_conditions: Options.T -> string list
-  val skipping_theory: (string -> unit) -> string -> string list -> bool
+  val skipping_theory: (string -> unit) -> string -> string -> bool
   val theoryN: string
   val endN: string
   val bootstrap_keywords: Keyword.keywords
@@ -58,14 +57,9 @@ fun make name imports options keywords : header =
 
 (* conditions *)
 
-fun bad_conditions options =
-  Options.string options "condition"
-  |> space_explode ","
-  |> filter (fn a => getenv a = "");
-
-fun skipping_theory output name bad =
-  if null bad then false
-  else (output ("Skipping theory " ^ quote name ^ " (undefined " ^ commas bad ^ ")"); true);
+fun skipping_theory output name condition_bad =
+  if condition_bad = "" then false
+  else (output ("Skipping theory " ^ quote name ^ " " ^ condition_bad); true);
 
 
 (* bootstrap keywords *)
