@@ -564,9 +564,6 @@ object Sessions {
   object Conditions {
     val CONDITION = "condition"
 
-    def get_options(options: Options): List[String] =
-      space_explode(',', options.string(CONDITION))
-
     def init(session_options: Options): Conditions =
       new Conditions(session_options, SortedMap.empty[String, Boolean])
   }
@@ -597,7 +594,7 @@ object Sessions {
       }
 
     def eval(options: Options): Conditions =
-      Conditions.get_options(options).foldLeft(this)(_ eval _)
+      space_explode(',', options.string(Conditions.CONDITION)).foldLeft(this)(_ eval _)
 
     def eval(options: Options.Update): Conditions =
       eval(session_options ++ options.filter(p => p._1 == Conditions.CONDITION))
