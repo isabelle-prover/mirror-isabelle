@@ -500,7 +500,7 @@ object Sessions {
       val conditions =
         session_base.used_theories.map(_.options)
           .foldLeft(Conditions.init(session_info.options))(_ eval _)
-          .dest.map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+          .check_errors.dest.map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
 
       val sources =
         Shasum.make_sorted(
@@ -568,29 +568,43 @@ object Sessions {
       new Conditions(session_options, SortedMap.empty)
   }
 
-  final class Conditions private(session_options: Options, rep: SortedMap[String, Boolean]) {
-    def dest: List[(String, Boolean)] = rep.toList
-    def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
-    def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
+  final class Conditions private(
+    session_options: Options,
+    rep: SortedMap[String, Exn.Result[Boolean]]
+  ) {
+    def dest: List[(String, Boolean)] =
+      List.from(for (case (a, Exn.Res(b)) <- rep.iterator) yield (a, b))
+    def errors: List[String] =
+      List.from(for (case (_, Exn.Exn(e)) <- rep.iterator) yield Exn.message(e))
+    def good: List[String] = List.from(for (case (a, Exn.Res(true)) <- rep.iterator) yield a)
+    def bad: List[String] = List.from(for (case (a, Exn.Res(false)) <- rep.iterator) yield a)
     def bad_message: String =
       bad match {
         case Nil => ""
         case xs => xs.map(x => "undefined " + x).mkString("(", ", ", ")")
       }
 
+    def check_errors: Conditions =
+      errors match {
+        case Nil => this
+        case errs => error(cat_lines(errs))
+      }
+
     def eval(cond: String): Conditions =
       if (rep.isDefinedAt(cond)) this
       else {
-        val res =
-          Library.try_unprefix("$", cond) match {
-            case Some(a) => Isabelle_System.getenv(a).nonEmpty
-            case None =>
-              try { session_options.proper_value(cond) }
-              catch {
-                case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
-              }
-          }
-        new Conditions(session_options, rep + (cond -> res))
+        val result =
+          Exn.result(
+            Library.try_unprefix("$", cond) match {
+              case Some(a) => Isabelle_System.getenv(a).nonEmpty
+              case None =>
+                try { session_options.proper_value(cond) }
+                catch {
+                  case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
+                }
+            }
+          )
+        new Conditions(session_options, rep + (cond -> result))
       }
 
     def eval(options: Options): Conditions =

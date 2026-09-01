@@ -301,6 +301,7 @@ class Resources(
           keywords = header.keywords,
           abbrevs = header.abbrevs,
           condition_bad = conditions.bad_message,
+          errors = conditions.errors,
           initiators = initiators)
       }
       catch { case e: Throwable => Resources.Thy(name = node_name, errors = List(Exn.message(e))) }
