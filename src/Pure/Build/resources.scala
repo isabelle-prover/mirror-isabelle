@@ -34,8 +34,9 @@ object Resources {
           pair(list(pair(encode_node_name, properties)),
             pair(list(pair(string, option(string))),
               pair(list(pair(string, pair(string, list(string)))),
-                pair(list(string), list(encode_node_name)))))))(
-        (thy.name, (thy.pos, (thy.imports, (options, (keywords, (thy.errors, thy.initiators)))))))
+                pair(string, pair(list(string), list(encode_node_name))))))))(
+        (thy.name, (thy.pos, (thy.imports, (options, (keywords,
+          (thy.condition_bad, (thy.errors, thy.initiators))))))))
     }
   }
 

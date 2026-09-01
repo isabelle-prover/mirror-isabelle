@@ -115,7 +115,7 @@ fun set_keywords keywords =
 
 fun read_thy node span : Resources.thy =
   let
-    val {name, imports = imports0, errors = errs, ...} = get_thy node;
+    val thy as {name, imports = imports0, errors = errs, ...} = get_thy node;
     val _ =
       if null errs then ()
       else error (Protocol_Message.command_positions_yxml (Position.thread_data ()) (cat_lines errs));
@@ -124,7 +124,7 @@ fun read_thy node span : Resources.thy =
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
   in
     {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
-      errors = [], initiators = []}
+      condition_bad = #condition_bad thy, errors = [], initiators = []}
   end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;

@@ -36,6 +36,7 @@ sig
     imports: (node_name * Position.T) list,
     options: Options.update_pos,
     keywords: Thy_Header.keywords,
+    condition_bad: string,
     errors: string list,
     initiators: node_name list}
   val no_thy: thy
@@ -250,12 +251,13 @@ type thy =
   imports: (node_name * Position.T) list,
   options: Options.update_pos,
   keywords: Thy_Header.keywords,
+  condition_bad: string,
   errors: string list,
   initiators: node_name list};
 
 val no_thy: thy =
  {name = empty_node_name, pos = Position.none, imports = [], options = [],
-   keywords = [], errors = [], initiators = []};
+   keywords = [], condition_bad = "", errors = [], initiators = []};
 
 val decode_thy: thy XML.Decode.T =
   let
@@ -268,21 +270,23 @@ val decode_thy: thy XML.Decode.T =
       (pair position
         (pair (list (pair decode_node_name position))
           (pair (list (pair string_none (option string_none)))
-            (pair (list keyword)
-              (pair (list string) (list decode_node_name))))))
+            (pair (list keyword) (pair string
+              ((pair (list string) (list decode_node_name))))))))
   end
-  #> (fn (name, (pos, (imports, (options, (keywords, (errors, initiators)))))) =>
+  #> (fn (name, (pos, (imports, (options, (keywords, (condition_bad, (errors, initiators))))))) =>
       {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
-        errors = errors, initiators = initiators});
+        condition_bad = condition_bad, errors = errors, initiators = initiators});
 
-fun map_thy_pos f ({name, pos, imports, options, keywords, errors, initiators}: thy) : thy =
- {name = name, pos = f pos, imports = map (apsnd f) imports,
-  options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
-  keywords = keywords, errors = errors, initiators = initiators};
+fun map_thy_pos f
+  ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
+   {name = name, pos = f pos, imports = map (apsnd f) imports,
+    options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
+    keywords = keywords, condition_bad = condition_bad, errors = errors, initiators = initiators};
 
-fun map_thy_errors f ({name, pos, imports, options, keywords, errors, initiators}: thy) : thy =
-  {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
-   errors = f errors, initiators = initiators};
+fun map_thy_errors f
+  ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
+   {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+    condition_bad = condition_bad, errors = f errors, initiators = initiators};
 
 fun begin_theory ({name, pos, keywords, ...}: thy) parents =
   let
