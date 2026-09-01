@@ -497,12 +497,10 @@ object Sessions {
         Shasum.make_sorted(session_info.options.changed(filter = _.session_content)
           .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
 
-      val theories_options =
-        session_base.used_theories.map(entry =>
-          Conditions.make_options(session_info.options, entry.options))
       val conditions =
-        theories_options.foldLeft(Conditions.init(session_info.options))(_ eval _).dest
-          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+        session_base.used_theories.map(_.options)
+          .foldLeft(Conditions.init(session_info.options))(_ eval _)
+          .dest.map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
 
       val sources =
         Shasum.make_sorted(
@@ -569,9 +567,6 @@ object Sessions {
     def get_options(options: Options): List[String] =
       space_explode(',', options.string(CONDITION))
 
-    def make_options(options: Options, opts: Options.Update): Options =
-      options ++ opts.filter(p => p._1 == CONDITION)
-
     def init(session_options: Options): Conditions =
       new Conditions(session_options, SortedMap.empty[String, Boolean])
   }
@@ -603,6 +598,9 @@ object Sessions {
 
     def eval(options: Options): Conditions =
       Conditions.get_options(options).foldLeft(this)(_ eval _)
+
+    def eval(options: Options.Update): Conditions =
+      eval(session_options ++ options.filter(p => p._1 == Conditions.CONDITION))
 
     override def toString: String = {
       val a = if_proper(good, "good = " + quote(good.mkString(",")))
