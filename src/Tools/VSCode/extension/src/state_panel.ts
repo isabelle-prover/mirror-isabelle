@@ -29,7 +29,7 @@ class Panel {
 
   private update_webview() {
     if (this.webview_panel.webview) {
-      this.webview_panel.webview.postMessage(JSON.stringify(this.state))
+      this.webview_panel.webview.postMessage(this.state)
     }
   }
 

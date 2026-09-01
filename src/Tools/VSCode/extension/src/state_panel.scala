@@ -68,7 +68,7 @@ object State_Panel {
     dom.window.onload = { _ => Pretty_Text_View.on_load() }
 
     Webview_Api.on_message { e =>
-      val json = JSON.parse(e.data.toString)
+      val json = Scalajs.JSON.unapply(e.data).get
 
       for {
         content <- JSON.string(json, "content")
