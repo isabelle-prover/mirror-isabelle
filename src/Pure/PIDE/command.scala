@@ -446,7 +446,7 @@ object Command {
         val thy = resources.check_thy(session.session_options, node_name, span.content_reader)
         val raw_imports =
           try {
-            val read_imports = Thy_Header.read(node_name, reader).imports.map(_._1)
+            val read_imports = Thy_Header.read(node_name, reader).imports_no_pos
             if (thy.imports.length == read_imports.length) read_imports else error("")
           }
           catch { case _: Throwable => List.fill(thy.imports.length)("") }
@@ -551,7 +551,7 @@ final class Command private(
     if (span.name == Thy_Header.THEORY) {
       try {
         val header = Thy_Header.read(node_name, span.content_reader)
-        for ((s, _) <- header.imports)
+        for (s <- header.imports_no_pos)
         yield {
           try { resources.import_name(node_name, s) }
           catch { case ERROR(_) => Document.Node.Name.empty }

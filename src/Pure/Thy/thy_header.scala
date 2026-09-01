@@ -220,6 +220,8 @@ sealed case class Thy_Header(
   keywords: Thy_Header.Keywords,
   abbrevs: Thy_Header.Abbrevs
 ) {
+  def imports_no_pos: List[String] = imports.map(_._1)
+
   def output(unicode_symbols: Boolean): Thy_Header = {
     def f(s: String): String = Symbol.output(unicode_symbols, s)
     Thy_Header(f(name), pos,
