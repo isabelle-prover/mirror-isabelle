@@ -259,6 +259,10 @@ object HTML {
     Set("head", "body", "meta", "div", "pre", "p", "title", "h1", "h2", "h3", "h4", "h5", "h6",
       "ul", "ol", "dl", "li", "dt", "dd")
 
+  private val void_elements =
+    Set("area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
+      "source", "track", "wbr")
+
   def output(s: StringBuilder, xml: XML.Body, hidden: Boolean, structural: Boolean): Unit = {
     val xml_output = new XML.Output(s)
 
@@ -266,7 +270,11 @@ object HTML {
       val control_blocks = check_control_blocks(body)
       body foreach {
         case XML.Elem(markup, Nil) =>
-          xml_output.elem(markup, end = true)
+          if (void_elements(markup.name)) xml_output.elem(markup, end = true)
+          else {
+            xml_output.elem(markup)
+            xml_output.end_elem(markup.name)
+          }
         case XML.Elem(Markup(Markup.RAW_HTML, _), body) =>
           XML.traverse_text(body, (), (_, raw) => s.append(raw))
         case XML.Elem(markup, ts) =>
