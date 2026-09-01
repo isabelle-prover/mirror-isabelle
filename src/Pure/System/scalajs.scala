@@ -183,7 +183,7 @@ object Scalajs {
         case null => Some(null)
         case xs: js.Array[_] =>
           val arr = xs.map(unapply)
-          if (arr.forall(_.isDefined)) Some(arr.map(_.get)) else None
+          if (arr.forall(_.isDefined)) Some(arr.map(_.get).toList) else None
         case Object(m) => Some(m)
         case _ => None
       }
