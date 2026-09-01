@@ -562,8 +562,6 @@ object Sessions {
   /* conditions to load theories */
 
   object Conditions {
-    val CONDITION = "condition"
-
     def init(session_options: Options): Conditions =
       new Conditions(session_options, SortedMap.empty)
   }
@@ -608,10 +606,10 @@ object Sessions {
       }
 
     def eval(options: Options): Conditions =
-      space_explode(',', options.string(Conditions.CONDITION)).foldLeft(this)(_ eval _)
+      space_explode(',', options.string(Condition.name)).foldLeft(this)(_ eval _)
 
     def eval(options: Options.Update): Conditions =
-      eval(session_options ++ options.filter(p => p._1 == Conditions.CONDITION))
+      eval(session_options ++ options.filter(p => p._1 == Condition.name))
 
     override def toString: String = {
       val a = if_proper(good, "good = " + quote(good.mkString(",")))
@@ -623,13 +621,13 @@ object Sessions {
 
   /* cumulative session info */
 
-  class Special_Info(val kind: String) {
-    override def toString: String = "<" + kind + ">"
+  class Special_Info(val name: String) {
+    override def toString: String = "<" + name + ">"
 
-    private val BG = "<" + kind + ":"
+    private val BG = "<" + name + ":"
     private val EN = ">"
 
-    def make(name: String): String = BG + name + EN
+    def make(value: String): String = BG + value + EN
 
     def detect(s: String): Boolean = {
       val i = s.indexOf('<')
@@ -640,7 +638,7 @@ object Sessions {
     }
   }
 
-  object Condition extends Special_Info(Conditions.CONDITION)
+  object Condition extends Special_Info("condition")
   object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(
