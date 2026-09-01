@@ -574,14 +574,16 @@ object Sessions {
 
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
-    def eval(opts: List[Options]): Conditions =
+    def eval(opts: List[Options]): Conditions = {
+      def check(cond: String): Boolean = Isabelle_System.getenv(cond).nonEmpty
       new Conditions(
         opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
-          case (map, a) =>
-            if (map.isDefinedAt(a)) map
-            else map + (a -> Isabelle_System.getenv(a).nonEmpty)
+          case (map, cond) =>
+            if (map.isDefinedAt(cond)) map
+            else map + (cond -> check(cond))
         }
       )
+    }
   }
 
   final class Conditions private(private val rep: SortedMap[String, Boolean]) {
