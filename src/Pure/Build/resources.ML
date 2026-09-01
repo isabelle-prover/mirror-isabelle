@@ -43,6 +43,7 @@ sig
   val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
   val map_thy_errors: (string list -> string list) -> thy -> thy
+  val skipping_theory: (string -> unit) -> thy -> bool
   val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
   val find_theory_file: string -> Path.T option
@@ -287,6 +288,13 @@ fun map_thy_errors f
   ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
    {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
     condition_bad = condition_bad, errors = f errors, initiators = initiators};
+
+
+(* begin theory *)
+
+fun skipping_theory output ({name, condition_bad, ...}: thy) =
+  if condition_bad = "" then false
+  else (output ("Skipping theory " ^ quote (#theory name) ^ " " ^ condition_bad); true);
 
 fun begin_theory ({name, pos, keywords, ...}: thy) parents =
   let

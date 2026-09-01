@@ -225,7 +225,7 @@ fun eval_thy loading_theory (thy: Resources.thy) text_pos text parents =
 
     fun excursion () =
       let
-        val _ = Thy_Header.skipping_theory Output.system_message name condition_bad;
+        val _ = Resources.skipping_theory Output.system_message thy;
         val _ = Position.setmp_thread_data text_id (fn () => Position.reports command_ranges) ();
 
         fun element_result span_elem (st, _) =

@@ -14,7 +14,6 @@ sig
     keywords: keywords}
   val make: string * Position.T -> (string * Position.T) list ->
     Options.update_pos -> keywords -> header
-  val skipping_theory: (string -> unit) -> string -> string -> bool
   val theoryN: string
   val endN: string
   val bootstrap_keywords: Keyword.keywords
@@ -53,13 +52,6 @@ type header =
 
 fun make name imports options keywords : header =
   {name = name, imports = imports, options = options, keywords = keywords};
-
-
-(* conditions *)
-
-fun skipping_theory output name condition_bad =
-  if condition_bad = "" then false
-  else (output ("Skipping theory " ^ quote name ^ " " ^ condition_bad); true);
 
 
 (* bootstrap keywords *)
