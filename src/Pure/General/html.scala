@@ -336,6 +336,7 @@ object HTML {
   object GUI {
     def onclick(script: String): Attribute = new Attribute("onclick", script)
     def onchange(script: String): Attribute = new Attribute("onchange", script)
+    def oninput(script: String): Attribute = new Attribute("oninput", script)
 
     private def optional_value(text: String): XML.Attributes =
       proper_string(text).map(a => "value" -> a).toList
@@ -361,6 +362,9 @@ object HTML {
     private def optional_onchange(script: String): XML.Attributes =
       proper_string(script).map(onchange(_).xml).toList
 
+    private def optional_oninput(script: String): XML.Attributes =
+      proper_string(script).map(oninput(_).xml).toList
+
     def button(body: XML.Body, name: String = "", tooltip: String = "", submit: Boolean = false,
         script: String = ""): XML.Elem =
       XML.Elem(
@@ -383,7 +387,7 @@ object HTML {
         List("type" -> "text") :::
           (if (columns > 0) List("size" -> columns.toString) else Nil) :::
           optional_value(text) ::: optional_name(name) ::: optional_title(tooltip) :::
-          optional_submit(submit) ::: optional_onchange(script)))
+          optional_submit(submit) ::: optional_oninput(script)))
 
     def parameter(text: String = "", name: String = ""): XML.Elem =
       XML.elem(
