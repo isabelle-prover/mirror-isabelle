@@ -27,6 +27,12 @@ depending on parameters that are changed by external means (e.g.
 environment variables): with suitable naming conventions and proof tool
 setup, later theories may work again uniformly on either variant.
 
+* The syntax of system option "condition" has been extended as follows:
+  - "$NAME" refers to a process environment variable. INCOMPATIBILITY,
+    was plain NAME before.
+  - "name" refers to a system option; to be enabled, the value needs to
+    be true (bool), non-empty (string), or > 0 (int, real).
+
 * The Isabelle application bundle has been split into "macos"
 (x86_64-darwin, Intel) and "macos_arm" (arm64-darwin, Apple Silicon).
 The correct version needs to be used for the actual system platform:

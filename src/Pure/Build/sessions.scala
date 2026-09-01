@@ -501,7 +501,7 @@ object Sessions {
         session_base.used_theories.map(entry =>
           Conditions.make_options(session_info.options, entry.options))
       val conditions =
-        Conditions.eval(theories_options).dest
+        Conditions.eval(session_info.options, theories_options).dest
           .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
 
       val sources =
@@ -574,8 +574,17 @@ object Sessions {
 
     private val empty_rep = SortedMap.empty[String, Boolean]
     val empty: Conditions = new Conditions(empty_rep)
-    def eval(opts: List[Options]): Conditions = {
-      def check(cond: String): Boolean = Isabelle_System.getenv(cond).nonEmpty
+    def eval(session_options: Options, opts: List[Options]): Conditions = {
+      def check(cond: String): Boolean =
+        Library.try_unprefix("$", cond) match {
+          case Some(a) => Isabelle_System.getenv(a).nonEmpty
+          case None =>
+            try { session_options.proper_value(cond) }
+            catch {
+              case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
+            }
+        }
+
       new Conditions(
         opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
           case (map, cond) =>

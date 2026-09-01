@@ -1,6 +1,6 @@
 theory Context_Free_Grammar_Example
   imports "HOL-Library.Code_Prolog"
-  options [condition = ISABELLE_SWIPL]
+  options [condition = "$ISABELLE_SWIPL"]
 begin
 (*
 declare mem_def[code_pred_inline]

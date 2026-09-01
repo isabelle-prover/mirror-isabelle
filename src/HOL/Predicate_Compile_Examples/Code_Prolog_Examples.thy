@@ -1,6 +1,6 @@
 theory Code_Prolog_Examples
   imports "HOL-Library.Code_Prolog"
-  options [condition = ISABELLE_SWIPL]
+  options [condition = "$ISABELLE_SWIPL"]
 begin
 
 section \<open>Example append\<close>

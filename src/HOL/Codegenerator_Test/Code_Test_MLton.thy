@@ -6,7 +6,7 @@ Test case for test_code on MLton
 
 theory Code_Test_MLton
   imports "HOL-Library.Code_Test" Code_Lazy_Test
-  options [condition = ISABELLE_MLTON]
+  options [condition = "$ISABELLE_MLTON"]
 begin
 
 test_code "14 + 7 * -12 = (140 div -2 :: integer)" in MLton

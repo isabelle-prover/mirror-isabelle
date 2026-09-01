@@ -6,7 +6,7 @@ Test case for test_code on SMLNJ
 
 theory Code_Test_SMLNJ
   imports "HOL-Library.Code_Test" Code_Lazy_Test
-  options [condition = ISABELLE_SMLNJ]
+  options [condition = "$ISABELLE_SMLNJ"]
 begin
 
 test_code "14 + 7 * -12 = (140 div -2 :: integer)" in SMLNJ
