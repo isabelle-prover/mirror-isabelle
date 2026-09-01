@@ -199,7 +199,11 @@ object HTML {
       xml_output.string(str, permissive = permissive)
 
     def output_hidden(body: => Unit): Unit =
-      if (hidden) { s ++= "<span class=\"hidden\">"; body; s ++= "</span>" }
+      if (hidden) {
+        xml_output.elem(Markup("span", List("class" -> "hidden")))
+        body
+        xml_output.end_elem("span")
+      }
 
     def output_symbol(sym: Symbol.Symbol): Unit =
       if (sym.nonEmpty) {
@@ -215,9 +219,9 @@ object HTML {
               case _ =>
                 if (hidden && Symbol.is_control_encoded(sym)) {
                   output_hidden(output_string(Symbol.control_prefix))
-                  s ++= "<span class=\"control\">"
+                  xml_output.elem(Markup("span", List("class" -> "control")))
                   output_string(Symbol.control_name(sym).get)
-                  s ++= "</span>"
+                  xml_output.end_elem("span")
                   output_hidden(output_string(Symbol.control_suffix))
                 }
                 else output_string(sym)
