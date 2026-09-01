@@ -500,7 +500,7 @@ object Sessions {
       val conditions =
         session_base.used_theories.map(_.options)
           .foldLeft(Conditions.init(session_info.options))(_ eval _)
-          .check_errors.dest.map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+          .check_errors.dest((a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)))
 
       val sources =
         Shasum.make_sorted(
@@ -572,8 +572,8 @@ object Sessions {
     session_options: Options,
     rep: SortedMap[String, Exn.Result[Boolean]]
   ) {
-    def dest: List[(String, Boolean)] =
-      List.from(for (case (a, Exn.Res(b)) <- rep.iterator) yield (a, b))
+    def dest[A](f: (String, Boolean) => A): List[A] =
+      List.from(for (case (a, Exn.Res(b)) <- rep.iterator) yield f(a, b))
     def errors: List[String] =
       List.from(for (case (_, Exn.Exn(e)) <- rep.iterator) yield Exn.message(e))
     def good: List[String] = List.from(for (case (a, Exn.Res(true)) <- rep.iterator) yield a)
