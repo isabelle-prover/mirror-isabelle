@@ -337,7 +337,7 @@ class Resources(
       thys: List[(Document.Node.Name, Position.T)],
       options: Options.Update = Nil,
       progress: Progress = new Progress): Dependencies =
-    Dependencies.empty.require_thys(session_options, thys,
+    Dependencies.require_thys(Dependencies.empty, session_options, thys,
       options = options, progress = progress)
 
   def session_dependencies(
@@ -346,7 +346,7 @@ class Resources(
   ) : Dependencies = {
     info.theories.foldLeft(Dependencies.empty) {
       case (dependencies, (options, thys)) =>
-        dependencies.require_thys(info.options,
+        Dependencies.require_thys(dependencies, info.options,
           for { (thy, pos) <- thys } yield (import_name(info, thy), pos),
           options = options, progress = progress)
     }
@@ -363,19 +363,9 @@ class Resources(
 
     private def required_by(initiators: List[Document.Node.Name]): String =
       if_proper(initiators, "\n(required by " + show_path(initiators.reverse) + ")")
-  }
 
-  final class Dependencies private(
-    protected val rev_entries: List[Resources.Thy],
-    protected val visited: Set[Document.Node.Name]
-  ) {
-    private def cons(thy: Resources.Thy): Dependencies =
-      new Dependencies(thy :: rev_entries, visited)
-
-    private def visit(name: Document.Node.Name): Dependencies =
-      new Dependencies(rev_entries, visited + name)
-
-    def require_thys(
+    private [Resources] def require_thys(
+      dependencies0: Dependencies,
       session_options: Options,
       theories: List[(Document.Node.Name, Position.T)],
       options: Options.Update = Nil,
@@ -390,7 +380,7 @@ class Resources(
 
         def message: String =
           "The error(s) above occurred for theory " + quote(name.theory) +
-            Dependencies.required_by(initiators) + Position.here(pos)
+            required_by(initiators) + Position.here(pos)
 
         if (dependencies.visited(name)) dependencies
         else {
@@ -398,7 +388,7 @@ class Resources(
           if (loaded_theory(name)) dependencies1
           else {
             try {
-              if (initiators.contains(name)) error(Dependencies.cycle_msg(initiators))
+              if (initiators.contains(name)) error(cycle_msg(initiators))
 
               progress.expose_interrupt()
               val thy =
@@ -421,8 +411,19 @@ class Resources(
         }
       }
 
-      theories.foldLeft(this)(require_thy(_, _, Nil))
+      theories.foldLeft(dependencies0)(require_thy(_, _, Nil))
     }
+  }
+
+  final class Dependencies private(
+    protected val rev_entries: List[Resources.Thy],
+    protected val visited: Set[Document.Node.Name]
+  ) {
+    private def cons(thy: Resources.Thy): Dependencies =
+      new Dependencies(thy :: rev_entries, visited)
+
+    private def visit(name: Document.Node.Name): Dependencies =
+      new Dependencies(rev_entries, visited + name)
 
     def entries: List[Resources.Thy] = rev_entries.reverse
     def theories: List[Document.Node.Name] = entries.map(_.name)
