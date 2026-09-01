@@ -79,7 +79,7 @@ sealed case class VSCode_Model(
 
   def get_thy: Resources.Thy =
     session.resources.special_thy(node_name) getOrElse
-      session.resources.check_thy(session.session_options, node_name, Scan.char_reader(content.text))
+      session.resources.check_thy(session.conditions, node_name, Scan.char_reader(content.text))
 
   def get_text(range: Text.Range): Option[String] = content.doc.get_text(range)
 

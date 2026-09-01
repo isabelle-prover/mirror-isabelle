@@ -260,8 +260,8 @@ object Document_Model {
             val pending_nodes = for (case (node_name, None) <- purged) yield node_name
             (open_nodes ::: touched_nodes ::: pending_nodes).map((_, Position.none))
           }
-          val session_options = PIDE.session.session_options
-          val retain = PIDE.resources.dependencies(session_options, imports).theories.toSet
+          val session_conditions = PIDE.session.conditions
+          val retain = PIDE.resources.dependencies(session_conditions, imports).theories.toSet
 
           for (case (node_name, Some(edits)) <- purged if !retain(node_name); edit <- edits)
             yield edit
@@ -416,7 +416,7 @@ case class File_Model(
   def get_thy: Resources.Thy =
     PIDE.resources.special_thy(node_name) getOrElse
       PIDE.resources.check_thy(
-        session.session_options, node_name, Scan.char_reader(content.text), strict = false)
+        session.conditions, node_name, Scan.char_reader(content.text), strict = false)
 
   override def get_text(range: Text.Range): Option[String] =
     range.try_substring(content.text)
@@ -505,7 +505,7 @@ class Buffer_Model private(
     PIDE.resources.special_thy(node_name) getOrElse
       JEdit_Lib.buffer_lock(buffer) {
         PIDE.resources.check_thy(
-          session.session_options, node_name, JEdit_Lib.buffer_reader(buffer), strict = false)
+          session.conditions, node_name, JEdit_Lib.buffer_reader(buffer), strict = false)
       }
   }
 

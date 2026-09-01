@@ -139,7 +139,7 @@ class Main_Plugin extends EBPlugin {
       val models = Document_Model.get_models_map()
 
       val thy_files =
-        session.resources.resolve_dependencies(session.session_options,
+        session.resources.resolve_dependencies(session.conditions,
           models.values, JEdit_Editor.document_required())
 
       val aux_files =

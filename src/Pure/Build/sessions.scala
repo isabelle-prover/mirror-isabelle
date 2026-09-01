@@ -573,6 +573,9 @@ object Sessions {
     session_options: Options,
     rep: SortedMap[String, Exn.Result[Boolean]]
   ) {
+    def restrict(domain: Set[String]): Conditions =
+      new Conditions(session_options, rep.filter(p => domain(p._1)))
+
     def dest[A](f: (String, Boolean) => A): List[A] =
       List.from(for (case (a, Exn.Res(b)) <- rep.iterator) yield f(a, b))
     def errors: List[String] =
@@ -620,6 +623,23 @@ object Sessions {
       val a = if_proper(good, "good = " + quote(good.mkString(",")))
       val b = if_proper(bad, "bad = " + quote(bad.mkString(",")))
       "Sessions.Conditions(" + a + if_proper(a.nonEmpty && b.nonEmpty, ", ") + b + ")"
+    }
+  }
+
+  final class Conditions_Variable(init_options: Options) {
+    private var conditions: Conditions = Conditions.init(init_options)
+
+    def value: Conditions = synchronized { conditions }
+    override def toString: String = value.toString
+
+    def init(options: Options): Conditions =
+      synchronized { conditions = Conditions.init(options); conditions }
+
+    def eval_restrict(specs: Options.Update): Conditions = synchronized {
+      val options = conditions.options(specs)
+      val conds = Conditions.explode(options)
+      conditions = conditions.evaluate(conds)
+      conditions.restrict(conds.toSet)
     }
   }
 

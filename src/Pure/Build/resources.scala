@@ -270,7 +270,7 @@ class Resources(
   }
 
   def check_thy(
-    session_options: Options,
+    session_conditions: Sessions.Conditions_Variable,
     node_name: Document.Node.Name,
     reader: Reader[Char],
     more_options: Options.Update = Nil,
@@ -291,7 +291,7 @@ class Resources(
           })
 
         val options = header.options ::: more_options
-        val conditions = Sessions.Conditions.init(session_options).eval(options)
+        val conditions = session_conditions.eval_restrict(options)
 
         Resources.Thy(
           name = node_name,
@@ -334,12 +334,12 @@ class Resources(
   /* theory and file dependencies */
 
   def dependencies(
-    session_options: Options,
+    session_conditions: Sessions.Conditions_Variable,
     theories: List[(Document.Node.Name, Position.T)],
     options: Options.Update = Nil,
     progress: Progress = new Progress
   ): Dependencies = {
-    Dependencies.require_thys(Dependencies.empty, session_options, theories,
+    Dependencies.require_thys(Dependencies.empty, session_conditions, theories,
       options = options, progress = progress)
   }
 
@@ -347,9 +347,10 @@ class Resources(
     info: Sessions.Info,
     progress: Progress = new Progress
   ) : Dependencies = {
+    val session_conditions = new Sessions.Conditions_Variable(info.options)
     info.theories.foldLeft(Dependencies.empty) {
       case (dependencies, (options, theories)) =>
-        Dependencies.require_thys(dependencies, info.options,
+        Dependencies.require_thys(dependencies, session_conditions,
           for { (s, pos) <- theories } yield (import_name(info, s), pos),
           options = options, progress = progress)
     }
@@ -369,7 +370,7 @@ class Resources(
 
     private [Resources] def require_thys(
       dependencies0: Dependencies,
-      session_options: Options,
+      session_conditions: Sessions.Conditions_Variable,
       theories: List[(Document.Node.Name, Position.T)],
       options: Options.Update = Nil,
       progress: Progress = new Progress
@@ -397,7 +398,7 @@ class Resources(
               val thy =
                 try {
                   with_thy_reader(name,
-                    check_thy(session_options, name, _,
+                    check_thy(session_conditions, name, _,
                       more_options = options, initiators = initiators, command = false)
                     ).cat_errors(message)
                 }
@@ -517,7 +518,7 @@ class Resources(
   /* resolve implicit theory dependencies */
 
   def resolve_dependencies(
-    session_options: Options,
+    session_conditions: Sessions.Conditions_Variable,
     models: Iterable[Document.Model],
     theories: List[Document.Node.Name]
   ): List[Document.Node.Name] = {
@@ -526,7 +527,7 @@ class Resources(
         yield (model.node_name, Position.none)).toList
 
     val thy_files1 =
-      dependencies(session_options, model_theories ::: theories.map((_, Position.none))).theories
+      dependencies(session_conditions, model_theories ::: theories.map((_, Position.none))).theories
 
     val thy_files2 =
       (for {
