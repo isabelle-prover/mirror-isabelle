@@ -565,7 +565,7 @@ object Sessions {
     val CONDITION = "condition"
 
     def init(session_options: Options): Conditions =
-      new Conditions(session_options, SortedMap.empty[String, Boolean])
+      new Conditions(session_options, SortedMap.empty)
   }
 
   final class Conditions private(session_options: Options, rep: SortedMap[String, Boolean]) {
