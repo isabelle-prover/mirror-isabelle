@@ -231,17 +231,17 @@ object Dump {
         if !resources.loaded_theory(entry.name)
         if {
           def warn(msg: String): Unit =
-            progress.echo_warning("Skipping theory " + entry.name + "  (" + msg + ")")
+            progress.echo_warning("Skipping theory " + entry.name + " " + msg)
 
           val theory_options = options ++ entry.options
 
-          val bad_conditions = Sessions.Conditions.eval(List(theory_options)).bad
-          if (bad_conditions.nonEmpty) {
-            warn("undefined " + bad_conditions.mkString(", "))
+          val condition_bad = Sessions.Conditions.eval(List(theory_options)).bad_message
+          if (condition_bad.nonEmpty) {
+            warn(condition_bad)
             false
           }
           else if (options.bool("skip_proofs") && !theory_options.bool("skip_proofs")) {
-            warn("option skip_proofs")
+            warn("(option skip_proofs)")
             false
           }
           else true
