@@ -142,7 +142,7 @@ object HTML {
   }
 
 
-  /* output text with control symbols */
+  /* traversal with control symbols */
 
   private val control: Map[Symbol.Symbol, Operator] =
     Map(
@@ -186,17 +186,13 @@ object HTML {
     ok && open.isEmpty
   }
 
-  def output(
-    s: StringBuilder,
+  def traverse(
+    xml_output: XML.Traversal,
     text: String,
     control_blocks: Boolean,
     hidden: Boolean,
-    permissive: Boolean
   ): Unit = {
-    val xml_output = new XML.Output(s)
-
-    def output_string(str: String): Unit =
-      xml_output.string(str, permissive = permissive)
+    def output_string(str: String): Unit = xml_output.text(str)
 
     def output_hidden(body: => Unit): Unit =
       if (hidden) {
@@ -248,6 +244,21 @@ object HTML {
     }
     output_symbol(ctrl)
   }
+
+
+  /* output text with control symbols */
+
+  def output(
+    s: StringBuilder,
+    text: String,
+    control_blocks: Boolean,
+    hidden: Boolean,
+    permissive: Boolean
+  ): Unit = {
+    val xml_output =
+      new XML.Output(s) { override def text(str: String): Unit = string(str, permissive) }
+    traverse(xml_output, text, control_blocks, hidden)
+   }
 
   def output(text: String): String = {
     val control_blocks = check_control_blocks(List(XML.Text(text)))
