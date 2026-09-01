@@ -187,6 +187,45 @@ object XML {
   def content(tree: Tree): String = content(List(tree))
 
 
+  /* builder */
+
+  class Builder extends Traversal {
+    private var rev_stack: List[Elem] = List(XML.elem(Markup.Empty))
+
+    private def rev_elem(elem: Elem): Elem = elem.copy(body = elem.body.map(rev_tree).reverse)
+    private def rev_tree(tree: Tree): Tree =
+      tree match {
+        case elem: Elem => rev_elem(elem)
+        case text: Text => text
+      }
+
+    def result: Body =
+      rev_stack match {
+        case root :: Nil => rev_elem(root).body
+        case _ => error("Unclosed element")
+      }
+
+    private def push(tree: Tree): Unit = {
+      tree match {
+        case elem: Elem => rev_stack ::= elem
+        case text: Text =>
+          val head = rev_stack.head
+          rev_stack = head.copy(body = text :: head.body) :: rev_stack.tail
+      }
+    }
+
+    private def pop(): Unit =
+      rev_stack match {
+        case e1 :: e2 :: rest => rev_stack = e2.copy(body = e1 :: e2.body) :: rest
+        case _ => error("No element to close")
+      }
+
+    def text(s: String): Unit = push(Text(s))
+    def elem(markup: Markup, end: Boolean): Unit = { push(XML.elem(markup)); if (end) pop() }
+    def end_elem(name: String): Unit =
+      if (rev_stack.head.name == name) pop() else error("Wrong element to close")
+  }
+
 
   /** string representation **/
 
