@@ -89,7 +89,7 @@ object JEdit_Editor extends Editor {
 
   def flush_edits(hidden: Boolean = false, purge: Boolean = false): Unit =
     GUI_Thread.require {
-      val (doc_blobs, edits) = Document_Model.flush_edits(hidden, purge)
+      val (doc_blobs, edits) = Document_Model.flush_edits(hidden = hidden, purge = purge)
       session.update(doc_blobs, edits)
     }
   override def flush(): Unit = flush_edits()
@@ -109,7 +109,7 @@ object JEdit_Editor extends Editor {
     GUI_Thread.require {
       delay_input.revoke()
       delay_generated_input.revoke()
-      Document_Model.flush_edits(hidden = false, purge = false)
+      Document_Model.flush_edits()
     }
 
   def visible_node(name: Document.Node.Name): Boolean =
