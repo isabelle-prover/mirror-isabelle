@@ -65,16 +65,6 @@ object Resources {
         val msg2 = make_msg2
         copy(errors = errors.map(msg1 => Exn.cat_message(msg1, msg2)))
       }
-
-    def eq_no_pos(other: Thy): Boolean =
-      name == name &&
-      imports_no_pos == other.imports_no_pos &&
-      options == other.options &&
-      keywords == other.keywords &&
-      abbrevs == other.abbrevs &&
-      condition_bad == other.condition_bad &&
-      errors == other.errors &&
-      initiators == other.initiators
   }
 
   def bootstrap: Resources =
