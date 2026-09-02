@@ -79,9 +79,8 @@ object Thy_Syntax {
       val node = nodes(name)
       val update_thy = node.thy.errors.nonEmpty || thy.errors.nonEmpty || node.thy != thy
       if (update_thy) {
-        val node1 = node.update_thy(thy)
-        if (!(node.thy eq_no_pos node1.thy)) syntax_changed0 += name
-        nodes += (name -> node1)
+        if (!(node.thy eq_no_pos thy)) syntax_changed0 += name
+        nodes += (name -> node.update_thy(thy))
         doc_edits += (name -> Document.Node.Thy(thy))
       }
     }
