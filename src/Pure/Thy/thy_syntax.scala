@@ -387,41 +387,40 @@ object Thy_Syntax {
 
         val node_edits = (edits ::: reparse.map((_, Document.Node.Edits(Nil)))).groupBy(_._1)
 
-        node_edits foreach {
-          case (name, edits) =>
-            val node = nodes(name)
-            val syntax = resources.session_base.node_syntax(nodes, name)
-            val commands = node.commands
+        for ((name, edits) <- node_edits) {
+          val node = nodes(name)
+          val syntax = resources.session_base.node_syntax(nodes, name)
+          val commands = node.commands
 
-            val node1 =
-              if (!resources.loaded_theory(name) && reparse_set(name) && commands.nonEmpty) {
-                node.update_commands(
-                  reparse_spans(session, syntax, get_blob, can_import, name,
-                  commands, commands.head, commands.last))
-              }
-              else node
-            val node2 =
-              edits.foldLeft(node1)(
-                text_edit(session, syntax, get_blob, can_import, reparse_limit, _, _))
-            val node3 =
-              if (resources.loaded_theory(name)) {
-                reload_theory(session, doc_blobs, name, node2)
-              }
-              else if (reparse_set(name)) {
-                text_edit(session, syntax, get_blob, can_import, reparse_limit,
-                  node2, (name, node2.edit_perspective))
-              }
-              else node2
-
-            if (!node.same_perspective(node3.text_perspective, node3.perspective)) {
-              doc_edits += (name -> node3.perspective)
+          val node1 =
+            if (!resources.loaded_theory(name) && reparse_set(name) && commands.nonEmpty) {
+              node.update_commands(
+                reparse_spans(session, syntax, get_blob, can_import, name,
+                commands, commands.head, commands.last))
             }
-
-            if (!resources.loaded_theory(name)) {
-              doc_edits += (name -> Document.Node.Edits(diff_commands(commands, node3.commands)))
+            else node
+          val node2 =
+            edits.foldLeft(node1)(
+              text_edit(session, syntax, get_blob, can_import, reparse_limit, _, _))
+          val node3 =
+            if (resources.loaded_theory(name)) {
+              reload_theory(session, doc_blobs, name, node2)
             }
+            else if (reparse_set(name)) {
+              text_edit(session, syntax, get_blob, can_import, reparse_limit,
+                node2, (name, node2.edit_perspective))
+            }
+            else node2
 
-            nodes += (name -> node3)
+          if (!node.same_perspective(node3.text_perspective, node3.perspective)) {
+            doc_edits += (name -> node3.perspective)
+          }
+
+          if (!resources.loaded_theory(name)) {
+            doc_edits += (name -> Document.Node.Edits(diff_commands(commands, node3.commands)))
+          }
+
+          nodes += (name -> node3)
         }
         (doc_edits.toList.filterNot(_._2.is_void), Document.Version.make(nodes))
       }
