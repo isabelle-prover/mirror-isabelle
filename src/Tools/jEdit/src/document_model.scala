@@ -413,7 +413,7 @@ case class File_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
-  def get_thy: Resources.Thy =
+  def get_thy(): Resources.Thy =
     PIDE.resources.special_thy(node_name) getOrElse
       PIDE.resources.check_thy(
         session.conditions, node_name, Scan.char_reader(content.text), strict = false)
@@ -460,7 +460,7 @@ case class File_Model(
   ): Option[(List[Document.Edit_Text], File_Model)] = {
     val (reparse, perspective) = node_perspective(doc_blobs, hidden)
     if (reparse || pending_edits.nonEmpty || last_perspective != perspective) {
-      val edits = node_edits(get_thy, pending_edits, perspective)
+      val edits = node_edits(get_thy(), pending_edits, perspective)
       Some((edits, copy(last_perspective = perspective, pending_edits = Nil)))
     }
     else None
