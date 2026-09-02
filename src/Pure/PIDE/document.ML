@@ -117,13 +117,17 @@ fun read_thy node span : Resources.thy =
   let
     val thy = Resources.check_thy_errors (get_thy node);
     val header = Thy_Header.read_tokens Position.none span;
+    val more_options =
+      drop (length (#options header)) (#options thy)
+      |> Options.update_no_pos
+      |> Options.update_pos_none;
   in
    {name = #name thy,
     pos = #2 (#name header),
     imports =
       (map #1 (#imports thy) ~~ map #2 (#imports header))
         handle ListPair.UnequalLengths => #imports thy,
-    options = #options header,
+    options = #options header @ more_options,
     keywords = #keywords header,
     condition_bad = #condition_bad thy,
     errors = #errors thy,
