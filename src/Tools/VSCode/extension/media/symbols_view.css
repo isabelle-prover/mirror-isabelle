@@ -23,31 +23,13 @@ body {
   background-color: var(--vscode-sideBar-background);
 }
 
-pre, code {
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-}
-
-a {
-  color: var(--vscode-textLink-foreground);
-  text-decoration: none;
-}
-
-a:hover, a:active {
-  color: var(--vscode-textLink-activeForeground);
-}
-
-ol, ul {
-  padding-left: var(--container-paddding);
-}
-
-body > *, form > * {
+body > * {
   margin-block-start: var(--input-margin-vertical);
   margin-block-end: var(--input-margin-vertical);
 }
 
 
-.arrow-button, .abbrevs-button, .symbol-button, .reset-button, .control-button {
+.symbol-button, .reset-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -67,20 +49,17 @@ body > *, form > * {
   text-overflow: ellipsis;
   width: auto;
   height: auto;
-  min-width: 14px;
-  min-height: 14px;
+  min-width: 21px;
+  min-height: 21px;
 }
 
-.arrow-button:hover,
-.abbrevs-button:hover,
 .symbol-button:hover,
-.reset-button:hover,
-.control-button:hover {
+.reset-button:hover {
   border: 1px solid var(--vscode-focusBorder);
   background: var(--vscode-button-hoverBackground);
 }
 
-.arrow-button:active, .abbrevs-button:active, .symbol-button:active, .reset-button:active, .control-button:active {
+.symbol-button:active, .reset-button:active {
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
 }
@@ -138,14 +117,10 @@ body > *, form > * {
   row-gap: 8px;
 }
 
-.tab-content .symbol-button { margin: 0; }
+.tab-content .symbol-button,
+.tab-content .reset-button { margin: 0; }
 
-.tab-content .arrow-button,
-.tab-content .abbrevs-button,
-.tab-content .reset-button,
-.tab-content .control-button { margin: 0; }
-
-input:not([type='checkbox']), textarea {
+input, textarea {
   display: block;
   width: 100%;
   border: 1px solid var(--input-border-color);
@@ -154,26 +129,6 @@ input:not([type='checkbox']), textarea {
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);
   color: var(--vscode-input-foreground);
   background-color: var(--vscode-input-background);
-}
-
-input::placeholder, textarea::placeholder {
-  color: var(--vscode-input-placeholderForeground);
-}
-
-#controls {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-}
-#controls > * {
-  margin-left: 5px;
-  margin-top: 5px;
-}
-
-pre {
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 
 .search-container {
@@ -213,17 +168,17 @@ pre {
   margin-top: 6px;
 }
 
-.search-results .symbol-button {
-  width: auto;
-  height: auto;
-  min-width: 14px;
-  min-height: 14px;
-  padding: 2px 6px;
-  box-sizing: border-box;
-}
-
-
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+sub, sup {
+  font-size: 80%;
+}
+
+.hidden {
+  font-family: Vacuous;
+  font-size: 1%;
+  color: rgba(255,255,255,0);
 }

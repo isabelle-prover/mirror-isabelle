@@ -20,7 +20,7 @@ import * as Preview_Panel from "./preview_panel"
 import * as LSP from "./lsp"
 import * as State_Panel from "./state_panel"
 import * as Output_View from "./output_view"
-import * as Symbol_Panel from "./symbol_panel"
+import * as Symbols_View from "./symbols_view"
 import * as Documentation_Panel from "./documentation_panel"
 import * as Sledgehammer_Panel from "./sledgehammer_panel"
 import * as Script_Decorations from "./script_decorations"
@@ -226,12 +226,11 @@ export async function activate(context: ExtensionContext) {
 
     /* symbols panel */
 
-    const symbols_provider = new Symbol_Panel.Provider(context.extensionUri, language_client)
+    const symbols_provider = new Symbols_View.Provider(context.extensionUri, language_client)
     context.subscriptions.push(
-      window.registerWebviewViewProvider(Symbol_Panel.view_type, symbols_provider)
-    )
-    language_client.onReady().then(() => symbols_provider.request(language_client))
-    language_client.onReady().then(() => symbols_provider.setup(language_client))
+      window.registerWebviewViewProvider(Symbols_View.view_type, symbols_provider))
+
+    language_client.onReady().then(() => symbols_provider.setup())
 
 
     /* sledgehammer panel */

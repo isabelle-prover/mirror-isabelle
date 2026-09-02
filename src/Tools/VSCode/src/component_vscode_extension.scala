@@ -234,7 +234,8 @@ val symbol_provider = Symbol_Static
         val modules =
           List(
             Scalajs.Module("output_view", "isabelle.vscode.extension.Output_View"),
-            Scalajs.Module("state_panel", "isabelle.vscode.extension.State_Panel"))
+            Scalajs.Module("state_panel", "isabelle.vscode.extension.State_Panel"),
+            Scalajs.Module("symbols_view", "isabelle.vscode.extension.Symbols_View"))
 
         progress.echo("Compiling scalajs modules ...")
         val scalajs_result =

@@ -1,7 +1,7 @@
 /*  Author:     Diana Korchmar, LMU Muenchen
     Author:     Makarius
 
-Isabelle symbols panel as web view.
+Isabelle symbols web view.
 */
 
 "use strict";
@@ -18,9 +18,7 @@ import * as Webview from "./webview"
 export const view_type = "isabelle-symbols"
 
 export class Provider implements WebviewViewProvider {
-
   private _view?: WebviewView
-  private _grouped_symbols: { [key: string]: Symbol.Entry[] } = {}
   private _abbrevs: [string, string][] = []
 
   constructor(
@@ -28,16 +26,15 @@ export class Provider implements WebviewViewProvider {
     private readonly _language_client: LanguageClient
   ) { }
 
-  request(language_client: LanguageClient) {
-    if (language_client) { this._language_client.sendNotification(LSP.abbrevs_request_type) }
+  private update_webview() {
+    if (this._view) this._view.webview.postMessage({ abbrevs: this._abbrevs })
   }
 
-  setup(language_client: LanguageClient) {
-    language_client.onNotification(LSP.abbrevs_response_type, params => {
-      this._grouped_symbols = this._group_symbols(Symbol.symbols.entries)
-      this._abbrevs = params.abbrevs ?? []
-      if (this._view) { this._update_webview() }
+  public setup() {
+    this._language_client.onNotification(LSP.abbrevs_response_type, params => {
+      this.update_abbrevs(params.abbrevs)
     })
+    this._language_client.sendNotification(LSP.abbrevs_request_type)
   }
 
   public resolveWebviewView(
@@ -49,15 +46,27 @@ export class Provider implements WebviewViewProvider {
 
     view.webview.options = { enableScripts: true, localResourceRoots: [this._extension_uri] }
 
-    view.webview.html = this._get_html()
+    view.webview.html =
+      Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Symbols",
+        "symbols_view.js", "symbols_view.css")
 
-    if (Object.keys(this._grouped_symbols).length > 0) { this._update_webview() }
-
-    this._view.webview.onDidReceiveMessage(message => {
-      if (message.command === "insert_symbol") { this._insert_symbol(message.symbol) }
-      else if (message.command === "reset_control") { this._reset_control() }
-      else if (message.command === "apply_control") { this._apply_control(message.action) }
-    })
+    this._view.webview.onDidReceiveMessage(async message =>
+      {
+        switch (message.command) {
+          case "ready":
+            this.update_webview()
+            break
+          case "insert_symbol":
+            this._insert_symbol(message.symbol)
+            break
+          case "reset_control":
+            this._reset_control()
+            break
+          case "apply_control":
+            this._apply_control(message.action)
+            break
+        }
+      })
   }
 
   private _apply_control(action: string): void {
@@ -133,29 +142,8 @@ export class Provider implements WebviewViewProvider {
     })
   }
 
-  private _update_webview(): void {
-    this._view.webview.postMessage({
-      command: "update",
-      symbols: this._grouped_symbols,
-      abbrevs: this._abbrevs,
-    })
-  }
-
-  private _group_symbols(symbols: Symbol.Entry[]): { [key: string]: Symbol.Entry[] } {
-    const grouped_symbols: { [key: string]: Symbol.Entry[] } = {}
-    for (const symbol of symbols) {
-      if (symbol.groups && Array.isArray(symbol.groups)) {
-        for (const group of symbol.groups) {
-          if (!grouped_symbols[group]) { grouped_symbols[group] = [] }
-          grouped_symbols[group].push(symbol)
-        }
-      }
-    }
-    return grouped_symbols
-  }
-
-  private _get_html(): string {
-    return Webview.get_html(this._view.webview, this._extension_uri.fsPath, "Symbols Panel",
-      "symbols.js", "symbols.css", '<div id="symbols-container"></div>')
+  public update_abbrevs(abbrevs: [string, string][]): void {
+    this._abbrevs = abbrevs
+    this.update_webview()
   }
 }

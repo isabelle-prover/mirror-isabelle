@@ -14,8 +14,7 @@ media/PreviewOnRightPane_16x.svg
 media/Preview.svg
 media/ViewSource_inverse.svg
 media/ViewSource.svg
-media/symbols.css
-media/symbols.js
+media/symbols_view.css
 media/documentation.css
 media/documentation.js
 media/sledgehammer.css
@@ -35,7 +34,7 @@ src/script_decorations.ts
 src/sledgehammer_panel.ts
 src/state_panel.ts
 src/symbol.ts
-src/symbol_panel.ts
+src/symbols_view.ts
 src/vscode_lib.ts
 src/webview.ts
 test/extension.test.ts

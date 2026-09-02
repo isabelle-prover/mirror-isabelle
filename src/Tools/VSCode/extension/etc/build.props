@@ -5,12 +5,14 @@ sources = \
   $ISABELLE_HOME/src/Pure/General/bytes.scala \
   $ISABELLE_HOME/src/Pure/General/cache.scala \
   $ISABELLE_HOME/src/Pure/General/codepoint.scala \
+  $ISABELLE_HOME/src/Pure/General/completion.scala \
   $ISABELLE_HOME/src/Pure/General/exn.scala \
   $ISABELLE_HOME/src/Pure/General/html.scala \
   $ISABELLE_HOME/src/Pure/General/js.scala \
   $ISABELLE_HOME/src/Pure/General/json.scala \
   $ISABELLE_HOME/src/Pure/General/mercurial.scala \
   $ISABELLE_HOME/src/Pure/General/message_digest.scala \
+  $ISABELLE_HOME/src/Pure/General/multi_map.scala \
   $ISABELLE_HOME/src/Pure/General/output.scala \
   $ISABELLE_HOME/src/Pure/General/path.scala \
   $ISABELLE_HOME/src/Pure/General/position.scala \
@@ -41,4 +43,5 @@ sources = \
   src/dom_metric.scala \
   src/pretty_text_view.scala \
   src/state_panel.scala \
+  src/symbols_view.scala \
   src/webview_api.scala
