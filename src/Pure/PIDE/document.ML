@@ -124,7 +124,7 @@ fun read_thy node span : Resources.thy =
     val imports = (map #1 imports0 ~~ map #2 imports1) handle ListPair.UnequalLengths => imports0;
   in
     {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
-      condition_bad = #condition_bad thy, errors = [], initiators = []}
+      condition_bad = #condition_bad thy, errors = #errors thy, initiators = #initiators thy}
   end;
 
 fun get_perspective (Node {perspective, ...}) = perspective;
