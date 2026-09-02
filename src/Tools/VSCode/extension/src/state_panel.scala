@@ -60,8 +60,7 @@ object State_Panel {
 
   def main(): Unit = {
     Pretty_Text_View.on_update { output =>
-      dom.document.body.innerHTML =
-        HTML.output(controls :: output, hidden = true, structural = true)
+      Scalajs.DOM.update(HTML.control_markup(controls :: output, hidden = true))
     }
 
     dom.window.onresize = { _ => Pretty_Text_View.on_resize() }

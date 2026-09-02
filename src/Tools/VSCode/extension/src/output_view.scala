@@ -19,7 +19,7 @@ object Output_View {
 
   def main(): Unit = {
     Pretty_Text_View.on_update { output =>
-      dom.document.body.innerHTML = HTML.output(output, hidden = true, structural = true)
+      Scalajs.DOM.update(HTML.control_markup(output, hidden = true))
     }
 
     dom.window.onresize = { _ => Pretty_Text_View.on_resize() }

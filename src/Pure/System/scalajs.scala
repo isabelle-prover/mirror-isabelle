@@ -10,6 +10,7 @@ import scala.language.unsafeNulls
 
 import java.io.{File => JFile}
 
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -17,6 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
+import org.scalajs.dom
 import org.scalajs.logging
 import org.scalajs.linker.{PathIRContainer, StandardImpl, PathOutputDirectory}
 import org.scalajs.linker.interface.{Report, StandardConfig, ModuleInitializer, ModuleKind}
@@ -232,5 +234,61 @@ object Scalajs {
   class Function private[Scalajs](val name: String) {
     override def toString: String = name
     def apply(args: JS.Source*): String = JS.function(Functions.lookup(name), args: _*)
+  }
+
+
+  /** DOM operations **/
+
+  object DOM {
+    /* DOM update via XML.Body diff */
+
+    private def update_attributes(elem: dom.Element, props: Properties.T): Unit = {
+      val seen =
+        (for ((key, value) <- props) yield {
+          if (elem.attributes.get(key).forall(_.value != value)) elem.setAttribute(key, value)
+          key
+        }).toSet
+      elem.attributes.keys.filterNot(seen).foreach(elem.removeAttribute)
+    }
+
+    private def create(tree: XML.Tree): dom.Node =
+      tree match {
+        case XML.Text(s) => dom.document.createTextNode(s)
+
+        case XML.Elem(Markup(Markup.RAW_HTML, _), body) =>
+          val raw =
+            Library.string_builder() { s => XML.traverse_text(body, (), (_, raw) => s.append(raw)) }
+          val elem = dom.document.createElement("raw-html")
+          elem.innerHTML = raw
+          elem
+
+        case XML.Elem(markup, body) =>
+          val elem = dom.document.createElement(markup.name)
+          update_attributes(elem, markup.properties)
+          body.foreach(child => elem.appendChild(create(child)))
+          elem
+      }
+
+    private def update_children(parent: dom.Node, body: XML.Body): Unit = {
+      @tailrec def update(children: List[dom.Node], trees: List[XML.Tree]): Unit =
+        (children, trees) match {
+          case (Nil, trees) => trees.map(create).foreach(parent.appendChild)
+          case (children, Nil) => children.foreach(parent.removeChild)
+          case (child :: children, tree :: trees) =>
+            (child, tree) match {
+              case (text: dom.Text, XML.Text(s)) => text.data = s
+              case (elem: dom.Element, XML.Elem(markup, body))
+                   if Word.lowercase(elem.tagName) == markup.name =>
+                update_attributes(elem, markup.properties)
+                update_children(elem, body)
+              case (_, tree) => parent.replaceChild(create(tree), child)
+            }
+            update(children, trees)
+        }
+
+      update(parent.childNodes.toList, body)
+    }
+
+    def update(body: XML.Body): Unit = update_children(dom.document.body, body)
   }
 }
