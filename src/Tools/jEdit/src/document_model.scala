@@ -118,16 +118,17 @@ object Document_Model {
   def sync_files(changed_files: Set[JFile]): Boolean = {
     state.change_result { st =>
       val changed_models =
-        (for {
-          (node_name, model) <- st.file_models_iterator
-          file <- model.file if changed_files(file)
-          text <- PIDE.resources.read_file_content(node_name)
-          if model.content.text != text
-        } yield {
-          val content = Document_Model.File_Content(node_name, text)
-          val edits = Text.Edit.replace(0, model.content.text, text)
-          (node_name, model.copy(content = content, pending_edits = model.pending_edits ::: edits))
-        }).toList
+        List.from(
+          for {
+            (node_name, model) <- st.file_models_iterator
+            file <- model.file if changed_files(file)
+            text <- PIDE.resources.read_file_content(node_name)
+            if model.content.text != text
+          } yield {
+            val content = Document_Model.File_Content(node_name, text)
+            val edits = Text.Edit.replace(0, model.content.text, text)
+            (node_name, model.copy(content = content, pending_edits = model.pending_edits ::: edits))
+          })
       if (changed_models.isEmpty) (false, st)
       else (true, st.copy(models = changed_models.foldLeft(st.models)(_ + _)))
     }
@@ -234,28 +235,33 @@ object Document_Model {
       val doc_blobs = st.document_blobs
 
       val buffer_edits =
-        (for {
-          (_, model) <- st.buffer_models.iterator
-          edit <- model.flush_edits(doc_blobs, hidden).iterator
-        } yield edit).toList
+        List.from(
+          for {
+            (_, model) <- st.buffer_models.iterator
+            edit <- model.flush_edits(doc_blobs, hidden).iterator
+          } yield edit)
 
       val file_edits =
-        (for {
-          (node_name, model) <- st.file_models_iterator
-          (edits, model1) <- model.flush_edits(doc_blobs, hidden)
-        } yield (edits, node_name -> model1)).toList
+        List.from(
+          for {
+            (node_name, model) <- st.file_models_iterator
+            (edits, model1) <- model.flush_edits(doc_blobs, hidden)
+          } yield (edits, node_name -> model1))
 
       val model_edits = buffer_edits ::: file_edits.flatMap(_._1)
 
       val purge_edits =
         if (purge) {
           val purged =
-            (for ((node_name, model) <- st.file_models_iterator)
-             yield (node_name -> model.purge_edits(doc_blobs))).toList
+            List.from(
+              for ((node_name, model) <- st.file_models_iterator)
+                yield (node_name -> model.purge_edits(doc_blobs)))
 
           val imports = {
             val open_nodes =
-              (for ((_, model) <- st.buffer_models.iterator) yield model.node_name).toList
+              List.from(
+                for ((_, model) <- st.buffer_models.iterator)
+                  yield model.node_name)
             val touched_nodes = model_edits.map(_._1)
             val pending_nodes = for (case (node_name, None) <- purged) yield node_name
             (open_nodes ::: touched_nodes ::: pending_nodes).map((_, Position.none))
@@ -524,10 +530,11 @@ class Buffer_Model private(
   override def document_view_ranges(snapshot: Document.Snapshot): List[Text.Range] = {
     GUI_Thread.require {}
 
-    (for {
-      doc_view <- document_view_iterator
-      range <- doc_view.perspective(snapshot).ranges.iterator
-    } yield range).toList
+    List.from(
+      for {
+        doc_view <- document_view_iterator
+        range <- doc_view.perspective(snapshot).ranges.iterator
+      } yield range)
   }
 
 
