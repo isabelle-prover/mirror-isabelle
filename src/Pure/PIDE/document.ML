@@ -203,9 +203,8 @@ fun update_node name f = default_node name #> String_Graph.map_node name f;
 
 val pure_keywords = Thy_Header.get_keywords o Theory.get_pure;
 
-fun node_keywords node =
+fun node_keywords name node =
   let
-    val name = #node (#name (get_thy node));
     val keywords1 = Option.map Thy_Header.get_keywords (Build.lookup_theory name);
     val keywords2 = (case node of Node {keywords, ...} => keywords);
   in
@@ -286,7 +285,8 @@ fun update_keywords name nodes =
     else
       let
         val thy = get_thy node;
-        val imports_keywords = map (node_keywords o get_node nodes o #node o #1) (#imports thy);
+        val imports_keywords = #imports thy
+          |> map (fn ({node = import, ...}, _) => node_keywords import (get_node nodes import));
         val keywords = Library.foldl Keyword.merge_keywords (pure_keywords (), imports_keywords);
         val (keywords', more_errors) =
           (Keyword.add_keywords (#keywords thy) keywords, [])
@@ -850,7 +850,7 @@ fun update old_version_id new_version_id edits consolidate state =
                 Runtime.exn_trace_system_message (fn () =>
                   let
                     val special_parent = get_special_parent node;
-                    val keywords = node_keywords node;
+                    val keywords = node_keywords name node;
 
                     val maybe_consolidate = consolidate name andalso could_consolidate node;
                     val deps = map (apsnd Future.join) deps_future;
