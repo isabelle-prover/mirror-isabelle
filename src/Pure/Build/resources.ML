@@ -43,6 +43,7 @@ sig
   val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
   val map_thy_errors: (string list -> string list) -> thy -> thy
+  val check_thy_errors: thy -> thy
   val skipping_theory: (string -> unit) -> thy -> bool
   val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
@@ -288,6 +289,12 @@ fun map_thy_errors f
   ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
    {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
     condition_bad = condition_bad, errors = f errors, initiators = initiators};
+
+fun check_thy_errors (thy: thy) =
+  (case #errors thy of
+    [] => thy
+  | errs =>
+      error (Protocol_Message.command_positions_yxml (Position.thread_data ()) (cat_lines errs)));
 
 
 (* begin theory *)

@@ -115,12 +115,7 @@ fun set_keywords keywords =
 
 fun read_thy node span : Resources.thy =
   let
-    val thy = get_thy node;
-    val _ =
-      (case #errors thy of
-        [] => ()
-      | errs =>
-          error (Protocol_Message.command_positions_yxml (Position.thread_data ()) (cat_lines errs)));
+    val thy = Resources.check_thy_errors (get_thy node);
     val header = Thy_Header.read_tokens Position.none span;
   in
    {name = #name thy,
