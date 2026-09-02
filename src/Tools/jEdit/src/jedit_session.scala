@@ -169,4 +169,9 @@ class JEdit_Session(_session_options: => Options) extends Session {
   override val store: Store = Store(JEdit_Session.session_options(session_options))
 
   override def auto_resolve: Boolean = session_options.bool("jedit_auto_resolve")
+
+  override def update_options(options: Options): Unit = {
+    super.update_options(options)
+    JEdit_Editor.flush_edits(reparse = true)
+  }
 }

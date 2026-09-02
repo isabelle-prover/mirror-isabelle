@@ -87,9 +87,14 @@ object JEdit_Editor extends Editor {
 
   override def session: Session = PIDE.session
 
-  def flush_edits(hidden: Boolean = false, purge: Boolean = false): Unit =
+  def flush_edits(
+    hidden: Boolean = false,
+    purge: Boolean = false,
+    reparse: Boolean = false
+  ): Unit =
     GUI_Thread.require {
-      val (doc_blobs, edits) = Document_Model.flush_edits(hidden = hidden, purge = purge)
+      val (doc_blobs, edits) =
+        Document_Model.flush_edits(hidden = hidden, purge = purge, reparse = reparse)
       session.update(doc_blobs, edits)
     }
 
