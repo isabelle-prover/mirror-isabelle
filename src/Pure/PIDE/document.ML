@@ -867,7 +867,7 @@ fun update old_version_id new_version_id edits consolidate state =
                         val proper_init =
                           is_some special_parent orelse
                             check_theory false name node andalso
-                            forall (fn (name, (_, node)) => check_theory true name node) deps;
+                            forall (fn (a, (_, b)) => check_theory true a b) deps;
 
                         val (print_execs, common, (still_visible, initial)) =
                           if deps_result_changed
