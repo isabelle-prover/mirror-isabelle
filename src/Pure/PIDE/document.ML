@@ -249,6 +249,22 @@ val edit_node = map_entries o fold
   (fn (id, SOME id2) => Entries.insert_after id (id2, NONE)
     | (id, NONE) => Entries.delete_after id #> reset_after id);
 
+fun cycle_msg names = "Cyclic dependency of " ^ space_implode " via " (map quote names);
+
+fun edit_thy name thy nodes =
+  let
+    val imports = map (#node o #1) (#imports thy);
+    val nodes1 = nodes |> default_node name |> fold default_node imports;
+    val nodes2 =
+      String_Graph.Keys.fold (fn dep => String_Graph.del_edge (dep, name))
+        (String_Graph.imm_preds nodes1 name) nodes1;
+    val (nodes3, more_errors) =
+      (String_Graph.add_deps_acyclic (name, imports) nodes2, [])
+        handle String_Graph.CYCLES cs => (nodes2, map cycle_msg cs);
+    val thy' = thy |> Resources.map_thy_errors (fn errors => errors @ more_errors);
+  in String_Graph.map_node name (set_thy thy') nodes3 end;
+
+
 
 (* version operations *)
 
@@ -257,26 +273,11 @@ val empty_version = Version String_Graph.empty;
 fun nodes_of (Version nodes) = nodes;
 val node_of = get_node o nodes_of;
 
-fun cycle_msg names = "Cyclic dependency of " ^ space_implode " via " (map quote names);
-
 fun edit_nodes (name, node_edit) (Version nodes) =
   Version
     (case node_edit of
       Edits edits => update_node name (edit_node edits) nodes
-    | Thy thy =>
-        let
-          val imports = map (#node o #1) (#imports thy);
-          val nodes1 = nodes
-            |> default_node name
-            |> fold default_node imports;
-          val nodes2 = nodes1
-            |> String_Graph.Keys.fold
-                (fn dep => String_Graph.del_edge (dep, name)) (String_Graph.imm_preds nodes1 name);
-          val (nodes3, more_errors) =
-            (String_Graph.add_deps_acyclic (name, imports) nodes2, [])
-              handle String_Graph.CYCLES cs => (nodes2, map cycle_msg cs);
-          val thy' = thy |> Resources.map_thy_errors (fn errors => errors @ more_errors);
-        in String_Graph.map_node name (set_thy thy') nodes3 end
+    | Thy thy => edit_thy name thy nodes
     | Perspective perspective => update_node name (set_perspective perspective) nodes);
 
 fun update_keywords name nodes =
