@@ -93,13 +93,12 @@ object JEdit_Editor extends Editor {
       session.update(doc_blobs, edits)
     }
   override def flush(): Unit = flush_edits()
-  def purge(): Unit = flush_edits(purge = true)
 
   private val delay_input: Delay =
-    GUI.Delay.last(PIDE.session.input_delay) { flush() }
+    GUI.Delay.last(PIDE.session.input_delay) { flush_edits() }
 
   private val delay_generated_input: Delay =
-    GUI.Delay.first(PIDE.session.generated_input_delay) { flush() }
+    GUI.Delay.first(PIDE.session.generated_input_delay) { flush_edits() }
 
   def invoke(): Unit = delay_input.invoke()
   def revoke(): Unit = delay_input.revoke()
@@ -125,7 +124,7 @@ object JEdit_Editor extends Editor {
   /* global changes */
 
   def state_changed(): Unit = {
-    GUI_Thread.later { flush() }
+    GUI_Thread.later { flush_edits() }
     PIDE.session.deps_changed()
     session.global_options.post(Session.Global_Options(PIDE.options))
   }

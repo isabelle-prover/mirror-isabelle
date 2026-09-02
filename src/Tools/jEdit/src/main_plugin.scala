@@ -240,7 +240,7 @@ class Main_Plugin extends EBPlugin {
 
   def init_models(): Unit = {
     GUI_Thread.now {
-      JEdit_Editor.flush()
+      JEdit_Editor.flush_edits()
 
       for {
         buffer <- JEdit_Lib.jedit_buffers()
