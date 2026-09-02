@@ -647,11 +647,11 @@ fun init_theory deps node span =
 
 fun get_special_parent node =
   let
-    val thy as {name = {theory = name, ...}, ...} = get_thy node;
+    val thy as {name, ...} = get_thy node;
     val parent =
-      if name = Sessions.root_name then
+      if #theory name = Sessions.root_name then
         SOME (Build.get_theory Sessions.theory_name)
-      else if member (op =) Thy_Header.ml_roots name then
+      else if member (op =) Thy_Header.ml_roots (#theory name) then
         SOME (Build.get_theory Thy_Header.ml_bootstrapN)
       else NONE;
   in parent |> Option.map (Resources.begin_theory thy o single) end;
