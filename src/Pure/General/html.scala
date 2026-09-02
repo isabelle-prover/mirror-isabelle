@@ -312,6 +312,28 @@ object HTML {
     output(List(tree), hidden, structural)
 
 
+  /* XML with markup for control symbols */
+
+  def control_markup(body: XML.Body, hidden: Boolean): XML.Body = {
+    val builder = new XML.Builder
+
+    def traverse_body(body: XML.Body): Unit = {
+      val control_blocks = check_control_blocks(body)
+
+      body.foreach {
+        case XML.Text(txt) => traverse(builder, txt, control_blocks, hidden)
+        case XML.Elem(markup, body) =>
+          builder.elem(markup)
+          traverse_body(body)
+          builder.end_elem(markup.name)
+      }
+    }
+
+    traverse_body(body)
+    builder.result
+  }
+
+
   /* input */
 
   def input_raw(text: String): XML.Elem = raw(HTML.text(input(text)))
