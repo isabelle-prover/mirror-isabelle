@@ -71,7 +71,7 @@ object Thy_Syntax {
     previous: Document.Version,
     edits: List[Document.Edit_Text]
   ): (List[Document.Node.Name], Document.Nodes, List[Document.Edit_Command]) = {
-    val syntax_changed0 = new mutable.ListBuffer[Document.Node.Name]
+    var syntax_changed = List.empty[Document.Node.Name]
     var nodes = previous.nodes
     val doc_edits = new mutable.ListBuffer[Document.Edit_Command]
 
@@ -81,13 +81,13 @@ object Thy_Syntax {
       if (update_thy) {
         if (node.thy.imports_no_pos != thy.imports_no_pos ||
             node.thy.keywords != thy.keywords ||
-            node.thy.abbrevs != thy.abbrevs) syntax_changed0 += name
+            node.thy.abbrevs != thy.abbrevs) syntax_changed = name :: syntax_changed
         nodes += (name -> node.update_thy(thy))
         doc_edits += (name -> Document.Node.Thy(thy))
       }
     }
 
-    val syntax_changed = nodes.descendants(syntax_changed0.toList)
+    syntax_changed = nodes.descendants(syntax_changed)
 
     for (name <- syntax_changed) {
       val node = nodes(name)
