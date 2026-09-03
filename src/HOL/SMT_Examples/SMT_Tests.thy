@@ -6,7 +6,7 @@ section \<open>Tests for the SMT binding\<close>
 
 theory SMT_Tests
   imports Complex_Main
-  options [condition = Z3_INSTALLED]
+  options [condition = "$Z3_INSTALLED"]
 begin
 
 smt_status

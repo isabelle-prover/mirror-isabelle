@@ -33,7 +33,7 @@ class Theories_Dockable(view: View, position: String) extends Dockable(view, pos
 
   private val purge = new GUI.Button("Purge") {
     tooltip = "Remove theories that are no longer required"
-    override def clicked(): Unit = JEdit_Editor.purge()
+    override def clicked(): Unit = JEdit_Editor.flush_edits(purge = true)
   }
 
   private val continuous_checking = new JEdit_Options.continuous_checking.GUI

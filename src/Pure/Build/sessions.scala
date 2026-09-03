@@ -350,7 +350,7 @@ object Sessions {
                 dependencies.entries.foldLeft(graph0) {
                   case (g, entry) =>
                     val a = node(entry.name)
-                    val bs = entry.imports.map(node).filterNot(_ == a)
+                    val bs = entry.imports_no_pos.map(node).filterNot(_ == a)
                     bs.foldLeft((a :: bs).foldLeft(g)(_.default_node(_, Nil)))(_.add_edge(_, a))
                 }
               }
@@ -497,12 +497,10 @@ object Sessions {
         Shasum.make_sorted(session_info.options.changed(filter = _.session_content)
           .map(ch => SHA1.digest(ch.print_prefs) -> Build_Prefs.make(ch.name)))
 
-      val theories_options =
-        session_base.used_theories.map(entry =>
-          Conditions.make_options(session_info.options, entry.options))
       val conditions =
-        Conditions.eval(theories_options).dest
-          .map({ case (a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)) })
+        session_base.used_theories.map(_.options)
+          .foldLeft(Conditions.init(session_info.options))(_ eval _)
+          .check_errors.dest((a, b) => Shasum.make(SHA1.digest(b), Condition.make(a)))
 
       val sources =
         Shasum.make_sorted(
@@ -564,55 +562,97 @@ object Sessions {
   /* conditions to load theories */
 
   object Conditions {
-    val CONDITION = "condition"
+    def init(session_options: Options): Conditions =
+      new Conditions(session_options, SortedMap.empty)
 
-    def get_options(options: Options): List[String] =
-      space_explode(',', options.string(CONDITION))
-
-    def make_options(options: Options, opts: Options.Update): Options =
-      options ++ opts.filter(p => p._1 == CONDITION)
-
-    private val empty_rep = SortedMap.empty[String, Boolean]
-    val empty: Conditions = new Conditions(empty_rep)
-    def eval(opts: List[Options]): Conditions =
-      new Conditions(
-        opts.iterator.flatMap(get_options).foldLeft(empty_rep) {
-          case (map, a) =>
-            if (map.isDefinedAt(a)) map
-            else map + (a -> Isabelle_System.getenv(a).nonEmpty)
-        }
-      )
+    def explode(options: Options): List[String] =
+      space_explode(',', options.string(Condition.name))
   }
 
-  final class Conditions private(private val rep: SortedMap[String, Boolean]) {
-    def dest: List[(String, Boolean)] = rep.toList
-    def good: List[String] = List.from(for ((a, b) <- rep.iterator if b) yield a)
-    def bad: List[String] = List.from(for ((a, b) <- rep.iterator if !b) yield a)
+  final class Conditions private(
+    session_options: Options,
+    rep: SortedMap[String, Exn.Result[Boolean]]
+  ) {
+    def restrict(domain: Set[String]): Conditions =
+      new Conditions(session_options, rep.filter(p => domain(p._1)))
+
+    def dest[A](f: (String, Boolean) => A): List[A] =
+      List.from(for (case (a, Exn.Res(b)) <- rep.iterator) yield f(a, b))
+    def errors: List[String] =
+      List.from(for (case (_, Exn.Exn(e)) <- rep.iterator) yield Exn.message(e))
+    def good: List[String] = List.from(for (case (a, Exn.Res(true)) <- rep.iterator) yield a)
+    def bad: List[String] = List.from(for (case (a, Exn.Res(false)) <- rep.iterator) yield a)
     def bad_message: String =
       bad match {
         case Nil => ""
         case xs => xs.map(x => "undefined " + x).mkString("(", ", ", ")")
       }
 
-    override def toString: String =
-      if (rep.isEmpty) "Sessions.Conditions.empty"
-      else {
-        val a = if_proper(good, "good = " + quote(good.mkString(",")))
-        val b = if_proper(bad, "bad = " + quote(bad.mkString(",")))
-        "Sessions.Conditions(" + a + if_proper(a.nonEmpty && b.nonEmpty, ", ") + b + ")"
+    def check_errors: Conditions =
+      errors match {
+        case Nil => this
+        case errs => error(cat_lines(errs))
       }
+
+    def options(specs: Options.Update): Options =
+      session_options ++ specs.filter(p => p._1 == Condition.name)
+
+    def evaluate(cond: String): Conditions =
+      if (rep.isDefinedAt(cond)) this
+      else {
+        val result =
+          Exn.result(
+            Library.try_unprefix("$", cond) match {
+              case Some(a) => Isabelle_System.getenv(a).nonEmpty
+              case None =>
+                try { session_options.proper_value(cond) }
+                catch {
+                  case ERROR(msg) => error(msg + " (use \"$NAME\" for environment variables)")
+                }
+            }
+          )
+        new Conditions(session_options, rep + (cond -> result))
+      }
+
+    def evaluate(conds: List[String]): Conditions = conds.foldLeft(this)(_ evaluate _)
+
+    def eval(options: Options): Conditions = evaluate(Conditions.explode(options))
+    def eval(specs: Options.Update): Conditions = eval(options(specs))
+
+    override def toString: String = {
+      val a = if_proper(good, "good = " + quote(good.mkString(",")))
+      val b = if_proper(bad, "bad = " + quote(bad.mkString(",")))
+      "Sessions.Conditions(" + a + if_proper(a.nonEmpty && b.nonEmpty, ", ") + b + ")"
+    }
+  }
+
+  final class Conditions_Variable(init_options: Options) {
+    private var conditions: Conditions = Conditions.init(init_options)
+
+    def value: Conditions = synchronized { conditions }
+    override def toString: String = value.toString
+
+    def init(options: Options): Conditions =
+      synchronized { conditions = Conditions.init(options); conditions }
+
+    def eval_restrict(specs: Options.Update): Conditions = synchronized {
+      val options = conditions.options(specs)
+      val conds = Conditions.explode(options)
+      conditions = conditions.evaluate(conds)
+      conditions.restrict(conds.toSet)
+    }
   }
 
 
   /* cumulative session info */
 
-  class Special_Info(val kind: String) {
-    override def toString: String = "<" + kind + ">"
+  class Special_Info(val name: String) {
+    override def toString: String = "<" + name + ">"
 
-    private val BG = "<" + kind + ":"
+    private val BG = "<" + name + ":"
     private val EN = ">"
 
-    def make(name: String): String = BG + name + EN
+    def make(value: String): String = BG + value + EN
 
     def detect(s: String): Boolean = {
       val i = s.indexOf('<')
@@ -623,7 +663,7 @@ object Sessions {
     }
   }
 
-  object Condition extends Special_Info(Conditions.CONDITION)
+  object Condition extends Special_Info("condition")
   object Build_Prefs extends Special_Info("build_prefs")
 
   sealed case class Chapter_Info(

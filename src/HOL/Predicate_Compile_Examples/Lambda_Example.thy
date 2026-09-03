@@ -1,6 +1,6 @@
 theory Lambda_Example
   imports "HOL-Library.Code_Prolog"
-  options [condition = ISABELLE_SWIPL]
+  options [condition = "$ISABELLE_SWIPL"]
 begin
 
 subsection \<open>Lambda\<close>

@@ -7,7 +7,7 @@ section \<open>Examples for narrowing-based testing\<close>
 
 theory Quickcheck_Narrowing_Examples
   imports Main
-  options [condition = ISABELLE_GHC]
+  options [condition = "$ISABELLE_GHC"]
 begin
 
 declare [[quickcheck_timeout = 3600]]

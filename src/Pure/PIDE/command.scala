@@ -443,17 +443,16 @@ object Command {
       // inlined errors
       case Thy_Header.THEORY =>
         val reader = span.content_reader
-        val header = resources.check_thy(session.session_options, node_name, span.content_reader)
-        val imports = header.imports
+        val thy = resources.check_thy(session.conditions, node_name, span.content_reader)
         val raw_imports =
           try {
-            val read_imports = Thy_Header.read(node_name, reader).imports.map(_._1)
-            if (imports.length == read_imports.length) read_imports else error("")
+            val read_imports = Thy_Header.read(node_name, reader).imports_no_pos
+            if (thy.imports.length == read_imports.length) read_imports else error("")
           }
-          catch { case _: Throwable => List.fill(header.imports.length)("") }
+          catch { case _: Throwable => List.fill(thy.imports.length)("") }
 
         val errors =
-          for { ((import_name, pos), s) <- imports zip raw_imports if !can_import(import_name) }
+          for { ((import_name, pos), s) <- thy.imports zip raw_imports if !can_import(import_name) }
           yield {
             val completion =
               if (Url.is_base_name(s)) resources.complete_import_name(node_name, s) else Nil
@@ -552,7 +551,7 @@ final class Command private(
     if (span.name == Thy_Header.THEORY) {
       try {
         val header = Thy_Header.read(node_name, span.content_reader)
-        for ((s, _) <- header.imports)
+        for (s <- header.imports_no_pos)
         yield {
           try { resources.import_name(node_name, s) }
           catch { case ERROR(_) => Document.Node.Name.empty }

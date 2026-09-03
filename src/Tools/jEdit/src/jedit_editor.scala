@@ -87,29 +87,33 @@ object JEdit_Editor extends Editor {
 
   override def session: Session = PIDE.session
 
-  def flush_edits(hidden: Boolean = false, purge: Boolean = false): Unit =
+  def flush_edits(
+    hidden: Boolean = false,
+    purge: Boolean = false,
+    reparse: Boolean = false
+  ): Unit =
     GUI_Thread.require {
-      val (doc_blobs, edits) = Document_Model.flush_edits(hidden, purge)
+      val (doc_blobs, edits) =
+        Document_Model.flush_edits(hidden = hidden, purge = purge, reparse = reparse)
       session.update(doc_blobs, edits)
     }
-  override def flush(): Unit = flush_edits()
-  def purge(): Unit = flush_edits(purge = true)
 
   private val delay_input: Delay =
-    GUI.Delay.last(PIDE.session.input_delay) { flush() }
+    GUI.Delay.last(PIDE.session.input_delay) { flush_edits() }
 
   private val delay_generated_input: Delay =
-    GUI.Delay.first(PIDE.session.generated_input_delay) { flush() }
+    GUI.Delay.first(PIDE.session.generated_input_delay) { flush_edits() }
 
-  def invoke(): Unit = delay_input.invoke()
-  def revoke(): Unit = delay_input.revoke()
+  override def flush(): Unit = flush_edits()
+  override def invoke(): Unit = delay_input.invoke()
+  override def revoke(): Unit = delay_input.revoke()
   def invoke_generated(): Unit = { delay_input.invoke(); delay_generated_input.invoke() }
 
   def shutdown(): Unit =
     GUI_Thread.require {
       delay_input.revoke()
       delay_generated_input.revoke()
-      Document_Model.flush_edits(hidden = false, purge = false)
+      Document_Model.flush_edits()
     }
 
   def visible_node(name: Document.Node.Name): Boolean =
@@ -125,7 +129,7 @@ object JEdit_Editor extends Editor {
   /* global changes */
 
   def state_changed(): Unit = {
-    GUI_Thread.later { flush() }
+    GUI_Thread.later { flush_edits() }
     PIDE.session.deps_changed()
     session.global_options.post(Session.Global_Options(PIDE.options))
   }

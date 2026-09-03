@@ -179,15 +179,15 @@ object Thy_Header {
       }
 
     val all_tokens = make_tokens(reader)
-    val drop_tokens =
+    val skip_tokens =
       if (strict) Nil
       else all_tokens.takeWhile(tok => !tok.is_command(Thy_Header.THEORY)).toList
 
-    val tokens = all_tokens.drop(drop_tokens.length)
+    val tokens = all_tokens.drop(skip_tokens.length)
     val tokens1 = tokens.takeWhile(tok => !tok.is_begin).toList
     val tokens2 = tokens.dropWhile(tok => !tok.is_begin).headOption.toList
 
-    (drop_tokens, tokens1 ::: tokens2)
+    (skip_tokens, tokens1 ::: tokens2)
   }
 
   private object Parsers extends Parsers {
@@ -203,15 +203,12 @@ object Thy_Header {
     strict: Boolean = true,
     unicode_symbols: Boolean = true
   ): Thy_Header = {
-    val (_, tokens0) = read_tokens(reader, true)
-    val text = Scan.reader_decode_utf8(reader, Token.implode(tokens0))
-
+    val text = Scan.reader_decode_utf8(reader, Token.implode(read_tokens(reader, true)._2))
     val (skip_tokens, tokens) = read_tokens(Scan.char_reader(text), strict)
-    val pos =
+    val start =
       if (command) Token.Pos.command
       else skip_tokens.foldLeft(Token.Pos.file(node_name.node))(_ advance _)
-
-    Parsers.parse_header(tokens, pos).output(unicode_symbols).check(node_name)
+    Parsers.parse_header(tokens, start).output(unicode_symbols).check(node_name)
   }
 }
 
@@ -223,6 +220,8 @@ sealed case class Thy_Header(
   keywords: Thy_Header.Keywords,
   abbrevs: Thy_Header.Abbrevs
 ) {
+  def imports_no_pos: List[String] = imports.map(_._1)
+
   def output(unicode_symbols: Boolean): Thy_Header = {
     def f(s: String): String = Symbol.output(unicode_symbols, s)
     Thy_Header(f(name), pos,

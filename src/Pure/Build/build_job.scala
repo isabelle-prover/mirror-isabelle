@@ -441,34 +441,27 @@ object Build_Job {
                   val prover_options = session.prover_options
                   val resources_xml = session.resources.init_session_xml
 
-                  type Thy = ((String, Position.T), Options.Update)
-                  sealed case class Theory(options: Options.Update, thy: Thy) {
+                  sealed case class Theory(options: Options.Update, thy: Resources.Thy) {
                     def options_eq(other: Theory): Boolean = options == other.options
                   }
 
-                  val theories: List[(Options.Update, List[Thy])] =
+                  val theories: List[(Options.Update, List[Resources.Thy])] =
                     Library.runs[Theory](
                       List.from(
                         for {
-                          (opts, thys) <- info.theories.iterator
-                          (opts_for_ML_process, thy_opts) =
-                            process.options.check_update(opts)
+                          thy <- session_background.base.used_theories.iterator
+                          (process_opts, thy_opts) =
+                            process.options.check_update(thy.options)
                               .partition(opt => process.options.get(opt.name).get.for_ML_process)
-                          thy <- thys.iterator
-                        } yield Theory(opts_for_ML_process, (thy, thy_opts))),
+                        } yield Theory(process_opts, thy.copy(options = thy_opts))),
                       eq = _ options_eq _)
                       .map(ts => (ts.head.options ::: prover_options, ts.map(_.thy)))
 
                   val theories_xml =
-                    theories.map({ arg =>
+                    theories.map({ case (opts, thys) =>
                       import XML.Encode._
-                      val encode_spec: T[Options.Spec] =
-                        spec => pair(string, option(string))(spec.name, spec.value)
-                      val encode_thy: T[Thy] =
-                        pair(pair(string, properties), list(encode_spec))
-                      val encode_options: T[Options.Update] =
-                        opts => (process.options ++ opts).encode
-                      pair(encode_options, list(encode_thy))(arg)
+                      pair(Options.encode, list(Resources.Thy.encode))(
+                        (process.options ++ opts, thys))
                     })
 
                   session.protocol_command_args("build_session",

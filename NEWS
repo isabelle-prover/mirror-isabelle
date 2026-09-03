@@ -19,13 +19,19 @@ PIDE session.
 * The meaning of system option "condition" has been changed as follows.
 If the condition is false, the theory remains formally intact, based on
 the header with imports; the theory body commands are ignored. Likewise,
-document preparation presents only the document commands up to 'theory,
-and ignores everything until the final 'end'. This allows to import
-theories uniformly, but the respective contents may be empty depending
-on conditions. This allows to construct variants of specifications,
+document preparation presents only the document commands up to 'theory',
+and ignores everything until the final 'end'. Thus theory imports work
+uniformly, but the respective contents may be empty depending on
+conditions. This allows to construct variants of specifications,
 depending on parameters that are changed by external means (e.g.
 environment variables): with suitable naming conventions and proof tool
 setup, later theories may work again uniformly on either variant.
+
+* The syntax of system option "condition" has been extended as follows:
+  - "$NAME" refers to a process environment variable. INCOMPATIBILITY,
+    was plain NAME before.
+  - "name" refers to a system option; to be enabled, the value needs to
+    be true (bool), non-empty (string), or > 0 (int, real).
 
 * The Isabelle application bundle has been split into "macos"
 (x86_64-darwin, Intel) and "macos_arm" (arm64-darwin, Apple Silicon).

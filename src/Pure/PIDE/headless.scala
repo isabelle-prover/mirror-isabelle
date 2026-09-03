@@ -227,7 +227,7 @@ object Headless {
                 dep_graph.topological_order.foldLeft(already_committed) {
                   case (committed, name) =>
                     def parents_committed: Boolean =
-                      version.nodes(name).header.imports.forall({ case (parent, _) =>
+                      version.nodes(name).thy.imports.forall({ case (parent, _) =>
                       resources.loaded_theory(parent) || committed.isDefinedAt(parent) })
                     if (!committed.isDefinedAt(name) && parents_committed &&
                         state.node_consolidated(version, name)) {
@@ -306,7 +306,7 @@ object Headless {
         val import_names =
           theories.map(thy =>
             resources.import_name(qualifier, master_directory(master_dir), thy) -> Position.none)
-        resources.dependencies(session_options, import_names,
+        resources.dependencies(conditions, import_names,
           options = options, progress = progress).check_errors
       }
       val dep_theories = dependencies.theories
@@ -475,7 +475,7 @@ object Headless {
 
     final class Theory private[Headless](
       val node_name: Document.Node.Name,
-      val node_header: Document.Node.Header,
+      val thy: isabelle.Resources.Thy,
       val text: String,
       val node_required: Boolean
     ) {
@@ -486,7 +486,7 @@ object Headless {
 
       def make_edits(text_edits: List[Text.Edit]): List[Document.Edit_Text] =
         List(
-          node_name -> Document.Node.Deps(node_header),
+          node_name -> Document.Node.Thy(thy),
           node_name -> Document.Node.Edits(text_edits),
           node_name -> node_perspective)
 
@@ -504,7 +504,7 @@ object Headless {
 
       def set_required(required: Boolean): Theory =
         if (required == node_required) this
-        else new Theory(node_name, node_header, text, required)
+        else new Theory(node_name, thy, text, required)
     }
 
     sealed case class State(
@@ -553,7 +553,7 @@ object Headless {
       lazy val theory_graph: Document.Node.Name.Graph[Unit] =
         Document.Node.Name.make_graph(
           for ((name, theory) <- theories.toList)
-          yield ((name, ()), theory.node_header.imports_no_pos.filter(theories.isDefinedAt)))
+          yield ((name, ()), theory.thy.imports_no_pos.filter(theories.isDefinedAt)))
 
       def is_required(name: Document.Node.Name): Boolean = required.isDefinedAt(name)
 
@@ -660,9 +660,8 @@ object Headless {
 
           progress.expose_interrupt()
           val text = Symbol.output(unicode_symbols, File.read(path))
-          val node_header =
-            resources.check_thy(session.session_options, node_name, Scan.char_reader(text))
-          new Resources.Theory(node_name, node_header, text, true)
+          val thy = resources.check_thy(session.conditions, node_name, Scan.char_reader(text))
+          new Resources.Theory(node_name, thy, text, true)
         }
 
       val loaded = loaded_theories.length

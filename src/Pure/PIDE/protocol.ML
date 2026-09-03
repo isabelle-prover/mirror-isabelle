@@ -42,7 +42,7 @@ fun decode_command id name kind parents_xml blobs_xml toks_xml sources : Documen
     val (blobs_digests, blobs_index) =
       blobs_xml |>
         let
-          val message = YXML.string_of_body o Protocol_Message.command_positions id;
+          val message = YXML.string_of_body o Protocol_Message.command_positions_body id;
           val blob =
             triple string string (option string)
             #> (fn (a, b, c) => {file_node = a, src_path = Path.explode b, digest = c});
@@ -118,22 +118,7 @@ val _ =
                   pair string
                     (variant
                      [fn ([], a) => Document.Edits (list (pair (option int) (option int)) a),
-                      fn ([], a) =>
-                        let
-                          val (master_dir, (name, (imports, (options, (keywords, errors))))) =
-                            pair (Path.explode o string) (pair string (pair (list string)
-                              (pair (list (pair string (option string)))
-                              ((pair (list (pair string (pair string (list string))))
-                                (list YXML.string_of_body)))))) a;
-                          val imports' = map (rpair Position.none) imports;
-                          val options' = Options.update_pos_none options;
-                          val keywords' =
-                            map (fn (x, y) => ((x, Position.none), Keyword.command_spec y)) keywords;
-                          val header =
-                            Thy_Header.make (name, Position.none) imports' options' keywords';
-                        in
-                          Document.Deps {master_dir = master_dir, header = header, errors = errors}
-                        end,
+                      fn ([], a) => Document.Thy (Resources.decode_thy a),
                       fn (a :: b, c) =>
                         Document.Perspective (bool_atom a, map int_atom b,
                           list (pair int (pair string (list string))) c)])

@@ -66,7 +66,7 @@ object JEdit_Options {
     override def changed(): Unit = GUI_Thread.require {
       super.changed()
       JEdit_Editor.flush_edits(hidden = true)
-      JEdit_Editor.flush()
+      JEdit_Editor.flush_edits()
     }
 
     class GUI extends Bool_GUI(this, "Proof state") {

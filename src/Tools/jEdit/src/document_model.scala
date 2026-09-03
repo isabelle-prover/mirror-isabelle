@@ -118,16 +118,17 @@ object Document_Model {
   def sync_files(changed_files: Set[JFile]): Boolean = {
     state.change_result { st =>
       val changed_models =
-        (for {
-          (node_name, model) <- st.file_models_iterator
-          file <- model.file if changed_files(file)
-          text <- PIDE.resources.read_file_content(node_name)
-          if model.content.text != text
-        } yield {
-          val content = Document_Model.File_Content(node_name, text)
-          val edits = Text.Edit.replace(0, model.content.text, text)
-          (node_name, model.copy(content = content, pending_edits = model.pending_edits ::: edits))
-        }).toList
+        List.from(
+          for {
+            (node_name, model) <- st.file_models_iterator
+            file <- model.file if changed_files(file)
+            text <- PIDE.resources.read_file_content(node_name)
+            if model.content.text != text
+          } yield {
+            val content = Document_Model.File_Content(node_name, text)
+            val edits = Text.Edit.replace(0, model.content.text, text)
+            (node_name, model.copy(content = content, pending_edits = model.pending_edits ::: edits))
+          })
       if (changed_models.isEmpty) (false, st)
       else (true, st.copy(models = changed_models.foldLeft(st.models)(_ + _)))
     }
@@ -227,41 +228,50 @@ object Document_Model {
 
   /* flushed edits */
 
-  def flush_edits(hidden: Boolean, purge: Boolean): (Document.Blobs, List[Document.Edit_Text]) = {
+  def flush_edits(
+    hidden: Boolean = false,
+    purge: Boolean = false,
+    reparse: Boolean = false
+  ): (Document.Blobs, List[Document.Edit_Text]) = {
     GUI_Thread.require {}
 
     state.change_result({ st =>
       val doc_blobs = st.document_blobs
 
       val buffer_edits =
-        (for {
-          (_, model) <- st.buffer_models.iterator
-          edit <- model.flush_edits(doc_blobs, hidden).iterator
-        } yield edit).toList
+        List.from(
+          for {
+            (_, model) <- st.buffer_models.iterator
+            edit <- model.flush_edits(doc_blobs, hidden = hidden, reparse = reparse).iterator
+          } yield edit)
 
       val file_edits =
-        (for {
-          (node_name, model) <- st.file_models_iterator
-          (edits, model1) <- model.flush_edits(doc_blobs, hidden)
-        } yield (edits, node_name -> model1)).toList
+        List.from(
+          for {
+            (node_name, model) <- st.file_models_iterator
+            (edits, model1) <- model.flush_edits(doc_blobs, hidden = hidden, reparse = reparse)
+          } yield (edits, node_name -> model1))
 
       val model_edits = buffer_edits ::: file_edits.flatMap(_._1)
 
       val purge_edits =
         if (purge) {
           val purged =
-            (for ((node_name, model) <- st.file_models_iterator)
-             yield (node_name -> model.purge_edits(doc_blobs))).toList
+            List.from(
+              for ((node_name, model) <- st.file_models_iterator)
+                yield (node_name -> model.purge_edits(doc_blobs)))
 
           val imports = {
             val open_nodes =
-              (for ((_, model) <- st.buffer_models.iterator) yield model.node_name).toList
+              List.from(
+                for ((_, model) <- st.buffer_models.iterator)
+                  yield model.node_name)
             val touched_nodes = model_edits.map(_._1)
             val pending_nodes = for (case (node_name, None) <- purged) yield node_name
             (open_nodes ::: touched_nodes ::: pending_nodes).map((_, Position.none))
           }
-          val session_options = PIDE.session.session_options
-          val retain = PIDE.resources.dependencies(session_options, imports).theories.toSet
+          val session_conditions = PIDE.session.conditions
+          val retain = PIDE.resources.dependencies(session_conditions, imports).theories.toSet
 
           for (case (node_name, Some(edits)) <- purged if !retain(node_name); edit <- edits)
             yield edit
@@ -342,7 +352,7 @@ sealed abstract class Document_Model extends Document.Model {
 
   def node_perspective(
     doc_blobs: Document.Blobs,
-    hidden: Boolean
+    hidden: Boolean = false
   ): (Boolean, Document.Node.Perspective_Text.T) = {
     GUI_Thread.require {}
 
@@ -413,6 +423,11 @@ case class File_Model(
 
   def node_name: Document.Node.Name = content.node_name
 
+  def get_thy(): Resources.Thy =
+    PIDE.resources.special_thy(node_name) getOrElse
+      PIDE.resources.check_thy(
+        session.conditions, node_name, Scan.char_reader(content.text), strict = false)
+
   override def get_text(range: Text.Range): Option[String] =
     range.try_substring(content.text)
 
@@ -420,14 +435,6 @@ case class File_Model(
   /* required */
 
   def set_node_required(b: Boolean): File_Model = copy(node_required = b)
-
-
-  /* header */
-
-  def node_header: Document.Node.Header =
-    PIDE.resources.special_header(node_name) getOrElse
-      PIDE.resources.check_thy(
-        session.session_options, node_name, Scan.char_reader(content.text), strict = false)
 
 
   /* content */
@@ -459,11 +466,12 @@ case class File_Model(
 
   def flush_edits(
     doc_blobs: Document.Blobs,
-    hidden: Boolean
+    hidden: Boolean = false,
+    reparse: Boolean = false
   ): Option[(List[Document.Edit_Text], File_Model)] = {
-    val (reparse, perspective) = node_perspective(doc_blobs, hidden)
-    if (reparse || pending_edits.nonEmpty || last_perspective != perspective) {
-      val edits = node_edits(node_header, pending_edits, perspective)
+    val (reparse1, perspective) = node_perspective(doc_blobs, hidden = hidden)
+    if (reparse || reparse1 || pending_edits.nonEmpty || last_perspective != perspective) {
+      val edits = node_edits(get_thy(), pending_edits, perspective)
       Some((edits, copy(last_perspective = perspective, pending_edits = Nil)))
     }
     else None
@@ -475,7 +483,7 @@ case class File_Model(
           (node_required || !Document.Node.Perspective_Text.is_empty(last_perspective))) None
     else {
       val text_edits = List(Text.Edit.remove(0, content.text))
-      Some(node_edits(Document.Node.Header.none, text_edits, Document.Node.Perspective_Text.empty))
+      Some(node_edits(Resources.Thy.empty, text_edits, Document.Node.Perspective_Text.empty))
     }
 
   def is_stable: Boolean = pending_edits.isEmpty
@@ -500,23 +508,20 @@ class Buffer_Model private(
   override def gui_style: GUI.Style = Isabelle_Encoding.gui_style(buffer = buffer)
 
 
-  /* text */
+  /* content */
+
+  def get_thy(): Resources.Thy = {
+    GUI_Thread.require {}
+
+    PIDE.resources.special_thy(node_name) getOrElse
+      JEdit_Lib.buffer_lock(buffer) {
+        PIDE.resources.check_thy(
+          session.conditions, node_name, JEdit_Lib.buffer_reader(buffer), strict = false)
+      }
+  }
 
   override def get_text(range: Text.Range): Option[String] =
     JEdit_Lib.get_text(buffer, range)
-
-
-  /* header */
-
-  def node_header(): Document.Node.Header = {
-    GUI_Thread.require {}
-
-    PIDE.resources.special_header(node_name) getOrElse
-      JEdit_Lib.buffer_lock(buffer) {
-        PIDE.resources.check_thy(
-          session.session_options, node_name, JEdit_Lib.buffer_reader(buffer), strict = false)
-      }
-  }
 
 
   /* perspective */
@@ -530,10 +535,11 @@ class Buffer_Model private(
   override def document_view_ranges(snapshot: Document.Snapshot): List[Text.Range] = {
     GUI_Thread.require {}
 
-    (for {
-      doc_view <- document_view_iterator
-      range <- doc_view.perspective(snapshot).ranges.iterator
-    } yield range).toList
+    List.from(
+      for {
+        doc_view <- document_view_iterator
+        range <- doc_view.perspective(snapshot).ranges.iterator
+      } yield range)
   }
 
 
@@ -556,14 +562,18 @@ class Buffer_Model private(
     def is_stable: Boolean = GUI_Thread.require { pending_edits.isEmpty }
     def get_pending_edits: List[Text.Edit] = GUI_Thread.require { pending_edits.toList }
 
-    def flush_edits(doc_blobs: Document.Blobs, hidden: Boolean): List[Document.Edit_Text] =
+    def flush_edits(
+      doc_blobs: Document.Blobs,
+      hidden: Boolean = false,
+      reparse: Boolean = false
+    ): List[Document.Edit_Text] =
       GUI_Thread.require {
         val edits = get_pending_edits
-        val (reparse, perspective) = node_perspective(doc_blobs, hidden)
-        if (reparse || edits.nonEmpty || last_perspective != perspective) {
+        val (reparse1, perspective) = node_perspective(doc_blobs, hidden = hidden)
+        if (reparse || reparse1 || edits.nonEmpty || last_perspective != perspective) {
           pending_edits.clear()
           last_perspective = perspective
-          node_edits(node_header(), edits, perspective)
+          node_edits(get_thy(), edits, perspective)
         }
         else Nil
       }
@@ -639,8 +649,13 @@ class Buffer_Model private(
 
   def is_stable: Boolean = buffer_state.is_stable
   def pending_edits: List[Text.Edit] = buffer_state.get_pending_edits
-  def flush_edits(doc_blobs: Document.Blobs, hidden: Boolean): List[Document.Edit_Text] =
-    buffer_state.flush_edits(doc_blobs, hidden)
+  def flush_edits(
+    doc_blobs: Document.Blobs,
+    hidden: Boolean = false,
+    reparse: Boolean = false
+  ): List[Document.Edit_Text] = {
+    buffer_state.flush_edits(doc_blobs, hidden = hidden, reparse = reparse)
+  }
 
   def node_required: Boolean = buffer_state.get_node_required
   def set_node_required(b: Boolean): Unit = buffer_state.set_node_required(b)

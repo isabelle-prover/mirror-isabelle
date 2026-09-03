@@ -26,28 +26,30 @@ sig
   val check_load_command: Proof.context -> string * Position.T -> string
   val check_scala_function: Proof.context -> string * Position.T -> string * scala_fun
   val master_directory: theory -> Path.T
-  val imports_of: theory -> (string * Position.T) list
   type node_name = {node: string, master_dir: Path.T, theory: string}
+  val node_name: string -> node_name
+  val empty_node_name: node_name
+  val decode_node_name: node_name XML.Decode.T
   type thy =
    {name: node_name,
     pos: Position.T,
-    imports: (string * Position.T) list,
+    imports: (node_name * Position.T) list,
     options: Options.update_pos,
     keywords: Thy_Header.keywords,
-    initiators: string list}
-  val make_thy:
-    {node: string, master_dir: Path.T, header: Thy_Header.header, initiators: string list} -> thy
+    condition_bad: string,
+    errors: string list,
+    initiators: node_name list}
+  val no_thy: thy
+  val decode_thy: thy XML.Decode.T
   val map_thy_pos: (Position.T -> Position.T) -> thy -> thy
+  val map_thy_errors: (string list -> string list) -> thy -> thy
+  val check_thy_errors: thy -> thy
+  val skipping_theory: (string -> unit) -> thy -> bool
   val begin_theory: thy -> theory list -> theory
   val theory_qualifier: string -> string
   val find_theory_file: string -> Path.T option
   val import_name: string -> Path.T -> string ->
     {node_name: Path.T, master_dir: Path.T, theory_name: string}
-  val check_thy: Path.T -> string ->
-   {thy_path: Path.T, text: string, theory_pos: Position.T,
-    imports: (string * Position.T) list,
-    options: Options.update_pos,
-    keywords: Thy_Header.keywords}
   val read_file_node: string -> Path.T -> Path.T * Position.T -> Token.file
   val read_file: Path.T -> Path.T * Position.T -> Token.file
   val parsed_files: (Path.T -> Path.T list) ->
@@ -224,57 +226,89 @@ val _ = Theory.setup
 
 (* theory resources and entries *)
 
-type data =
- {master_dir: Path.T,  (*master directory of theory source*)
-  imports: (string * Position.T) list};  (*source specification of imports*)
-
-fun make_data (master_dir, imports): data =
- {master_dir = master_dir, imports = imports};
-
 structure Data = Theory_Data
 (
-  type T = data;
-  val empty = make_data (Path.current, []);
+  type T = Path.T;  (*master directory of theory source*)
+  val empty = Path.current;
   val merge = fst;
 );
 
-val master_directory = #master_dir o Data.get;
-val imports_of = #imports o Data.get;
+val master_directory = Data.get;
+
 
 type node_name = {node: string, master_dir: Path.T, theory: string};
+
+fun node_name node : node_name = {node = node, master_dir = Path.current, theory = ""};
+val empty_node_name: node_name = {node = "", master_dir = Path.current, theory = ""};
+
+val decode_node_name: node_name XML.Decode.T =
+  let open XML.Decode
+  in triple string (Path.explode o string) string end
+  #> (fn (node, master_dir, theory) => {node = node, master_dir = master_dir, theory = theory});
+
 
 type thy =
  {name: node_name,
   pos: Position.T,
-  imports: (string * Position.T) list,
+  imports: (node_name * Position.T) list,
   options: Options.update_pos,
   keywords: Thy_Header.keywords,
-  initiators: string list};
+  condition_bad: string,
+  errors: string list,
+  initiators: node_name list};
 
-fun make_thy {node, master_dir, header: Thy_Header.header, initiators} : thy =
+val no_thy: thy =
+ {name = empty_node_name, pos = Position.none, imports = [], options = [],
+   keywords = [], condition_bad = "", errors = [], initiators = []};
+
+val decode_thy: thy XML.Decode.T =
   let
-    val (theory, pos) = #name header;
-    val name = {node = node, master_dir = master_dir, theory = theory};
+    open XML.Decode;
+    val position = Position.of_properties o properties;
+    val string_none = rpair Position.none o string;
+    val keyword = pair string_none (Keyword.command_spec o pair string (list string));
   in
-   {name = name,
-    pos = pos,
-    imports = #imports header,
-    options = #options header,
-    keywords = #keywords header,
-    initiators = initiators}
-  end;
+    pair decode_node_name
+      (pair position
+        (pair (list (pair decode_node_name position))
+          (pair (list (pair string_none (option string_none)))
+            (pair (list keyword) (pair string
+              ((pair (list string) (list decode_node_name))))))))
+  end
+  #> (fn (name, (pos, (imports, (options, (keywords, (condition_bad, (errors, initiators))))))) =>
+      {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+        condition_bad = condition_bad, errors = errors, initiators = initiators});
 
-fun map_thy_pos f ({name, pos, imports, options, keywords, initiators}: thy) : thy =
- {name = name, pos = f pos, imports = map (apsnd f) imports,
-  options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
-  keywords = keywords, initiators = initiators};
+fun map_thy_pos f
+  ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
+   {name = name, pos = f pos, imports = map (apsnd f) imports,
+    options = map (fn (a, b) => (apsnd f a, Option.map (apsnd f) b)) options,
+    keywords = keywords, condition_bad = condition_bad, errors = errors, initiators = initiators};
 
-fun begin_theory ({name, pos, imports, keywords, ...}: thy) parents =
+fun map_thy_errors f
+  ({name, pos, imports, options, keywords, condition_bad, errors, initiators}: thy) : thy =
+   {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
+    condition_bad = condition_bad, errors = f errors, initiators = initiators};
+
+fun check_thy_errors (thy: thy) =
+  (case #errors thy of
+    [] => thy
+  | errs =>
+      error (Protocol_Message.command_positions_yxml (Position.thread_data ()) (cat_lines errs)));
+
+
+(* begin theory *)
+
+fun skipping_theory output ({name, condition_bad, ...}: thy) =
+  if condition_bad = "" then false
+  else (output ("Skipping theory " ^ quote (#theory name) ^ " " ^ condition_bad); true);
+
+fun begin_theory ({name, pos, keywords, ...}: thy) parents =
   let
     val master_dir = Path.explode (File.symbolic_path (#master_dir name));
     val thy =
       Theory.begin_theory (#theory name, pos) parents
-      |> Data.put {master_dir = master_dir, imports = imports}
+      |> Data.put master_dir
       |> Thy_Header.add_keywords keywords;
     val ctxt = Proof_Context.init_global thy;
     val _ = List.app (ignore o check_load_command ctxt o #load_command o #2) keywords;
@@ -330,28 +364,6 @@ fun import_name qualifier dir s =
           if Thy_Header.is_base_name s andalso Long_Name.is_qualified s
           then loaded_theory_node theory
           else theory_node (File.full_path dir (Path.thy (Path.expand (Path.explode s)))))
-  end;
-
-fun check_file dir file = File.check_file (File.full_path dir file);
-
-fun check_thy dir thy_name =
-  let
-    val thy_base_name = Long_Name.base_name thy_name;
-    val thy_path =
-      (case find_theory_file thy_name of
-        SOME path => check_file Path.current path
-      | NONE => check_file dir (Path.thy (Path.basic thy_base_name)));
-    val text = File.read thy_path;
-
-    val {name = (name, pos), imports, options, keywords} =
-      Thy_Header.read (Position.file (File.symbolic_path thy_path)) text;
-    val _ =
-      thy_base_name <> name andalso
-        error ("Bad theory name " ^ quote name ^
-          " for file " ^ Path.print (Path.base thy_path) ^ Position.here pos);
-  in
-    {thy_path = thy_path, text = text, theory_pos = pos, imports = imports,
-      options = options, keywords = keywords}
   end;
 
 

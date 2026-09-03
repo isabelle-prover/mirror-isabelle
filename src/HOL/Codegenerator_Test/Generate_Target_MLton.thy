@@ -9,7 +9,7 @@ theory Generate_Target_MLton
   imports
     "HOL-Codegenerator_Test.Generate_Target_String_Literals"
     "HOL-Codegenerator_Test.Generate_Target_Bit_Operations"
-  options [condition = ISABELLE_MLTON]
+  options [condition = "$ISABELLE_MLTON"]
 begin
 
 test_code Generate_Target_String_Literals.check in MLton

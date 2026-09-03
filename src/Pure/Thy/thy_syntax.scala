@@ -71,38 +71,36 @@ object Thy_Syntax {
     previous: Document.Version,
     edits: List[Document.Edit_Text]
   ): (List[Document.Node.Name], Document.Nodes, List[Document.Edit_Command]) = {
-    val syntax_changed0 = new mutable.ListBuffer[Document.Node.Name]
+    var syntax_changed = List.empty[Document.Node.Name]
     var nodes = previous.nodes
     val doc_edits = new mutable.ListBuffer[Document.Edit_Command]
 
-    edits foreach {
-      case (name, Document.Node.Deps(header)) if !resources.loaded_theory(name) =>
-        val node = nodes(name)
-        val update_header =
-          node.header.errors.nonEmpty || header.errors.nonEmpty || node.header != header
-        if (update_header) {
-          val node1 = node.update_header(header)
-          if (!(node.header eq_no_pos node1.header)) syntax_changed0 += name
-          nodes += (name -> node1)
-          doc_edits += (name -> Document.Node.Deps(header))
-        }
-      case _ =>
+    for (case (name, Document.Node.Thy(thy)) <- edits if !resources.loaded_theory(name)) {
+      val node = nodes(name)
+      val update_thy = node.thy.errors.nonEmpty || thy.errors.nonEmpty || node.thy != thy
+      if (update_thy) {
+        if (node.thy.imports_no_pos != thy.imports_no_pos ||
+            node.thy.keywords != thy.keywords ||
+            node.thy.abbrevs != thy.abbrevs) syntax_changed = name :: syntax_changed
+        nodes += (name -> node.update_thy(thy))
+        doc_edits += (name -> Document.Node.Thy(thy))
+      }
     }
 
-    val syntax_changed = nodes.descendants(syntax_changed0.toList)
+    syntax_changed = nodes.descendants(syntax_changed)
 
     for (name <- syntax_changed) {
       val node = nodes(name)
       val syntax =
         if (node.is_empty) None
         else {
-          val header = node.header
+          val thy = node.thy
           val imports_syntax =
-            if (header.imports.nonEmpty) {
-              Outer_Syntax.merge(header.imports_no_pos.map(resources.session_base.node_syntax(nodes, _)))
+            if (thy.imports.nonEmpty) {
+              Outer_Syntax.merge(thy.imports_no_pos.map(resources.session_base.node_syntax(nodes, _)))
             }
             else resources.session_base.overall_syntax
-          Some(imports_syntax.add_keywords(header.keywords).add_abbrevs(header.abbrevs))
+          Some(imports_syntax.add_keywords(thy.keywords).add_abbrevs(thy.abbrevs))
         }
       nodes += (name -> node.update_syntax(syntax))
     }
@@ -148,7 +146,7 @@ object Thy_Syntax {
 
   /* reload theory from session store */
 
-  def reload_theory(
+  private def reload_theory(
     session: Session,
     doc_blobs: Document.Blobs,
     node_name: Document.Node.Name,
@@ -314,7 +312,7 @@ object Thy_Syntax {
         }
         else node
 
-      case (_, Document.Node.Deps(_)) => node
+      case (_, Document.Node.Thy(_)) => node
 
       case (name, Document.Node.Perspective(_, _, _)) if resources.loaded_theory(name) => node
 
@@ -369,7 +367,7 @@ object Thy_Syntax {
       doc_blobs.get(name) orElse previous.nodes(name).get_blob
 
     def can_import(name: Document.Node.Name): Boolean =
-      resources.loaded_theory(name) || nodes0(name).has_header
+      resources.loaded_theory(name) || nodes0(name).has_thy
 
     val (doc_edits, version) =
       if (edits.isEmpty) (Nil, Document.Version.make(previous.nodes))
@@ -389,41 +387,40 @@ object Thy_Syntax {
 
         val node_edits = (edits ::: reparse.map((_, Document.Node.Edits(Nil)))).groupBy(_._1)
 
-        node_edits foreach {
-          case (name, edits) =>
-            val node = nodes(name)
-            val syntax = resources.session_base.node_syntax(nodes, name)
-            val commands = node.commands
+        for ((name, edits) <- node_edits) {
+          val node = nodes(name)
+          val syntax = resources.session_base.node_syntax(nodes, name)
+          val commands = node.commands
 
-            val node1 =
-              if (!resources.loaded_theory(name) && reparse_set(name) && commands.nonEmpty) {
-                node.update_commands(
-                  reparse_spans(session, syntax, get_blob, can_import, name,
-                  commands, commands.head, commands.last))
-              }
-              else node
-            val node2 =
-              edits.foldLeft(node1)(
-                text_edit(session, syntax, get_blob, can_import, reparse_limit, _, _))
-            val node3 =
-              if (resources.loaded_theory(name)) {
-                reload_theory(session, doc_blobs, name, node2)
-              }
-              else if (reparse_set(name)) {
-                text_edit(session, syntax, get_blob, can_import, reparse_limit,
-                  node2, (name, node2.edit_perspective))
-              }
-              else node2
-
-            if (!node.same_perspective(node3.text_perspective, node3.perspective)) {
-              doc_edits += (name -> node3.perspective)
+          val node1 =
+            if (!resources.loaded_theory(name) && reparse_set(name) && commands.nonEmpty) {
+              node.update_commands(
+                reparse_spans(session, syntax, get_blob, can_import, name,
+                commands, commands.head, commands.last))
             }
-
-            if (!resources.loaded_theory(name)) {
-              doc_edits += (name -> Document.Node.Edits(diff_commands(commands, node3.commands)))
+            else node
+          val node2 =
+            edits.foldLeft(node1)(
+              text_edit(session, syntax, get_blob, can_import, reparse_limit, _, _))
+          val node3 =
+            if (resources.loaded_theory(name)) {
+              reload_theory(session, doc_blobs, name, node2)
             }
+            else if (reparse_set(name)) {
+              text_edit(session, syntax, get_blob, can_import, reparse_limit,
+                node2, (name, node2.edit_perspective))
+            }
+            else node2
 
-            nodes += (name -> node3)
+          if (!node.same_perspective(node3.text_perspective, node3.perspective)) {
+            doc_edits += (name -> node3.perspective)
+          }
+
+          if (!resources.loaded_theory(name)) {
+            doc_edits += (name -> Document.Node.Edits(diff_commands(commands, node3.commands)))
+          }
+
+          nodes += (name -> node3)
         }
         (doc_edits.toList.filterNot(_._2.is_void), Document.Version.make(nodes))
       }

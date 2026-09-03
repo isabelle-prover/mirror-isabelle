@@ -72,7 +72,7 @@ type action = {run: command -> string, finalize: unit -> string};
 val dry_run_action : action = {run = K "", finalize = K ""}
 
 local
-  val actions = Synchronized.var "Mirabelle.actions"
+  val actions = Synchronized.var \<^unchecked_name>\<open>Mirabelle.actions\<close>
     (Symtab.empty : (action_context -> string * action) Symtab.table);
 in
 

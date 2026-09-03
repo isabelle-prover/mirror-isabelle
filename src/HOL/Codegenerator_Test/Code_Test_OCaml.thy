@@ -4,7 +4,7 @@
 
 theory Code_Test_OCaml
   imports "HOL-Library.Code_Test" Code_Lazy_Test
-  options [condition = ISABELLE_OCAMLFIND]
+  options [condition = "$ISABELLE_OCAMLFIND"]
 begin
 
 text \<open>Test cases for \<^text>\<open>test_code\<close>\<close>

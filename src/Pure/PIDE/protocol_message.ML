@@ -8,8 +8,10 @@ signature PROTOCOL_MESSAGE =
 sig
   val marker_text: string -> string -> unit
   val marker: string -> Properties.T -> unit
-  val command_positions: string -> XML.body -> XML.body
-  val command_positions_yxml: string -> string -> string
+  val command_positions_property: string -> Properties.entry -> Properties.entry
+  val command_positions_body: string -> XML.body -> XML.body
+  val command_positions_xml: Position.T -> XML.body -> XML.body
+  val command_positions_yxml: Position.T -> string -> string
   val clean_output: string -> string
 end;
 
@@ -27,16 +29,25 @@ fun marker a props =
 
 (* inlined messages *)
 
-fun command_positions id =
-  let
-    fun attribute (a, b) =
-      if a = Markup.idN andalso b = Markup.commandN then (a, id) else (a, b);
-    fun tree (XML.Elem ((a, atts), ts)) = XML.Elem ((a, map attribute atts), map tree ts)
-      | tree text = text;
-  in map tree end;
+fun command_positions_property id (a, b) =
+  if Markup.command_position_property = (a, b) then (a, id) else (a, b);
 
-fun command_positions_yxml id =
-  YXML.string_of_body o command_positions id o YXML.parse_body;
+fun command_positions_body id =
+  let
+    val attributes = map (command_positions_property id);
+    fun body xml = xml |> map
+      (fn XML.Elem ((a, atts), ts) => XML.Elem ((a, attributes atts), body ts) | text => text);
+  in body end;
+
+fun command_positions_xml pos =
+  (case Position.id_of pos of
+    NONE => I
+  | SOME id => command_positions_body id);
+
+fun command_positions_yxml pos =
+  (case Position.id_of pos of
+    NONE => I
+  | SOME id => YXML.parse_body #> command_positions_body id #> YXML.string_of_body);
 
 
 (* clean output *)
