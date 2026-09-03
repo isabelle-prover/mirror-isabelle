@@ -146,7 +146,7 @@ object Thy_Syntax {
 
   /* reload theory from session store */
 
-  def reload_theory(
+  private def reload_theory(
     session: Session,
     doc_blobs: Document.Blobs,
     node_name: Document.Node.Name,
