@@ -665,6 +665,13 @@ fun last_common the_command_name_kind node_required node0 node =
     val is_theory_begin =
       Symset.member Keyword.theory_begin_kinds o #kind o the_command_name_kind;
 
+    val thy0 = get_thy node0;
+    val thy = get_thy node;
+
+    fun thy_ok command_id =
+      not (is_theory_begin command_id) orelse
+        #options thy0 = #options thy andalso #condition_bad thy0 = #condition_bad thy;
+
     fun update_flags prev (visible, initial) =
       let
         val visible' = visible andalso prev <> visible_last node;
@@ -681,7 +688,7 @@ fun last_common the_command_name_kind node_required node0 node =
           val ok' =
             (case (lookup_entry node0 command_id, opt_exec) of
               (SOME (eval0, _), SOME (eval, _)) =>
-                Command.eval_eq (eval0, eval) andalso
+                Command.eval_eq (eval0, eval) andalso thy_ok command_id andalso
                   (visible' orelse node_required orelse Command.eval_running eval)
             | _ => false);
           val assign_update' = assign_update |> ok' ?
