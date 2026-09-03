@@ -662,15 +662,16 @@ fun check_theory full name node =
 
 fun last_common the_command_name_kind node_required node0 node =
   let
+    val is_theory_begin =
+      Symset.member Keyword.theory_begin_kinds o #kind o the_command_name_kind;
+
     fun update_flags prev (visible, initial) =
       let
         val visible' = visible andalso prev <> visible_last node;
         val initial' = initial andalso
           (case prev of
             NONE => true
-          | SOME command_id =>
-              let val {kind, ...} = the_command_name_kind command_id
-              in not (Symset.member Keyword.theory_begin_kinds kind) end);
+          | SOME command_id => not (is_theory_begin command_id));
       in (visible', initial') end;
 
     fun get_common ((prev, command_id), opt_exec) (_, ok, flags, assign_update) =
