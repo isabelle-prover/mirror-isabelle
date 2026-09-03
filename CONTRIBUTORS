@@ -6,6 +6,9 @@ listed as an author in one of the source files of this Isabelle distribution.
 Contributions to Isabelle2026
 -----------------------------
 
+* September 2026: Manuel Eberl
+  HOL-Analysis: new relation "has_log_derivative"
+
 * June 2026: Manuel Eberl
   HOL-Complex_Analysis: new compositional relation "has_zorder" to simplify
   analysis of zeros and poles of compound functions.

@@ -314,9 +314,29 @@ lemma holomorphic_on_sum [holomorphic_intros]:
   "(\<And>i. i \<in> I \<Longrightarrow> (f i) holomorphic_on A) \<Longrightarrow> (\<lambda>x. sum (\<lambda>i. f i x) I) holomorphic_on A"
   unfolding holomorphic_on_def by (metis field_differentiable_sum)
 
+lemma holomorphic_on_sum_list [holomorphic_intros]:
+  assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x holomorphic_on A"
+  shows   "(\<lambda>z. \<Sum>x\<leftarrow>xs. f x z) holomorphic_on A"
+  using assms by (induction xs) (auto intro!: holomorphic_intros)
+
+lemma holomorphic_on_sum_mset [holomorphic_intros]:
+  assumes "\<And>x. x \<in># X \<Longrightarrow> f x holomorphic_on A"
+  shows   "(\<lambda>z. \<Sum>x\<in>#X. f x z) holomorphic_on A"
+  using assms by (induction X) (auto intro!: holomorphic_intros)
+
 lemma holomorphic_on_prod [holomorphic_intros]:
   "(\<And>i. i \<in> I \<Longrightarrow> (f i) holomorphic_on A) \<Longrightarrow> (\<lambda>x. prod (\<lambda>i. f i x) I) holomorphic_on A"
   by (induction I rule: infinite_finite_induct) (auto intro: holomorphic_intros)
+
+lemma holomorphic_on_prod_list [holomorphic_intros]:
+  assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x holomorphic_on A"
+  shows   "(\<lambda>z. \<Prod>x\<leftarrow>xs. f x z) holomorphic_on A"
+  using assms by (induction xs) (auto intro!: holomorphic_intros)
+
+lemma holomorphic_on_prod_mset [holomorphic_intros]:
+  assumes "\<And>x. x \<in># X \<Longrightarrow> f x holomorphic_on A"
+  shows   "(\<lambda>z. \<Prod>x\<in>#X. f x z) holomorphic_on A"
+  using assms by (induction X) (auto intro!: holomorphic_intros)
 
 lemma holomorphic_pochhammer [holomorphic_intros]:
   "f holomorphic_on A \<Longrightarrow> (\<lambda>s. pochhammer (f s) n) holomorphic_on A"
@@ -589,9 +609,29 @@ lemma analytic_on_sum [analytic_intros]:
   "(\<And>i. i \<in> I \<Longrightarrow> (f i) analytic_on S) \<Longrightarrow> (\<lambda>x. sum (\<lambda>i. f i x) I) analytic_on S"
   by (induct I rule: infinite_finite_induct) (auto simp: analytic_on_add)
 
+lemma analytic_on_sum_list [analytic_intros]:
+  assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x analytic_on A"
+  shows   "(\<lambda>z. \<Sum>x\<leftarrow>xs. f x z) analytic_on A"
+  using assms by (induction xs) (auto intro!: analytic_intros)
+
+lemma analytic_on_sum_mset [analytic_intros]:
+  assumes "\<And>x. x \<in># X \<Longrightarrow> f x analytic_on A"
+  shows   "(\<lambda>z. \<Sum>x\<in>#X. f x z) analytic_on A"
+  using assms by (induction X) (auto intro!: analytic_intros)
+
 lemma analytic_on_prod [analytic_intros]:
   "(\<And>i. i \<in> I \<Longrightarrow> (f i) analytic_on S) \<Longrightarrow> (\<lambda>x. prod (\<lambda>i. f i x) I) analytic_on S"
   by (induct I rule: infinite_finite_induct) (auto simp: analytic_on_mult)
+
+lemma analytic_on_prod_list [analytic_intros]:
+  assumes "\<And>x. x \<in> set xs \<Longrightarrow> f x analytic_on A"
+  shows   "(\<lambda>z. \<Prod>x\<leftarrow>xs. f x z) analytic_on A"
+  using assms by (induction xs) (auto intro!: analytic_intros)
+
+lemma analytic_on_prod_mset [analytic_intros]:
+  assumes "\<And>x. x \<in># X \<Longrightarrow> f x analytic_on A"
+  shows   "(\<lambda>z. \<Prod>x\<in>#X. f x z) analytic_on A"
+  using assms by (induction X) (auto intro!: analytic_intros)
 
 lemma analytic_on_gbinomial [analytic_intros]:
   "f analytic_on A \<Longrightarrow> (\<lambda>w. f w gchoose n) analytic_on A"

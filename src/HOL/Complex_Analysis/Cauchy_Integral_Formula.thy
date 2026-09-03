@@ -428,6 +428,11 @@ lemma analytic_derivI:
   shows   "(f has_field_derivative (deriv f z)) (at z within A)"
   using assms holomorphic_derivI[of f _ z] analytic_at by blast
 
+lemma analytic_logderivI:
+  assumes "f analytic_on {z}" "f z \<noteq> 0"
+  shows   "(f has_log_derivative (deriv f z / f z)) (at z)"
+  by (intro has_field_derivative_imp_has_log_derivative' analytic_derivI assms)
+
 lemma deriv_compose_analytic:
   fixes f g :: "complex \<Rightarrow> complex"
   assumes "f analytic_on {g z}" "g analytic_on {z}"
@@ -775,6 +780,58 @@ lemma higher_deriv_mult_at:
     shows "(deriv ^^ n) (\<lambda>w. f w * g w) z =
            (\<Sum>i = 0..n. of_nat (n choose i) * (deriv ^^ i) f z * (deriv ^^ (n-i)) g z)"
   using analytic_at_two assms higher_deriv_mult by blast
+
+lemma higher_deriv_sum_at:
+  assumes "\<And>x. x \<in> X \<Longrightarrow> f x analytic_on {z}"
+  shows   "(deriv ^^ n) (\<lambda>z. \<Sum>x\<in>X. f x z) z = (\<Sum>x\<in>X. (deriv ^^ n) (f x) z)"
+  using assms
+  by (induction X rule: infinite_finite_induct)
+     (auto simp: higher_deriv_add_at analytic_on_sum)
+
+lemma deriv_scale:
+  assumes "f analytic_on {c * z}"
+  shows   "deriv (f \<circ> (\<lambda>z. c * z)) z = c * deriv f (c * z)"
+  by (subst (2) mult.commute, intro DERIV_imp_deriv DERIV_chain analytic_derivI assms)
+     (auto intro!: derivative_eq_intros)
+
+lemma higher_deriv_scale:
+  assumes "f analytic_on {c * z}"
+  shows   "(deriv ^^ n) (f \<circ> (\<lambda>z. c * z)) z = c ^ n * (deriv ^^ n) f (c * z)"
+  using assms
+proof (induction n arbitrary: f)
+  case (Suc n f)
+  obtain R where R: "R > 0" "f holomorphic_on ball (c * z) R"
+    using analytic_at_ball Suc.prems by blast
+  define r where "r = (if c = 0 then 1 else R / norm c)"
+  have r: "r > 0"
+    using R by (auto simp: r_def)
+
+  have "(deriv ^^ Suc n) (f \<circ> (\<lambda>z. c * z)) z = (deriv ^^ n) (deriv (f \<circ> (*) c)) z"
+    by (subst funpow_Suc_right) auto
+  also have "(deriv ^^ n) (deriv (f \<circ> (*) c)) z = (deriv ^^ n) (\<lambda>z. c * deriv f (c * z)) z"
+  proof (intro higher_deriv_cong_ev)
+    have "eventually (\<lambda>w. w \<in> ball z r) (nhds z)"
+      by (intro eventually_nhds_in_open) (use r in auto)
+    thus "\<forall>\<^sub>F w in nhds z. deriv (f \<circ> (*) c) w = c * deriv f (c * w)"
+    proof eventually_elim
+      case (elim w)
+      have "c * w \<in> ball (c * z) R"
+        using elim \<open>R > 0\<close> by (auto simp: dist_mult_left r_def field_simps split: if_splits)
+      moreover have "f analytic_on ball (c * z) R"
+        using R by (simp add: analytic_on_open)
+      ultimately have "f analytic_on {c * w}"
+        using analytic_on_analytic_at by blast
+      thus ?case
+        by (rule deriv_scale)
+    qed
+  qed auto
+  also have "\<dots> = c * (deriv ^^ n) (deriv f \<circ> (\<lambda>z. c * z)) z"
+    by (subst higher_deriv_cmult') (auto intro!: analytic_intros Suc.prems simp: o_def)
+  also have "\<dots> = c ^ Suc n * (deriv ^^ Suc n) f (c * z)"
+    by (subst Suc.IH) 
+       (auto intro!: analytic_intros Suc.prems simp: funpow_Suc_right simp del: funpow.simps)
+  finally show ?case .
+qed auto
 
 
 text\<open> Nonexistence of isolated singularities and a stronger integral formula.\<close>

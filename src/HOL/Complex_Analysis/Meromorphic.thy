@@ -1943,6 +1943,26 @@ proof
     by simp
 qed
 
+lemma nicely_meromorphic_on_cosparse_eq_imp_eq:
+  assumes "\<forall>\<^sub>\<approx>x\<in>A. f x = g x" "f nicely_meromorphic_on A" "g nicely_meromorphic_on A"
+  assumes "open A" "x \<in> A"
+  shows   "f x = g x"
+proof -
+  have *: "is_pole f x \<longleftrightarrow> is_pole g x"
+    by (intro is_pole_cong) (use assms in \<open>auto simp: eventually_cosparse_open_eq\<close>)
+  show ?thesis
+  proof (cases "is_pole f x")
+    case True
+    thus ?thesis using * assms(2,3)[THEN is_pole_zero_at_nicely_mero[of _ A x]] assms(3-) by auto
+  next
+    case False
+    with * have **: "f analytic_on {x}" "g analytic_on {x}"
+      using assms nicely_meromorphic_on_imp_analytic_at by blast+
+    show ?thesis
+      using assms(1) ** by (rule analytic_on_continuation) (use assms(5) in auto)
+  qed
+qed
+
 
 subsection \<open>A relation for the zero order of a function\<close>
 
@@ -2244,6 +2264,43 @@ lemma has_zorder_prod_mset [zorder_intros]:
   assumes "\<And>x. x \<in># A \<Longrightarrow> has_zorder (f x) z (g x)"
   shows   "has_zorder (\<lambda>z. \<Prod>x\<in>#A. f x z) z (\<Sum>x\<in>#A. g x)"
   using assms by (induction A) (auto intro!: zorder_intros)
+
+lemma has_zorder_deriv:
+  assumes "has_zorder f z n" "n \<noteq> 0"
+  shows   "has_zorder (deriv f) z (n - 1)"
+proof -
+  from assms obtain F 
+    where F: "(\<lambda>w. f (z + w)) has_laurent_expansion F" "F \<noteq> 0" "fls_subdegree F = n"
+    by (auto simp: has_zorder_altdef)
+  have "(\<lambda>w. deriv (\<lambda>w. f (z + w)) w) has_laurent_expansion fls_deriv F"
+    by (intro laurent_expansion_intros F)
+  hence F': "(\<lambda>w. deriv f (z + w)) has_laurent_expansion fls_deriv F"
+    by (simp add: deriv_shift_0' o_def add_ac)
+
+  have "fls_nth F n \<noteq> 0"
+    using F by auto
+  hence "fls_nth (fls_deriv F) (n - 1) \<noteq> fls_nth 0 (n - 1)"
+    using \<open>n \<noteq> 0\<close> by auto
+  hence "fls_deriv F \<noteq> 0"
+    by metis
+
+  show ?thesis
+  proof (rule has_laurent_expansion_imp_has_zorder)
+    have "deriv (\<lambda>w. f (z + w)) has_laurent_expansion fls_deriv F"
+      by (intro laurent_expansion_intros F(1))
+    also have "deriv (\<lambda>w. f (z + w)) = (\<lambda>w. deriv f (z + w))"
+      by (rule ext) (simp add: deriv_shift_0' o_def add_ac)
+    finally show "(\<lambda>w. deriv f (z + w)) has_laurent_expansion fls_deriv F" .
+  next
+    show "fls_subdegree (fls_deriv F) = n - 1"
+      using F assms(2) by (subst fls_subdegree_deriv) auto
+  qed fact
+qed
+
+lemma has_zorder_logderiv:
+  assumes "has_zorder f z n" "n \<noteq> 0"
+  shows   "has_zorder (\<lambda>z. deriv f z / f z) z (-1)"
+  by (rule has_zorder_divide has_zorder_deriv assms)+ auto
 
 
 lemma has_zorder_sin_0: "has_zorder sin 0 1"

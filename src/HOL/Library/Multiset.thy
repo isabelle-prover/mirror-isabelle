@@ -1735,6 +1735,9 @@ corollary image_mset_add_mset [simp]:
   "image_mset f (add_mset a M) = add_mset (f a) (image_mset f M)"
   unfolding image_mset_union add_mset_add_single[of a M] by (simp add: image_mset_single)
 
+lemma image_mset_sum: "image_mset f (\<Sum>x\<in>A. g x) = (\<Sum>x\<in>A. image_mset f (g x))"
+  by (induction A rule: infinite_finite_induct) auto
+
 lemma set_image_mset [simp]: "set_mset (image_mset f M) = image f (set_mset M)"
   by (induct M) simp_all
 
@@ -2764,6 +2767,9 @@ lemma sum_mset_sum_list:
   "sum_mset (mset xs) = sum_list xs"
   by (induction xs) auto
 
+lemma sum_mset_sum: "sum_mset (\<Sum>x\<in>A. f x) = (\<Sum>x\<in>A. sum_mset (f x))"
+  by (induction A rule: infinite_finite_induct) auto
+
 end
 
 context canonically_ordered_monoid_add
@@ -2791,6 +2797,22 @@ begin
 lemma sum_mset_diff:
   "sum_mset (M - N) = sum_mset M - sum_mset N" if "N \<subseteq># M" for M N :: "'a multiset"
   using that by (auto simp add: subset_mset.le_iff_add)
+
+end
+
+context ab_group_add
+begin
+
+lemma sum_mset_negf: "(\<Sum>x\<in>#M. -f x :: 'a) = -(\<Sum>x\<in>#M. f x)"
+proof -
+  have "(\<Sum>x\<in>#M. -f x) + (\<Sum>x\<in>#M. f x) = 0"
+    by (subst sum_mset.distrib [symmetric]) auto
+  thus ?thesis
+    using local.eq_neg_iff_add_eq_0 by blast
+qed
+
+lemma sum_mset_subtractf: "(\<Sum>x\<in>#M. f x - g x) = (\<Sum>x\<in>#M. f x) - (\<Sum>x\<in>#M. g x)"
+  using sum_mset.distrib[of f "\<lambda>x. -g x" M] by (simp add: sum_mset_negf)
 
 end
 
