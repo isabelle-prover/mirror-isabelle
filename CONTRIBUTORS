@@ -7,7 +7,7 @@ Contributions to Isabelle2026
 -----------------------------
 
 * September 2026: Manuel Eberl
-  HOL-Analysis: new relation "has_log_derivative"
+  HOL: new relation "has_log_derivative"
 
 * June 2026: Manuel Eberl
   HOL-Complex_Analysis: new compositional relation "has_zorder" to simplify

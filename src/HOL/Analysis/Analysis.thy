@@ -22,7 +22,6 @@ theory Analysis
   (* Unsorted *)
   Line_Segment
   Derivative
-  Log_Derivative
   Cartesian_Euclidean_Space
   Kronecker_Approximation_Theorem
   Weierstrass_Theorems

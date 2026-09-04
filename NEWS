@@ -277,9 +277,8 @@ the abbreviation "matrix_det". INCOMPATIBILITY
 indexed by arbitrary sets, generalising the existing treatment of
 the product of a sequence.
 
-* Session "HOL-Analysis": Theory "Log_Derivative" introduces the
-relation "has_log_derivative", which simplifies talking about
-logarithmic derivatives.
+* Session "HOL": New relation "has_log_derivative", which 
+simplifies talking about logarithmic derivatives.
 
 
 *** ML ***

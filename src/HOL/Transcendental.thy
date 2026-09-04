@@ -1341,6 +1341,13 @@ proof
   finally show False by simp
 qed
 
+lemma has_log_derivative_exp [derivative_intros]:
+  assumes "((\<lambda>x. f x) has_field_derivative f') (at x within A)"
+  shows   "((\<lambda>x. exp (f x)) has_log_derivative f') (at x within A)"
+  using assms
+  by (cases "at x within A = bot")
+     (auto simp: has_log_derivative_def Lim_ident_at intro!: derivative_eq_intros)
+
 lemma exp_minus_inverse: "exp x * exp (- x) = 1"
   by (simp add: exp_add_commuting[symmetric])
 
@@ -2253,6 +2260,17 @@ proof -
     then show ?thesis by simp
   qed
 qed
+
+lemma has_log_derivative_imp_has_field_derivative_ln_real:
+  assumes "f x > (0::real)" "(f has_log_derivative D) (at x within A)"
+  shows   "((\<lambda>x. ln (f x)) has_field_derivative D) (at x within A)"
+proof (cases "at x within A = bot")
+  case [simp]: False
+  have [simp]: "Lim (at x within A) (\<lambda>x. x) = x"
+    by (simp add: Lim_ident_at)
+  show ?thesis using assms
+    by (auto intro!: derivative_eq_intros simp: has_log_derivative_def)
+qed auto
 
 corollary ln_diff_less: "0 < x \<Longrightarrow> 0 < y \<Longrightarrow> x \<noteq> y \<Longrightarrow> ln x - ln y < (x - y) / y" for x :: real
 using ln_eq_minus_one[of "x/y"] ln_diff_le[of x y]
