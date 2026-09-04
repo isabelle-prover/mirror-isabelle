@@ -272,8 +272,8 @@ val decode_thy: thy XML.Decode.T =
       (pair position
         (pair (list (pair decode_node_name position))
           (pair (list (pair string_none (option string_none)))
-            (pair (list keyword) (pair string
-              ((pair (list string) (list decode_node_name))))))))
+            (pair (list keyword) (pair YXML.string_of_body
+              ((pair (list YXML.string_of_body) (list decode_node_name))))))))
   end
   #> (fn (name, (pos, (imports, (options, (keywords, (condition_bad, (errors, initiators))))))) =>
       {name = name, pos = pos, imports = imports, options = options, keywords = keywords,
