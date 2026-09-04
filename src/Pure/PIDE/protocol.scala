@@ -422,15 +422,14 @@ trait Protocol {
       import XML.Encode._
 
       def id: T[Command] = (cmd => long(cmd.id))
-      def encode_edit(name: Document.Node.Name)
-          : T[Document.Node.Edit[Command.Edit, Command.Perspective]] =
+      val encode_edit: T[Document.Node.Edit[Command.Edit, Command.Perspective]] =
         variant(List(
           { case Document.Node.Edits(a) => (Nil, list(pair(option(id), option(id)))(a)) },
           { case Document.Node.Thy(a) => (Nil, Resources.Thy.encode(a)) },
           { case Document.Node.Perspective(a, b, c) =>
               (bool_atom(a) :: b.commands.map(cmd => long_atom(cmd.id)),
                 list(pair(id, pair(string, list(string))))(c.dest)) }))
-      edits.map({ case (name, edit) => pair(string, encode_edit(name))(name.node, edit) })
+      edits.map({ case (name, edit) => pair(string, encode_edit)(name.node, edit) })
     }
     protocol_command_args("Document.update",
       Document_ID.encode(old_id) :: Document_ID.encode(new_id) :: consolidate_xml :: edits_xml)
